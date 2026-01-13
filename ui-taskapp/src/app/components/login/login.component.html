@@ -1,0 +1,50 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <h1>TasksApp</h1>
+      <p>Faça login para continuar</p>
+    </div>
+
+    @if (error) {
+      <div class="alert alert-error">
+        {{ error }}
+      </div>
+    }
+
+    <form (ngSubmit)="fazerLogin()" class="login-form">
+      <div class="form-group">
+        <label for="login">Usuário</label>
+        <input
+          type="text"
+          id="login"
+          [(ngModel)]="loginDto.login"
+          name="login"
+          placeholder="Digite seu usuário"
+          required
+          autocomplete="username"
+          [disabled]="loading">
+      </div>
+
+      <div class="form-group">
+        <label for="senha">Senha</label>
+        <input
+          type="password"
+          id="senha"
+          [(ngModel)]="loginDto.senha"
+          name="senha"
+          placeholder="Digite sua senha"
+          required
+          autocomplete="current-password"
+          [disabled]="loading">
+      </div>
+
+      <button type="submit" class="btn-login" [disabled]="loading">
+        @if (loading) {
+          <span>Entrando...</span>
+        } @else {
+          <span>Entrar</span>
+        }
+      </button>
+    </form>
+  </div>
+</div>

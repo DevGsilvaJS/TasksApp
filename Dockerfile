@@ -2,34 +2,16 @@
 # Stage 1: Build do Frontend Angular
 # ============================================
 FROM node:20-alpine AS frontend-build
-
-# Criar diretório de trabalho
-WORKDIR /app
-
-# Copiar TODO o projeto primeiro (para debug)
-COPY . .
-
-# Verificar estrutura e localizar package.json
-RUN echo "=== Estrutura do diretório ===" && \
-    ls -la && \
-    echo "=== Procurando package.json ===" && \
-    find . -name "package.json" -type f 2>/dev/null || echo "package.json não encontrado!" && \
-    echo "=== Verificando ui-taskapp ===" && \
-    ls -la ui-taskapp/ 2>/dev/null || echo "pasta ui-taskapp não encontrada!"
-
-# Mudar para o diretório do frontend
 WORKDIR /app/ui-taskapp
 
-# Verificar se package.json existe
-RUN if [ ! -f package.json ]; then \
-        echo "ERRO: package.json não encontrado em /app/ui-taskapp/"; \
-        echo "Conteúdo do diretório:"; \
-        ls -la; \
-        exit 1; \
-    fi
+# Copiar arquivos de dependências primeiro (cache layer)
+COPY ui-taskapp/package*.json ./
 
 # Instalar dependências (Angular precisa de devDependencies para build)
 RUN npm install
+
+# Copiar resto do código fonte do frontend
+COPY ui-taskapp/ ./
 
 # Build de produção do Angular
 RUN npm run build -- --configuration production
