@@ -8,7 +8,8 @@ WORKDIR /app/ui-taskapp
 COPY ui-taskapp/package*.json ./
 
 # Instalar dependências (Angular precisa de devDependencies para build)
-RUN npm ci
+# npm install funciona com ou sem package-lock.json
+RUN npm install
 
 # Copiar código fonte do frontend
 COPY ui-taskapp/ ./
