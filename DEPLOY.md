@@ -20,7 +20,7 @@ Este guia detalha como fazer o deploy do TasksApp no Render.
    - **Region**: Escolha a mesma região do seu web service
    - **Plan**: Escolha conforme sua necessidade (Starter é suficiente para começar)
 3. Clique em **"Create Database"**
-4. **IMPORTANTE**: Anote a **Internal Database URL** (será usada como `DATABASE_URL`)
+4. **IMPORTANTE**: Anote a **External Database URL** (será usada como `DATABASE_URL`)
 
 ### 2. Criar Web Service
 
@@ -43,10 +43,13 @@ Na seção **"Environment"** do web service, adicione:
 | Key | Value | Descrição |
 |-----|-------|-----------|
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Ambiente de execução |
-| `DATABASE_URL` | `postgres://user:pass@host:port/dbname` | URL do banco (use a Internal Database URL do passo 1) |
+| `DATABASE_URL` | `postgres://user:pass@host:port/dbname` | URL do banco (use a **External Database URL** do passo 1) |
 | `CorsOrigins` | `https://tasksapp-api.onrender.com` | URLs permitidas para CORS (separadas por `;`) |
 
-**Nota**: O Render pode gerar automaticamente a `DATABASE_URL` se você conectar o banco ao serviço.
+**Nota**: 
+- Use sempre a **External Database URL** (não a Internal), pois ela funciona de qualquer lugar
+- O Render pode gerar automaticamente a `DATABASE_URL` se você conectar o banco ao serviço, mas ainda assim use a External URL
+- A External URL permite acesso local, migrations externas e debug sem problemas
 
 ### 4. Configurar Health Check (Opcional)
 

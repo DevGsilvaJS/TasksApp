@@ -84,7 +84,7 @@ docker run -p 5000:5000 -e DATABASE_URL="sua_connection_string" tasksapp
 Configure as seguintes variáveis de ambiente no Render:
 
 - `ASPNETCORE_ENVIRONMENT`: `Production`
-- `DATABASE_URL`: A connection string do seu banco PostgreSQL no Render (gerada automaticamente)
+- `DATABASE_URL`: Use a **External Database URL** do seu banco PostgreSQL no Render (⚠️ NÃO use a Internal URL, ela só funciona dentro da rede do Render)
 - `CorsOrigins`: URLs permitidas para CORS (ex: `https://seu-app.onrender.com;https://www.seudominio.com`)
 
 ### 4. Deploy Automático

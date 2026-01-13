@@ -1,93 +1,63 @@
 using Infrastructure.Extensions;
+using Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ======================
 // Services
 // ======================
-
-// Controllers
 builder.Services.AddControllers();
-
-// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// CORS
+// CORS simples (Angular + API juntos)
 builder.Services.AddCors(options =>
 {
-    if (builder.Environment.IsDevelopment())
-    {
-        // Desenvolvimento: permitir tudo
-        options.AddPolicy("AllowAll", policy =>
-        {
-            policy
-                .AllowAnyOrigin()
-                .AllowAnyHeader()
-                .AllowAnyMethod();
-        });
-    }
-    else
-    {
-        // Produção: permitir apenas origens específicas
-        var corsOrigins = builder.Configuration["CorsOrigins"]?.Split(';') ?? Array.Empty<string>();
-        options.AddPolicy("AllowAll", policy =>
-        {
-            if (corsOrigins.Length > 0)
-            {
-                policy
-                    .WithOrigins(corsOrigins)
-                    .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .AllowCredentials();
-            }
-            else
-            {
-                // Se não configurado, permitir qualquer origem (não recomendado para produção)
-                policy
-                    .AllowAnyOrigin()
-                    .AllowAnyHeader()
-                    .AllowAnyMethod();
-            }
-        });
-    }
+    options.AddPolicy("AllowAll", policy =>
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod());
 });
 
-// Infrastructure (PostgreSQL + EF + Repositórios)
-// Usar variável de ambiente se disponível, senão usar appsettings
+// Database - Converter DATABASE_URL do Render para formato Npgsql
 var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") 
     ?? builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' não foi encontrada.");
 
-// Converter DATABASE_URL do Render para formato Npgsql se necessário
+// Converter DATABASE_URL do Render (postgres://) para formato Npgsql
 if (connectionString.StartsWith("postgres://"))
 {
     var uri = new Uri(connectionString);
     connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.LocalPath.TrimStart('/')};Username={uri.UserInfo.Split(':')[0]};Password={uri.UserInfo.Split(':')[1]};SSL Mode=Require;Trust Server Certificate=true";
 }
 
-// Criar configuração temporária com connection string atualizada
-var tempConfig = new Dictionary<string, string?>
-{
-    { "ConnectionStrings:DefaultConnection", connectionString }
-};
-builder.Configuration.AddInMemoryCollection(tempConfig);
+// Adicionar connection string convertida à configuração
+builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
 
+// Database
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// Servir arquivos estáticos do frontend
-builder.Services.AddSpaStaticFiles(configuration =>
+// Static files (Angular)
+builder.Services.AddSpaStaticFiles(options =>
 {
-    configuration.RootPath = "wwwroot";
+    options.RootPath = "wwwroot";
 });
 
 var app = builder.Build();
 
+// Porta dinâmica do Render (apenas em produção)
+// Em desenvolvimento, usa a porta do launchSettings.json
+if (!app.Environment.IsDevelopment())
+{
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+    app.Urls.Clear();
+    app.Urls.Add($"http://0.0.0.0:{port}");
+}
+
 // ======================
 // Pipeline
 // ======================
-
-// 🔥 CORS SEMPRE ANTES DE TUDO
 app.UseCors("AllowAll");
 
 if (app.Environment.IsDevelopment())
@@ -95,26 +65,31 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-else
-{
-    app.UseHttpsRedirection();
-}
 
 app.UseStaticFiles();
 app.UseSpaStaticFiles();
 
 app.UseAuthorization();
-
 app.MapControllers();
 
-// Servir SPA Angular
-app.UseSpa(spa =>
+// Fallback para Angular Router
+app.MapFallbackToFile("index.html");
+
+// 🔥 Migrations automáticas (executa ao iniciar a aplicação)
+try
 {
-    spa.Options.SourcePath = "wwwroot";
-    if (app.Environment.IsDevelopment())
+    using (var scope = app.Services.CreateScope())
     {
-        spa.UseProxyToSpaDevelopmentServer("http://localhost:4200");
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.Database.Migrate();
     }
-});
+    Console.WriteLine("✅ Migrations aplicadas com sucesso!");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"⚠️ Erro ao aplicar migrations: {ex.Message}");
+    // Não interrompe a aplicação se migrations falharem
+    // Isso permite que a aplicação inicie mesmo se houver problemas com o banco
+}
 
 app.Run();

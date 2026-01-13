@@ -16,7 +16,7 @@ git push origin main
    - Name: `tasksapp-db`
    - Plan: Starter
    - Create Database
-   - **Copiar a Internal Database URL**
+   - **Copiar a External Database URL** (⚠️ NÃO use a Internal, ela só funciona dentro da rede do Render)
 
 2. **Criar Web Service**
    - New + → Web Service
@@ -30,7 +30,7 @@ git push origin main
 
 3. **Variáveis de Ambiente**
    - `ASPNETCORE_ENVIRONMENT` = `Production`
-   - `DATABASE_URL` = (cole a Internal Database URL do passo 1)
+   - `DATABASE_URL` = (cole a **External Database URL** do passo 1)
    - `CorsOrigins` = `https://tasksapp-api.onrender.com` (ajuste com seu URL)
 
 4. **Create Web Service**
