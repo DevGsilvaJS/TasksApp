@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: tasksapp-api
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    region: oregon
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DATABASE_URL
+        sync: false
+      - key: CorsOrigins
+        sync: false
+    healthCheckPath: /
+    autoDeploy: true
+
