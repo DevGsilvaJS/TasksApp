@@ -1,6 +1,7 @@
 using Infrastructure.Extensions;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,25 +21,45 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod());
 });
 
-// Database - Converter DATABASE_URL do Render para formato Npgsql
-var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") 
-    ?? builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' não foi encontrada.");
+// ======================
+// Database
+// ======================
 
-// Converter DATABASE_URL do Render (postgres://) para formato Npgsql
-if (connectionString.StartsWith("postgres://"))
+// Lê a variável de ambiente DATABASE_URL (Render) ou do appsettings
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("DATABASE_URL não encontrada. Configure a variável de ambiente ou ConnectionStrings:DefaultConnection no appsettings.");
+
+// Converter URL do Render (postgres://) para formato Npgsql
+if (databaseUrl.StartsWith("postgres://"))
 {
-    var uri = new Uri(connectionString);
-    connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.LocalPath.TrimStart('/')};Username={uri.UserInfo.Split(':')[0]};Password={uri.UserInfo.Split(':')[1]};SSL Mode=Require;Trust Server Certificate=true";
+    var uri = new Uri(databaseUrl);
+    var userInfo = uri.UserInfo.Split(':');
+
+    var npgsqlBuilder = new NpgsqlConnectionStringBuilder
+    {
+        Host = uri.Host,
+        Port = uri.Port,
+        Database = uri.LocalPath.TrimStart('/'),
+        Username = Uri.UnescapeDataString(userInfo[0]),
+        Password = Uri.UnescapeDataString(userInfo[1]),
+        SslMode = SslMode.Require,
+        TrustServerCertificate = true
+    };
+
+    databaseUrl = npgsqlBuilder.ConnectionString;
 }
 
-// Adicionar connection string convertida à configuração
-builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
+// Injetar a connection string convertida no IConfiguration
+// Isso permite que AddInfrastructure leia corretamente
+builder.Configuration["ConnectionStrings:DefaultConnection"] = databaseUrl;
 
-// Database
+// Adiciona DbContext e serviços usando AddInfrastructure
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// ======================
 // Static files (Angular)
+// ======================
 builder.Services.AddSpaStaticFiles(options =>
 {
     options.RootPath = "wwwroot";
@@ -46,8 +67,7 @@ builder.Services.AddSpaStaticFiles(options =>
 
 var app = builder.Build();
 
-// Porta dinâmica do Render (apenas em produção)
-// Em desenvolvimento, usa a porta do launchSettings.json
+// Porta dinâmica do Render (produção)
 if (!app.Environment.IsDevelopment())
 {
     var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
@@ -56,7 +76,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 // ======================
-// Pipeline
+// Middleware / Pipeline
 // ======================
 app.UseCors("AllowAll");
 
@@ -75,7 +95,9 @@ app.MapControllers();
 // Fallback para Angular Router
 app.MapFallbackToFile("index.html");
 
-// 🔥 Migrations automáticas (executa ao iniciar a aplicação)
+// ======================
+// Migrations automáticas
+// ======================
 try
 {
     using (var scope = app.Services.CreateScope())
@@ -89,7 +111,6 @@ catch (Exception ex)
 {
     Console.WriteLine($"⚠️ Erro ao aplicar migrations: {ex.Message}");
     // Não interrompe a aplicação se migrations falharem
-    // Isso permite que a aplicação inicie mesmo se houver problemas com o banco
 }
 
 app.Run();
