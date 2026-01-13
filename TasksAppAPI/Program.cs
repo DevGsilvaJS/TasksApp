@@ -28,21 +28,26 @@ builder.Services.AddCors(options =>
 // Lê a variável de ambiente DATABASE_URL (Render) ou do appsettings
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
     ?? builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("DATABASE_URL não encontrada. Configure a variável de ambiente ou ConnectionStrings:DefaultConnection no appsettings.");
+    ?? throw new InvalidOperationException("DATABASE_URL não encontrada.");
 
 // Converter URL do Render (postgres://) para formato Npgsql
+// Apenas se for postgres://
 if (databaseUrl.StartsWith("postgres://"))
 {
     var uri = new Uri(databaseUrl);
     var userInfo = uri.UserInfo.Split(':');
 
-    var npgsqlBuilder = new NpgsqlConnectionStringBuilder
+    // Decode para username e password, importante se tiver caracteres especiais
+    var username = Uri.UnescapeDataString(userInfo[0]);
+    var password = Uri.UnescapeDataString(userInfo[1]);
+
+    var npgsqlBuilder = new Npgsql.NpgsqlConnectionStringBuilder
     {
         Host = uri.Host,
         Port = uri.Port,
         Database = uri.LocalPath.TrimStart('/'),
-        Username = Uri.UnescapeDataString(userInfo[0]),
-        Password = Uri.UnescapeDataString(userInfo[1]),
+        Username = username,
+        Password = password,
         SslMode = SslMode.Require,
         TrustServerCertificate = true
     };
