@@ -4,15 +4,11 @@
 FROM node:20-alpine AS frontend-build
 WORKDIR /app/ui-taskapp
 
-# Copiar arquivos de dependências
-COPY ui-taskapp/package*.json ./
+# Copiar TODO o frontend (garante que package.json existe)
+COPY ui-taskapp/ ./
 
 # Instalar dependências (Angular precisa de devDependencies para build)
-# npm install funciona com ou sem package-lock.json
 RUN npm install
-
-# Copiar código fonte do frontend
-COPY ui-taskapp/ ./
 
 # Build de produção do Angular
 RUN npm run build -- --configuration production
