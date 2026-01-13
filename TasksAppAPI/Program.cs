@@ -30,12 +30,18 @@ var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
     ?? builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("DATABASE_URL não encontrada.");
 
-// Converter URL do Render (postgres://) para formato Npgsql
-// Apenas se for postgres://
-if (databaseUrl.StartsWith("postgres://"))
+// Converter URL do Render (postgres:// ou postgresql://) para formato Npgsql
+// Aceita ambos os formatos: postgres:// e postgresql://
+if (databaseUrl.StartsWith("postgres://") || databaseUrl.StartsWith("postgresql://"))
 {
     try
     {
+        // Normalizar para postgres:// se for postgresql:// (Uri precisa do formato correto)
+        if (databaseUrl.StartsWith("postgresql://"))
+        {
+            databaseUrl = databaseUrl.Replace("postgresql://", "postgres://");
+        }
+        
         var uri = new Uri(databaseUrl);
         
         // Extrair username e password do UserInfo
