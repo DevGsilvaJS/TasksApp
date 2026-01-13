@@ -34,25 +34,54 @@ var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
 // Apenas se for postgres://
 if (databaseUrl.StartsWith("postgres://"))
 {
-    var uri = new Uri(databaseUrl);
-    var userInfo = uri.UserInfo.Split(':');
-
-    // Decode para username e password, importante se tiver caracteres especiais
-    var username = Uri.UnescapeDataString(userInfo[0]);
-    var password = Uri.UnescapeDataString(userInfo[1]);
-
-    var npgsqlBuilder = new Npgsql.NpgsqlConnectionStringBuilder
+    try
     {
-        Host = uri.Host,
-        Port = uri.Port,
-        Database = uri.LocalPath.TrimStart('/'),
-        Username = username,
-        Password = password,
-        SslMode = SslMode.Require,
-        TrustServerCertificate = true
-    };
+        var uri = new Uri(databaseUrl);
+        
+        // Extrair username e password do UserInfo
+        // O UserInfo já vem decodificado pelo Uri, mas pode ter caracteres especiais
+        var userInfo = uri.UserInfo;
+        var colonIndex = userInfo.IndexOf(':');
+        
+        if (colonIndex < 0)
+        {
+            throw new InvalidOperationException($"Formato inválido de DATABASE_URL. UserInfo deve conter 'user:password', recebido: '{userInfo}'");
+        }
+        
+        var username = userInfo.Substring(0, colonIndex);
+        var password = userInfo.Substring(colonIndex + 1);
+        
+        // Decode adicional se necessário (para caracteres URL-encoded)
+        username = Uri.UnescapeDataString(username);
+        password = Uri.UnescapeDataString(password);
 
-    databaseUrl = npgsqlBuilder.ConnectionString;
+        var npgsqlBuilder = new Npgsql.NpgsqlConnectionStringBuilder
+        {
+            Host = uri.Host,
+            Port = uri.Port > 0 ? uri.Port : 5432,
+            Database = uri.LocalPath.TrimStart('/'),
+            Username = username,
+            Password = password,
+            SslMode = SslMode.Require,
+            TrustServerCertificate = true
+        };
+
+        databaseUrl = npgsqlBuilder.ConnectionString;
+        
+        Console.WriteLine($"✅ Connection string convertida. Host: {npgsqlBuilder.Host}, Port: {npgsqlBuilder.Port}, Database: {npgsqlBuilder.Database}, User: {npgsqlBuilder.Username}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Erro ao converter DATABASE_URL: {ex.Message}");
+        Console.WriteLine($"   DATABASE_URL recebida: {(string.IsNullOrEmpty(databaseUrl) ? "(vazia)" : databaseUrl.Substring(0, Math.Min(50, databaseUrl.Length)) + "...")}");
+        throw new InvalidOperationException($"Erro ao converter DATABASE_URL: {ex.Message}", ex);
+    }
+}
+
+// Validar connection string antes de usar
+if (string.IsNullOrWhiteSpace(databaseUrl))
+{
+    throw new InvalidOperationException("Connection string está vazia após conversão.");
 }
 
 // Injetar a connection string convertida no IConfiguration
