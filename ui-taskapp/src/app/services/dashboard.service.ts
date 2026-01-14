@@ -1,0 +1,64 @@
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { ApiService } from './api.service';
+
+export interface DashboardEstatisticasDto {
+  totalAtendimentosPorUsuario: number;
+  totalContasAPagar: number;
+  totalAtendimentosPorCliente: number;
+  atendimentosPorUsuario: AtendimentoPorUsuarioDto[];
+  contasAPagar: ContaAPagarDto[];
+  atendimentosPorCliente: AtendimentoPorClienteDto[];
+}
+
+export interface AtendimentoPorUsuarioDto {
+  usuarioId: number;
+  usuarioNome: string;
+  quantidade: number;
+}
+
+export interface ContaAPagarDto {
+  parcelaId: number;
+  duplicataId: number;
+  numeroDuplicata: string;
+  dataVencimento: string;
+  valor: number;
+  paga: boolean;
+}
+
+export interface AtendimentoPorClienteDto {
+  clienteId: number;
+  clienteNome: string;
+  quantidade: number;
+}
+
+export enum PeriodoFiltro {
+  Dia = 'dia',
+  Semana = 'semana',
+  Mes = 'mes'
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class DashboardService {
+  constructor(private api: ApiService) { }
+
+  obterEstatisticas(dataInicio?: Date, dataFim?: Date): Observable<DashboardEstatisticasDto> {
+    let url = 'dashboard';
+    const params: string[] = [];
+    
+    if (dataInicio) {
+      params.push(`dataInicio=${dataInicio.toISOString().split('T')[0]}`);
+    }
+    if (dataFim) {
+      params.push(`dataFim=${dataFim.toISOString().split('T')[0]}`);
+    }
+    
+    if (params.length > 0) {
+      url += '?' + params.join('&');
+    }
+    
+    return this.api.get<DashboardEstatisticasDto>(url);
+  }
+}

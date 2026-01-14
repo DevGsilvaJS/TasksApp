@@ -1,0 +1,186 @@
+<div class="page-container">
+  <div class="page-header">
+    <h2>Dashboard</h2>
+    <div class="periodo-filtro">
+      <label>Período:</label>
+      <select [(ngModel)]="periodoSelecionado" (change)="onPeriodoChange()" class="periodo-select">
+        <option [value]="PeriodoFiltro.Dia">Dia (Atual)</option>
+        <option [value]="PeriodoFiltro.Semana">Semana (Últimos 7 dias)</option>
+        <option [value]="PeriodoFiltro.Mes">Mês (Atual)</option>
+      </select>
+    </div>
+  </div>
+
+  @if (error) {
+    <div class="alert alert-error">
+      {{ error }}
+    </div>
+  }
+
+  @if (loading) {
+    <div class="loading">
+      <p>Carregando estatísticas...</p>
+    </div>
+  } @else if (estatisticas) {
+    <div class="cards-container">
+      <!-- Card 1: Atendimentos por Usuário -->
+      <div class="stat-card" (click)="abrirModalAtendimentosUsuario()">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <div class="card-content">
+          <h3>Atendimentos por Usuário</h3>
+          <p class="card-value">{{ estatisticas.totalAtendimentosPorUsuario }}</p>
+          <p class="card-subtitle">Total de atendimentos</p>
+        </div>
+      </div>
+
+      <!-- Card 2: Contas a Pagar -->
+      <div class="stat-card" (click)="abrirModalContasPagar()">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+            <line x1="1" y1="10" x2="23" y2="10"></line>
+          </svg>
+        </div>
+        <div class="card-content">
+          <h3>Contas a Pagar</h3>
+          <p class="card-value">{{ estatisticas.totalContasAPagar }}</p>
+          <p class="card-subtitle">Parcelas pendentes</p>
+        </div>
+      </div>
+
+      <!-- Card 3: Atendimentos por Cliente -->
+      <div class="stat-card" (click)="abrirModalAtendimentosCliente()">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <div class="card-content">
+          <h3>Atendimentos por Cliente</h3>
+          <p class="card-value">{{ estatisticas.totalAtendimentosPorCliente }}</p>
+          <p class="card-subtitle">Total de atendimentos</p>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Atendimentos por Usuário -->
+  @if (showModalAtendimentosUsuario) {
+    <div class="modal-overlay" (click)="fecharModalAtendimentosUsuario()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Atendimentos por Usuário</h3>
+          <button class="btn-close" (click)="fecharModalAtendimentosUsuario()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (dadosModalAtendimentosUsuario.length === 0) {
+            <p class="empty-state">Nenhum atendimento encontrado no período selecionado.</p>
+          } @else {
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th>Usuário</th>
+                  <th>Quantidade</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of dadosModalAtendimentosUsuario; track item.usuarioId) {
+                  <tr>
+                    <td>{{ item.usuarioNome }}</td>
+                    <td>{{ item.quantidade }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Contas a Pagar -->
+  @if (showModalContasPagar) {
+    <div class="modal-overlay" (click)="fecharModalContasPagar()">
+      <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Contas a Pagar</h3>
+          <button class="btn-close" (click)="fecharModalContasPagar()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (dadosModalContasPagar.length === 0) {
+            <p class="empty-state">Nenhuma conta a pagar encontrada no período selecionado.</p>
+          } @else {
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th>Número Duplicata</th>
+                  <th>Data Vencimento</th>
+                  <th>Valor</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of dadosModalContasPagar; track item.parcelaId) {
+                  <tr>
+                    <td>{{ item.numeroDuplicata }}</td>
+                    <td>{{ formatarData(item.dataVencimento) }}</td>
+                    <td>{{ formatarMoeda(item.valor) }}</td>
+                    <td>
+                      <span class="status-badge" [ngClass]="item.paga ? 'status-paga' : 'status-pendente'">
+                        {{ item.paga ? 'Paga' : 'Pendente' }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Atendimentos por Cliente -->
+  @if (showModalAtendimentosCliente) {
+    <div class="modal-overlay" (click)="fecharModalAtendimentosCliente()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Atendimentos por Cliente</h3>
+          <button class="btn-close" (click)="fecharModalAtendimentosCliente()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (dadosModalAtendimentosCliente.length === 0) {
+            <p class="empty-state">Nenhum atendimento encontrado no período selecionado.</p>
+          } @else {
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Quantidade</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of dadosModalAtendimentosCliente; track item.clienteId) {
+                  <tr>
+                    <td>{{ item.clienteNome }}</td>
+                    <td>{{ item.quantidade }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

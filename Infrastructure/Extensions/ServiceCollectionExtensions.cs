@@ -49,6 +49,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITarefaService, TarefaService>();
         services.AddScoped<IAnotacaoService, AnotacaoService>();
         services.AddScoped<IDuplicataService, DuplicataService>();
+        services.AddScoped<IDashboardService, DashboardService>();
 
         return services;
     }
