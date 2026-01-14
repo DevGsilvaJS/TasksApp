@@ -30,5 +30,9 @@ public class CadastroTarefaDto
     [MaxLength(20)]
     public string? CelularSolicitante { get; set; }
 
+    public TipoAtendimento? TipoAtendimento { get; set; }
+
+    public PrioridadeTarefa Prioridade { get; set; } = PrioridadeTarefa.Media;
+
     public List<IFormFile>? Imagens { get; set; }
 }

@@ -17,6 +17,10 @@ public class TarefaResponseDto
     public string? Protocolo { get; set; }
     public string? Solicitante { get; set; }
     public string? CelularSolicitante { get; set; }
+    public TipoAtendimento? TipoAtendimento { get; set; }
+    public string TipoAtendimentoDescricao { get; set; } = string.Empty;
+    public PrioridadeTarefa Prioridade { get; set; }
+    public string PrioridadeDescricao { get; set; } = string.Empty;
     public List<AnotacaoResponseDto> Anotacoes { get; set; } = new();
     public List<ImagemResponseDto> Imagens { get; set; } = new();
 }

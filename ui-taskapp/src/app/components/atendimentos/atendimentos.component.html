@@ -65,6 +65,25 @@
               </select>
             </div>
           </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tipo de Atendimento</label>
+              <select [(ngModel)]="novoTarefa.tipoAtendimento" name="tipoAtendimento" class="form-select">
+                <option [value]="undefined">Selecione...</option>
+                @for (tipo of tipoAtendimentoOptions; track tipo.value) {
+                  <option [value]="tipo.value">{{ tipo.label }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Prioridade</label>
+              <select [(ngModel)]="novoTarefa.prioridade" name="prioridade" class="form-select" [value]="novoTarefa.prioridade">
+                @for (prioridade of prioridadeOptions; track prioridade.value) {
+                  <option [value]="prioridade.value">{{ prioridade.label }}</option>
+                }
+              </select>
+            </div>
+          </div>
           <div class="form-group">
             <label>Descrição/Anotação</label>
             <textarea 
@@ -146,27 +165,32 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Protocolo</th>
             <th>Título</th>
             <th>Solicitante</th>
             <th>Celular</th>
+            <th>Tipo</th>
+            <th>Prioridade</th>
             <th>Cliente</th>
             <th>Usuário</th>
             <th>Status</th>
             <th>Data Cadastro</th>
-            <th>Data Conclusão</th>
             <th class="actions-column">Ações</th>
           </tr>
         </thead>
         <tbody>
           @for (tarefa of tarefasFiltradas; track tarefa.tarefaId) {
             <tr>
-              <td>{{ tarefa.tarefaId }}</td>
               <td>{{ tarefa.protocolo || '-' }}</td>
               <td>{{ tarefa.titulo || '-' }}</td>
               <td>{{ tarefa.solicitante || '-' }}</td>
               <td>{{ tarefa.celularSolicitante || '-' }}</td>
+              <td>{{ tarefa.tipoAtendimentoDescricao || '-' }}</td>
+              <td>
+                <span class="prioridade-badge" [ngClass]="'prioridade-' + (tarefa.prioridadeDescricao?.toLowerCase() || 'media')">
+                  {{ tarefa.prioridadeDescricao || '-' }}
+                </span>
+              </td>
               <td>{{ tarefa.clienteNome }}</td>
               <td>{{ tarefa.usuarioNome }}</td>
               <td>
@@ -175,7 +199,6 @@
                 </span>
               </td>
               <td>{{ formatarData(tarefa.dataCadastro) }}</td>
-              <td>{{ formatarData(tarefa.dataConclusao) }}</td>
               <td class="actions-cell">
                 <div class="actions-group">
                   <button class="btn-notes" (click)="abrirAnotacoes(tarefa)" title="Anotações">
@@ -201,13 +224,6 @@
                     <button class="btn-status" (click)="alterarStatus(tarefa, StatusTarefa.Concluida)" title="Marcar como Concluída">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 6L9 17l-5-5"></path>
-                      </svg>
-                    </button>
-                  }
-                  @if (tarefa.status !== StatusTarefa.Cancelada) {
-                    <button class="btn-status btn-cancel" (click)="alterarStatus(tarefa, StatusTarefa.Cancelada)" title="Cancelar">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 6L6 18M6 6l12 12"></path>
                       </svg>
                     </button>
                   }

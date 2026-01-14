@@ -1,6 +1,7 @@
 using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
+using Domain.Enums;
 
 namespace Application.Services;
 
@@ -48,7 +49,10 @@ public class ClienteService : IClienteService
                 PesId = pessoa.PesId,
                 CliCodigo = dto.Codigo,
                 CliDataCadastro = DateTime.UtcNow,
-                CliValorContrato = dto.ValorContrato
+                CliValorContrato = dto.ValorContrato,
+                CliDataFinalContrato = dto.DataFinalContrato?.ToUniversalTime(),
+                CliDiaPagamento = dto.DiaPagamento,
+                CliStatus = dto.Status
             };
 
             await _clienteRepository.InserirAsync(cliente);
@@ -63,7 +67,11 @@ public class ClienteService : IClienteService
                 DocEstadual = pessoa.PesDocEstadual,
                 Codigo = cliente.CliCodigo,
                 DataCadastro = cliente.CliDataCadastro,
-                ValorContrato = cliente.CliValorContrato
+                ValorContrato = cliente.CliValorContrato,
+                DataFinalContrato = cliente.CliDataFinalContrato,
+                DiaPagamento = cliente.CliDiaPagamento,
+                Status = cliente.CliStatus,
+                StatusDescricao = ObterDescricaoStatus(cliente.CliStatus)
             };
         }
         catch (Exception ex)
@@ -92,7 +100,11 @@ public class ClienteService : IClienteService
             DocEstadual = pessoa.PesDocEstadual,
             Codigo = cliente.CliCodigo,
             DataCadastro = cliente.CliDataCadastro,
-            ValorContrato = cliente.CliValorContrato
+            ValorContrato = cliente.CliValorContrato,
+            DataFinalContrato = cliente.CliDataFinalContrato,
+            DiaPagamento = cliente.CliDiaPagamento,
+            Status = cliente.CliStatus,
+            StatusDescricao = ObterDescricaoStatus(cliente.CliStatus)
         };
     }
 
@@ -150,6 +162,9 @@ public class ClienteService : IClienteService
         // Atualizar Cliente
         cliente.CliCodigo = dto.Codigo;
         cliente.CliValorContrato = dto.ValorContrato;
+        cliente.CliDataFinalContrato = dto.DataFinalContrato?.ToUniversalTime();
+        cliente.CliDiaPagamento = dto.DiaPagamento;
+        cliente.CliStatus = dto.Status;
 
         await _clienteRepository.AtualizarAsync(cliente);
         await _clienteRepository.SalvarAlteracoesAsync();
@@ -163,7 +178,11 @@ public class ClienteService : IClienteService
             DocEstadual = pessoa.PesDocEstadual,
             Codigo = cliente.CliCodigo,
             DataCadastro = cliente.CliDataCadastro,
-            ValorContrato = cliente.CliValorContrato
+            ValorContrato = cliente.CliValorContrato,
+            DataFinalContrato = cliente.CliDataFinalContrato,
+            DiaPagamento = cliente.CliDiaPagamento,
+            Status = cliente.CliStatus,
+            StatusDescricao = ObterDescricaoStatus(cliente.CliStatus)
         };
     }
 
@@ -195,5 +214,16 @@ public class ClienteService : IClienteService
                 await _pessoaRepository.SalvarAlteracoesAsync();
             }
         }
+    }
+
+    private string ObterDescricaoStatus(StatusCliente status)
+    {
+        return status switch
+        {
+            StatusCliente.Ativo => "Ativo",
+            StatusCliente.Inativo => "Inativo",
+            StatusCliente.Suspenso => "Suspenso",
+            _ => status.ToString()
+        };
     }
 }

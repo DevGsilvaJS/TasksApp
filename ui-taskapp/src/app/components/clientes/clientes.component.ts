@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ClienteService, ClienteResponseDto, CadastroClienteDto } from '../../services/cliente.service';
+import { ClienteService, ClienteResponseDto, CadastroClienteDto, StatusCliente } from '../../services/cliente.service';
 
 @Component({
   selector: 'app-clientes',
@@ -20,12 +20,21 @@ export class ClientesComponent implements OnInit {
   clienteEditando: ClienteResponseDto | null = null;
   termoBusca = '';
 
+  StatusCliente = StatusCliente;
+
   novoCliente: CadastroClienteDto = {
     fantasia: '',
     docFederal: '',
     docEstadual: '',
-    codigo: 0
+    codigo: 0,
+    status: StatusCliente.Ativo
   };
+
+  statusOptions = [
+    { value: StatusCliente.Ativo, label: 'Ativo', icon: '✓' },
+    { value: StatusCliente.Inativo, label: 'Inativo', icon: '✗' },
+    { value: StatusCliente.Suspenso, label: 'Suspenso', icon: '⚠' }
+  ];
 
   constructor(private clienteService: ClienteService) { }
 
@@ -72,7 +81,8 @@ export class ClientesComponent implements OnInit {
       fantasia: '',
       docFederal: '',
       docEstadual: '',
-      codigo: 0
+      codigo: 0,
+      status: StatusCliente.Ativo
     };
     this.error = null;
   }
@@ -86,7 +96,10 @@ export class ClientesComponent implements OnInit {
       docFederal: cliente.docFederal || '',
       docEstadual: cliente.docEstadual || '',
       codigo: cliente.codigo,
-      valorContrato: cliente.valorContrato
+      valorContrato: cliente.valorContrato,
+      dataFinalContrato: cliente.dataFinalContrato,
+      diaPagamento: cliente.diaPagamento,
+      status: cliente.status || StatusCliente.Ativo
     };
     this.error = null;
   }

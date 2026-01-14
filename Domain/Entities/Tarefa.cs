@@ -42,6 +42,12 @@ public class Tarefa
     [MaxLength(20)]
     public string? TarCelularSolicitante { get; set; }
 
+    [Column("TARTIPOATENDIMENTO")]
+    public TipoAtendimento? TarTipoAtendimento { get; set; }
+
+    [Column("TARPRIORIDADE")]
+    public PrioridadeTarefa TarPrioridade { get; set; } = PrioridadeTarefa.Media;
+
     // Navegação
     [ForeignKey("CliId")]
     public virtual Cliente Cliente { get; set; } = null!;

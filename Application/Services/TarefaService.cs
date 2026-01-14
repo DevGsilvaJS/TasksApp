@@ -53,7 +53,9 @@ public class TarefaService : ITarefaService
             TarTitulo = dto.Titulo?.ToUpper(),
             TarProtocolo = dto.Protocolo?.ToUpper(),
             TarSolicitante = dto.Solicitante?.ToUpper(),
-            TarCelularSolicitante = dto.CelularSolicitante
+            TarCelularSolicitante = dto.CelularSolicitante,
+            TarTipoAtendimento = dto.TipoAtendimento,
+            TarPrioridade = dto.Prioridade
         };
 
         await _tarefaRepository.InserirAsync(tarefa);
@@ -124,6 +126,8 @@ public class TarefaService : ITarefaService
         tarefa.TarProtocolo = dto.Protocolo?.ToUpper();
         tarefa.TarSolicitante = dto.Solicitante?.ToUpper();
         tarefa.TarCelularSolicitante = dto.CelularSolicitante;
+        tarefa.TarTipoAtendimento = dto.TipoAtendimento;
+        tarefa.TarPrioridade = dto.Prioridade;
 
         await _tarefaRepository.AtualizarAsync(tarefa);
         await _tarefaRepository.SalvarAlteracoesAsync();
@@ -294,6 +298,10 @@ public class TarefaService : ITarefaService
             Protocolo = tarefa.TarProtocolo,
             Solicitante = tarefa.TarSolicitante,
             CelularSolicitante = tarefa.TarCelularSolicitante,
+            TipoAtendimento = tarefa.TarTipoAtendimento,
+            TipoAtendimentoDescricao = ObterDescricaoTipoAtendimento(tarefa.TarTipoAtendimento),
+            Prioridade = tarefa.TarPrioridade,
+            PrioridadeDescricao = ObterDescricaoPrioridade(tarefa.TarPrioridade),
             Anotacoes = anotacoesDto,
             Imagens = imagensDto
         };
@@ -307,6 +315,29 @@ public class TarefaService : ITarefaService
             StatusTarefa.Concluida => "Concluída",
             StatusTarefa.Cancelada => "Cancelada",
             _ => status.ToString()
+        };
+    }
+
+    private string ObterDescricaoTipoAtendimento(TipoAtendimento? tipo)
+    {
+        if (!tipo.HasValue) return string.Empty;
+        return tipo.Value switch
+        {
+            TipoAtendimento.Treinamento => "Treinamento",
+            TipoAtendimento.Suporte => "Suporte",
+            TipoAtendimento.Reuniao => "Reunião",
+            _ => tipo.Value.ToString()
+        };
+    }
+
+    private string ObterDescricaoPrioridade(PrioridadeTarefa prioridade)
+    {
+        return prioridade switch
+        {
+            PrioridadeTarefa.Baixa => "Baixa",
+            PrioridadeTarefa.Media => "Média",
+            PrioridadeTarefa.Alta => "Alta",
+            _ => prioridade.ToString()
         };
     }
 

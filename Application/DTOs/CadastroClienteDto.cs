@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Domain.Enums;
 
 namespace Application.DTOs;
 
@@ -18,4 +19,10 @@ public class CadastroClienteDto
     public int Codigo { get; set; }
 
     public decimal? ValorContrato { get; set; }
+
+    public DateTime? DataFinalContrato { get; set; }
+
+    public int? DiaPagamento { get; set; }
+
+    public StatusCliente Status { get; set; } = StatusCliente.Ativo;
 }

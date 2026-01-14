@@ -8,6 +8,18 @@ export enum StatusTarefa {
   Cancelada = 3
 }
 
+export enum TipoAtendimento {
+  Treinamento = 1,
+  Suporte = 2,
+  Reuniao = 3
+}
+
+export enum PrioridadeTarefa {
+  Baixa = 1,
+  Media = 2,
+  Alta = 3
+}
+
 export interface CadastroTarefaDto {
   clienteId: number;
   usuarioId: number;
@@ -18,6 +30,8 @@ export interface CadastroTarefaDto {
   protocolo?: string;
   solicitante?: string;
   celularSolicitante?: string;
+  tipoAtendimento?: TipoAtendimento;
+  prioridade?: PrioridadeTarefa;
   imagens?: File[];
 }
 
@@ -52,6 +66,10 @@ export interface TarefaResponseDto {
   protocolo?: string;
   solicitante?: string;
   celularSolicitante?: string;
+  tipoAtendimento?: TipoAtendimento;
+  tipoAtendimentoDescricao?: string;
+  prioridade?: PrioridadeTarefa;
+  prioridadeDescricao?: string;
   anotacoes: AnotacaoResponseDto[];
   imagens: ImagemResponseDto[];
 }

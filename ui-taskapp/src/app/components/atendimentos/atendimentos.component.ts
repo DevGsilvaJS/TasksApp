@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TarefaService, TarefaResponseDto, CadastroTarefaDto, StatusTarefa } from '../../services/tarefa.service';
+import { TarefaService, TarefaResponseDto, CadastroTarefaDto, StatusTarefa, TipoAtendimento, PrioridadeTarefa } from '../../services/tarefa.service';
 import { ClienteService, ClienteResponseDto } from '../../services/cliente.service';
 import { UsuarioService, UsuarioResponseDto } from '../../services/usuario.service';
 import { AnotacaoService, CadastroAnotacaoDto } from '../../services/anotacao.service';
@@ -14,8 +14,10 @@ import { AnotacaoService, CadastroAnotacaoDto } from '../../services/anotacao.se
   styleUrl: './atendimentos.component.css'
 })
 export class AtendimentosComponent implements OnInit {
-  // Expor o enum para uso no template
+  // Expor os enums para uso no template
   StatusTarefa = StatusTarefa;
+  TipoAtendimento = TipoAtendimento;
+  PrioridadeTarefa = PrioridadeTarefa;
   
   tarefas: TarefaResponseDto[] = [];
   tarefasFiltradas: TarefaResponseDto[] = [];
@@ -38,6 +40,8 @@ export class AtendimentosComponent implements OnInit {
     protocolo: undefined,
     solicitante: undefined,
     celularSolicitante: undefined,
+    tipoAtendimento: undefined,
+    prioridade: PrioridadeTarefa.Media,
     imagens: undefined
   };
 
@@ -55,6 +59,18 @@ export class AtendimentosComponent implements OnInit {
     { value: StatusTarefa.EmAberto, label: 'Em Aberto' },
     { value: StatusTarefa.Concluida, label: 'Concluída' },
     { value: StatusTarefa.Cancelada, label: 'Cancelada' }
+  ];
+
+  tipoAtendimentoOptions = [
+    { value: TipoAtendimento.Treinamento, label: 'Treinamento' },
+    { value: TipoAtendimento.Suporte, label: 'Suporte' },
+    { value: TipoAtendimento.Reuniao, label: 'Reunião' }
+  ];
+
+  prioridadeOptions = [
+    { value: PrioridadeTarefa.Baixa, label: 'Baixa' },
+    { value: PrioridadeTarefa.Media, label: 'Média' },
+    { value: PrioridadeTarefa.Alta, label: 'Alta' }
   ];
 
   constructor(
@@ -185,6 +201,8 @@ export class AtendimentosComponent implements OnInit {
       protocolo: tarefa.protocolo,
       solicitante: tarefa.solicitante,
       celularSolicitante: tarefa.celularSolicitante,
+      tipoAtendimento: tarefa.tipoAtendimento,
+      prioridade: tarefa.prioridade || PrioridadeTarefa.Media,
       imagens: undefined
     };
     this.imagensSelecionadas = [];
@@ -374,6 +392,8 @@ export class AtendimentosComponent implements OnInit {
       protocolo: this.novoTarefa.protocolo ? this.novoTarefa.protocolo.toUpperCase() : undefined,
       solicitante: this.novoTarefa.solicitante ? this.novoTarefa.solicitante.toUpperCase() : undefined,
       celularSolicitante: this.novoTarefa.celularSolicitante || undefined,
+      tipoAtendimento: this.novoTarefa.tipoAtendimento,
+      prioridade: this.novoTarefa.prioridade || PrioridadeTarefa.Media,
       imagens: this.imagensSelecionadas.length > 0 ? this.imagensSelecionadas : undefined
     };
 

@@ -23,27 +23,50 @@
           <button class="btn-close" (click)="fecharFormulario()">×</button>
         </div>
         <form (ngSubmit)="salvarCliente()" class="form">
-          <div class="form-group">
-            <label>Fantasia *</label>
-            <input type="text" [(ngModel)]="novoCliente.fantasia" name="fantasia" required>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Código *</label>
+              <input type="number" [(ngModel)]="novoCliente.codigo" name="codigo" required [readonly]="editando" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>Fantasia *</label>
+              <input type="text" [(ngModel)]="novoCliente.fantasia" name="fantasia" required class="form-input">
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select [(ngModel)]="novoCliente.status" name="status" class="form-select">
+                @for (status of statusOptions; track status.value) {
+                  <option [value]="status.value">{{ status.icon }} {{ status.label }}</option>
+                }
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label>CPF/CNPJ</label>
-            <input type="text" [(ngModel)]="novoCliente.docFederal" name="docFederal" 
-                   (input)="aplicarMascaraCNPJ($event)" maxlength="18" placeholder="00.000.000/0000-00">
+          <div class="form-row">
+            <div class="form-group">
+              <label>CPF/CNPJ</label>
+              <input type="text" [(ngModel)]="novoCliente.docFederal" name="docFederal" 
+                     (input)="aplicarMascaraCNPJ($event)" maxlength="18" placeholder="00.000.000/0000-00" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>RG/IE</label>
+              <input type="text" [(ngModel)]="novoCliente.docEstadual" name="docEstadual" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>Valor do Contrato</label>
+              <input type="number" [(ngModel)]="novoCliente.valorContrato" name="valorContrato" 
+                     step="0.01" min="0" placeholder="0,00" class="form-input">
+            </div>
           </div>
-          <div class="form-group">
-            <label>Valor do Contrato</label>
-            <input type="number" [(ngModel)]="novoCliente.valorContrato" name="valorContrato" 
-                   step="0.01" min="0" placeholder="0,00">
-          </div>
-          <div class="form-group">
-            <label>RG/IE</label>
-            <input type="text" [(ngModel)]="novoCliente.docEstadual" name="docEstadual">
-          </div>
-          <div class="form-group">
-            <label>Código *</label>
-            <input type="number" [(ngModel)]="novoCliente.codigo" name="codigo" required [readonly]="editando">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Data Final de Contrato</label>
+              <input type="date" [(ngModel)]="novoCliente.dataFinalContrato" name="dataFinalContrato" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>Dia de Pagamento</label>
+              <input type="number" [(ngModel)]="novoCliente.diaPagamento" name="diaPagamento" 
+                     min="1" max="31" placeholder="Dia (1-31)" class="form-input">
+            </div>
           </div>
           <div class="form-actions">
             <button type="button" class="btn-secondary" (click)="fecharFormulario()">Cancelar</button>
@@ -81,6 +104,9 @@
             <th>CPF/CNPJ</th>
             <th>RG/IE</th>
             <th>Valor Contrato</th>
+            <th>Data Final Contrato</th>
+            <th>Dia Pagamento</th>
+            <th>Status</th>
             <th>Data Cadastro</th>
             <th class="actions-column">Ações</th>
           </tr>
@@ -93,6 +119,19 @@
               <td>{{ formatarCNPJParaExibicao(cliente.docFederal) }}</td>
               <td>{{ cliente.docEstadual || '-' }}</td>
               <td>{{ formatarMoeda(cliente.valorContrato) }}</td>
+              <td>{{ formatarData(cliente.dataFinalContrato) }}</td>
+              <td>{{ cliente.diaPagamento ? cliente.diaPagamento + 'º' : '-' }}</td>
+              <td>
+                @if (cliente.status === StatusCliente.Ativo) {
+                  <span class="status-icon status-ativo" title="Ativo">✓</span>
+                } @else if (cliente.status === StatusCliente.Inativo) {
+                  <span class="status-icon status-inativo" title="Inativo">✗</span>
+                } @else if (cliente.status === StatusCliente.Suspenso) {
+                  <span class="status-icon status-suspenso" title="Suspenso">⚠</span>
+                } @else {
+                  <span>-</span>
+                }
+              </td>
               <td>{{ formatarData(cliente.dataCadastro) }}</td>
               <td class="actions-cell">
                 <button class="btn-edit" (click)="abrirFormularioEdicao(cliente)" title="Editar">

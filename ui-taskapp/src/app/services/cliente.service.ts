@@ -2,12 +2,21 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 
+export enum StatusCliente {
+  Ativo = 1,
+  Inativo = 2,
+  Suspenso = 3
+}
+
 export interface CadastroClienteDto {
   fantasia: string;
   docFederal?: string;
   docEstadual?: string;
   codigo: number;
   valorContrato?: number;
+  dataFinalContrato?: string;
+  diaPagamento?: number;
+  status?: StatusCliente;
 }
 
 export interface ClienteResponseDto {
@@ -19,6 +28,10 @@ export interface ClienteResponseDto {
   codigo: number;
   dataCadastro?: string;
   valorContrato?: number;
+  dataFinalContrato?: string;
+  diaPagamento?: number;
+  status?: StatusCliente;
+  statusDescricao?: string;
 }
 
 @Injectable({
