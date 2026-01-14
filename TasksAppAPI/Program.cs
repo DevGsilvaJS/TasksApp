@@ -153,4 +153,72 @@ catch (Exception ex)
     // Não interrompe a aplicação se migrations falharem
 }
 
+// ======================
+// Seed de usuários padrão
+// ======================
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        
+        // Verificar e criar usuário TI.GABRIEL
+        var usuarioGabriel = db.Usuarios.FirstOrDefault(u => u.UsuLogin == "TI.GABRIEL");
+        if (usuarioGabriel == null)
+        {
+            var pessoaGabriel = new Domain.Entities.Pessoa
+            {
+                PesFantasia = "Gabriel"
+            };
+            db.Pessoas.Add(pessoaGabriel);
+            db.SaveChanges();
+            
+            var novoUsuarioGabriel = new Domain.Entities.Usuario
+            {
+                PesId = pessoaGabriel.PesId,
+                UsuLogin = "TI.GABRIEL",
+                UsuSenha = "1234GABRIEL"
+            };
+            db.Usuarios.Add(novoUsuarioGabriel);
+            db.SaveChanges();
+            Console.WriteLine("✅ Usuário TI.GABRIEL criado com sucesso!");
+        }
+        else
+        {
+            Console.WriteLine("ℹ️ Usuário TI.GABRIEL já existe.");
+        }
+        
+        // Verificar e criar usuário TI.ABNER
+        var usuarioAbner = db.Usuarios.FirstOrDefault(u => u.UsuLogin == "TI.ABNER");
+        if (usuarioAbner == null)
+        {
+            var pessoaAbner = new Domain.Entities.Pessoa
+            {
+                PesFantasia = "Abner"
+            };
+            db.Pessoas.Add(pessoaAbner);
+            db.SaveChanges();
+            
+            var novoUsuarioAbner = new Domain.Entities.Usuario
+            {
+                PesId = pessoaAbner.PesId,
+                UsuLogin = "TI.ABNER",
+                UsuSenha = "1234ABNER"
+            };
+            db.Usuarios.Add(novoUsuarioAbner);
+            db.SaveChanges();
+            Console.WriteLine("✅ Usuário TI.ABNER criado com sucesso!");
+        }
+        else
+        {
+            Console.WriteLine("ℹ️ Usuário TI.ABNER já existe.");
+        }
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"⚠️ Erro ao criar usuários padrão: {ex.Message}");
+    // Não interrompe a aplicação se seed falhar
+}
+
 app.Run();
