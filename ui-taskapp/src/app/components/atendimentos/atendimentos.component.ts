@@ -37,6 +37,7 @@ export class AtendimentosComponent implements OnInit {
     titulo: undefined,
     protocolo: undefined,
     solicitante: undefined,
+    celularSolicitante: undefined,
     imagens: undefined
   };
 
@@ -153,6 +154,7 @@ export class AtendimentosComponent implements OnInit {
       titulo: '',
       protocolo: '',
       solicitante: '',
+      celularSolicitante: '',
       imagens: undefined
     };
     this.imagensSelecionadas = [];
@@ -182,6 +184,7 @@ export class AtendimentosComponent implements OnInit {
       titulo: tarefa.titulo,
       protocolo: tarefa.protocolo,
       solicitante: tarefa.solicitante,
+      celularSolicitante: tarefa.celularSolicitante,
       imagens: undefined
     };
     this.imagensSelecionadas = [];
@@ -366,10 +369,11 @@ export class AtendimentosComponent implements OnInit {
       dataConclusao: this.novoTarefa.status === StatusTarefa.Concluida 
         ? (this.novoTarefa.dataConclusao || new Date().toISOString().split('T')[0])
         : undefined,
-      descricao: this.novoTarefa.descricao || undefined,
-      titulo: this.novoTarefa.titulo || undefined,
-      protocolo: this.novoTarefa.protocolo || undefined,
-      solicitante: this.novoTarefa.solicitante || undefined,
+      descricao: this.novoTarefa.descricao ? this.novoTarefa.descricao.toUpperCase() : undefined,
+      titulo: this.novoTarefa.titulo ? this.novoTarefa.titulo.toUpperCase() : undefined,
+      protocolo: this.novoTarefa.protocolo ? this.novoTarefa.protocolo.toUpperCase() : undefined,
+      solicitante: this.novoTarefa.solicitante ? this.novoTarefa.solicitante.toUpperCase() : undefined,
+      celularSolicitante: this.novoTarefa.celularSolicitante || undefined,
       imagens: this.imagensSelecionadas.length > 0 ? this.imagensSelecionadas : undefined
     };
 
@@ -483,5 +487,29 @@ export class AtendimentosComponent implements OnInit {
     if (target) {
       target.style.display = 'none';
     }
+  }
+
+  aplicarMascaraCelular(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let valor = input.value.replace(/\D/g, '');
+    
+    // Limitar a 11 dígitos (DDD + 9 dígitos)
+    if (valor.length > 11) {
+      valor = valor.substring(0, 11);
+    }
+    
+    // Aplicar máscara: (11) 98327-0236
+    if (valor.length > 0) {
+      if (valor.length <= 2) {
+        valor = `(${valor}`;
+      } else if (valor.length <= 7) {
+        valor = `(${valor.substring(0, 2)}) ${valor.substring(2)}`;
+      } else {
+        valor = `(${valor.substring(0, 2)}) ${valor.substring(2, 7)}-${valor.substring(7)}`;
+      }
+    }
+    
+    input.value = valor;
+    this.novoTarefa.celularSolicitante = valor;
   }
 }

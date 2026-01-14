@@ -19,6 +19,9 @@ public class Cliente
     [Column("CLIDATACADASTRO")]
     public DateTime? CliDataCadastro { get; set; }
 
+    [Column("CLIVALORCONTRATO", TypeName = "decimal(18,2)")]
+    public decimal? CliValorContrato { get; set; }
+
     // Navegação
     [ForeignKey("PesId")]
     public virtual Pessoa Pessoa { get; set; } = null!;

@@ -30,7 +30,7 @@ public class AnotacaoService : IAnotacaoService
         {
             TarId = dto.TarefaId,
             UsuId = dto.UsuarioId,
-            AntDescricao = dto.Descricao,
+            AntDescricao = dto.Descricao?.ToUpper(),
             AntDtCadastro = DateTime.UtcNow
         };
 

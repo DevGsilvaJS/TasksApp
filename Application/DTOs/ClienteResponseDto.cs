@@ -9,4 +9,5 @@ public class ClienteResponseDto
     public string? DocEstadual { get; set; }
     public int Codigo { get; set; }
     public DateTime? DataCadastro { get; set; }
+    public decimal? ValorContrato { get; set; }
 }

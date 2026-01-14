@@ -116,6 +116,30 @@ if (!app.Environment.IsDevelopment())
 }
 
 // ======================
+// Migrations automáticas (ANTES de qualquer middleware)
+// ======================
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Console.WriteLine("🔄 Aplicando migrations automaticamente...");
+        db.Database.Migrate();
+        Console.WriteLine("✅ Migrations aplicadas com sucesso!");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"❌ ERRO CRÍTICO ao aplicar migrations: {ex.Message}");
+    Console.WriteLine($"   Stack trace: {ex.StackTrace}");
+    // Em produção, pode ser melhor falhar aqui para evitar problemas
+    if (!app.Environment.IsDevelopment())
+    {
+        throw; // Falha o deploy se migrations não funcionarem em produção
+    }
+}
+
+// ======================
 // Middleware / Pipeline
 // ======================
 app.UseCors("AllowAll");
@@ -134,24 +158,6 @@ app.MapControllers();
 
 // Fallback para Angular Router
 app.MapFallbackToFile("index.html");
-
-// ======================
-// Migrations automáticas
-// ======================
-try
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        db.Database.Migrate();
-    }
-    Console.WriteLine("✅ Migrations aplicadas com sucesso!");
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"⚠️ Erro ao aplicar migrations: {ex.Message}");
-    // Não interrompe a aplicação se migrations falharem
-}
 
 // ======================
 // Seed de usuários padrão

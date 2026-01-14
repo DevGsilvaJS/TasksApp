@@ -85,7 +85,8 @@ export class ClientesComponent implements OnInit {
       fantasia: cliente.fantasia,
       docFederal: cliente.docFederal || '',
       docEstadual: cliente.docEstadual || '',
-      codigo: cliente.codigo
+      codigo: cliente.codigo,
+      valorContrato: cliente.valorContrato
     };
     this.error = null;
   }
@@ -146,5 +147,65 @@ export class ClientesComponent implements OnInit {
   formatarData(data?: string): string {
     if (!data) return '-';
     return new Date(data).toLocaleDateString('pt-BR');
+  }
+
+  formatarMoeda(valor?: number): string {
+    if (valor === null || valor === undefined) return '-';
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(valor);
+  }
+
+  aplicarMascaraCNPJ(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let valor = input.value.replace(/\D/g, '');
+    
+    if (valor.length <= 11) {
+      // CPF: 000.000.000-00
+      valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+      valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+      valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    } else {
+      // CNPJ: 00.000.000/0000-00
+      valor = valor.replace(/^(\d{2})(\d)/, '$1.$2');
+      valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+      valor = valor.replace(/\.(\d{3})(\d)/, '.$1/$2');
+      valor = valor.replace(/(\d{4})(\d)/, '$1-$2');
+    }
+    
+    input.value = valor;
+    this.novoCliente.docFederal = valor;
+  }
+
+  formatarCNPJParaExibicao(cnpj?: string): string {
+    if (!cnpj) return '-';
+    // Se já está formatado, retorna como está
+    if (cnpj.includes('.') || cnpj.includes('/') || cnpj.includes('-')) {
+      return cnpj;
+    }
+    // Remove formatação existente e reaplica
+    let valor = cnpj.replace(/\D/g, '');
+    
+    if (valor.length <= 11) {
+      // CPF: 000.000.000-00
+      valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+      valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+      valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    } else {
+      // CNPJ: 00.000.000/0000-00
+      valor = valor.replace(/^(\d{2})(\d)/, '$1.$2');
+      valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+      valor = valor.replace(/\.(\d{3})(\d)/, '.$1/$2');
+      valor = valor.replace(/(\d{4})(\d)/, '$1-$2');
+    }
+    
+    return valor;
+  }
+
+  calcularTotalValorContrato(): number {
+    return this.clientesFiltrados
+      .filter(c => c.valorContrato !== null && c.valorContrato !== undefined)
+      .reduce((total, c) => total + (c.valorContrato || 0), 0);
   }
 }

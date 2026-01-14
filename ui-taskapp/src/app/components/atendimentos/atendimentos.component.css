@@ -500,15 +500,6 @@ tbody tr:hover {
 .form-row {
   display: grid;
   gap: 1rem;
-}
-
-/* Form-row com 2 colunas (Título e Cliente) */
-.form-row:first-of-type {
-  grid-template-columns: 1fr 1fr;
-}
-
-/* Form-row com 3 colunas (Protocolo, Solicitante e Status) */
-.form-row:not(:first-of-type) {
   grid-template-columns: 1fr 1fr 1fr;
 }
 

@@ -29,7 +29,13 @@
           </div>
           <div class="form-group">
             <label>CPF/CNPJ</label>
-            <input type="text" [(ngModel)]="novoCliente.docFederal" name="docFederal">
+            <input type="text" [(ngModel)]="novoCliente.docFederal" name="docFederal" 
+                   (input)="aplicarMascaraCNPJ($event)" maxlength="18" placeholder="00.000.000/0000-00">
+          </div>
+          <div class="form-group">
+            <label>Valor do Contrato</label>
+            <input type="number" [(ngModel)]="novoCliente.valorContrato" name="valorContrato" 
+                   step="0.01" min="0" placeholder="0,00">
           </div>
           <div class="form-group">
             <label>RG/IE</label>
@@ -74,6 +80,7 @@
             <th>Fantasia</th>
             <th>CPF/CNPJ</th>
             <th>RG/IE</th>
+            <th>Valor Contrato</th>
             <th>Data Cadastro</th>
             <th class="actions-column">Ações</th>
           </tr>
@@ -83,8 +90,9 @@
             <tr>
               <td>{{ cliente.codigo }}</td>
               <td>{{ cliente.fantasia }}</td>
-              <td>{{ cliente.docFederal || '-' }}</td>
+              <td>{{ formatarCNPJParaExibicao(cliente.docFederal) }}</td>
               <td>{{ cliente.docEstadual || '-' }}</td>
+              <td>{{ formatarMoeda(cliente.valorContrato) }}</td>
               <td>{{ formatarData(cliente.dataCadastro) }}</td>
               <td class="actions-cell">
                 <button class="btn-edit" (click)="abrirFormularioEdicao(cliente)" title="Editar">
@@ -102,6 +110,13 @@
             </tr>
           }
         </tbody>
+        <tfoot>
+          <tr class="total-row">
+            <td colspan="4" class="total-label"><strong>Total:</strong></td>
+            <td class="total-value"><strong>{{ formatarMoeda(calcularTotalValorContrato()) }}</strong></td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
       </table>
     </div>
   }

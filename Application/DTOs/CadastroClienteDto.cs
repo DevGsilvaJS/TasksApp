@@ -16,4 +16,6 @@ public class CadastroClienteDto
 
     [Required(ErrorMessage = "Código do cliente é obrigatório")]
     public int Codigo { get; set; }
+
+    public decimal? ValorContrato { get; set; }
 }

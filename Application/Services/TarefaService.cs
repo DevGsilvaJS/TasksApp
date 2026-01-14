@@ -50,9 +50,10 @@ public class TarefaService : ITarefaService
             TarDtCadastro = DateTime.UtcNow,
             TarDtConclusao = dto.DataConclusao?.ToUniversalTime(),
             TarStatus = dto.Status,
-            TarTitulo = dto.Titulo,
-            TarProtocolo = dto.Protocolo,
-            TarSolicitante = dto.Solicitante
+            TarTitulo = dto.Titulo?.ToUpper(),
+            TarProtocolo = dto.Protocolo?.ToUpper(),
+            TarSolicitante = dto.Solicitante?.ToUpper(),
+            TarCelularSolicitante = dto.CelularSolicitante
         };
 
         await _tarefaRepository.InserirAsync(tarefa);
@@ -65,7 +66,7 @@ public class TarefaService : ITarefaService
             {
                 TarId = tarefa.TarId,
                 UsuId = dto.UsuarioId,
-                AntDescricao = dto.Descricao,
+                AntDescricao = dto.Descricao.ToUpper(),
                 AntDtCadastro = DateTime.UtcNow
             };
 
@@ -119,9 +120,10 @@ public class TarefaService : ITarefaService
         tarefa.UsuId = dto.UsuarioId;
         tarefa.TarDtConclusao = dto.DataConclusao?.ToUniversalTime();
         tarefa.TarStatus = dto.Status;
-        tarefa.TarTitulo = dto.Titulo;
-        tarefa.TarProtocolo = dto.Protocolo;
-        tarefa.TarSolicitante = dto.Solicitante;
+        tarefa.TarTitulo = dto.Titulo?.ToUpper();
+        tarefa.TarProtocolo = dto.Protocolo?.ToUpper();
+        tarefa.TarSolicitante = dto.Solicitante?.ToUpper();
+        tarefa.TarCelularSolicitante = dto.CelularSolicitante;
 
         await _tarefaRepository.AtualizarAsync(tarefa);
         await _tarefaRepository.SalvarAlteracoesAsync();
@@ -133,7 +135,7 @@ public class TarefaService : ITarefaService
             {
                 TarId = tarefa.TarId,
                 UsuId = dto.UsuarioId,
-                AntDescricao = dto.Descricao,
+                AntDescricao = dto.Descricao.ToUpper(),
                 AntDtCadastro = DateTime.UtcNow
             };
 
@@ -291,6 +293,7 @@ public class TarefaService : ITarefaService
             Titulo = tarefa.TarTitulo,
             Protocolo = tarefa.TarProtocolo,
             Solicitante = tarefa.TarSolicitante,
+            CelularSolicitante = tarefa.TarCelularSolicitante,
             Anotacoes = anotacoesDto,
             Imagens = imagensDto
         };

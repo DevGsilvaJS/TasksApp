@@ -17,6 +17,7 @@ export interface CadastroTarefaDto {
   titulo?: string;
   protocolo?: string;
   solicitante?: string;
+  celularSolicitante?: string;
   imagens?: File[];
 }
 
@@ -50,6 +51,7 @@ export interface TarefaResponseDto {
   titulo?: string;
   protocolo?: string;
   solicitante?: string;
+  celularSolicitante?: string;
   anotacoes: AnotacaoResponseDto[];
   imagens: ImagemResponseDto[];
 }
@@ -98,6 +100,9 @@ export class TarefaService {
     }
     if (dto.solicitante) {
       formData.append('solicitante', dto.solicitante);
+    }
+    if (dto.celularSolicitante) {
+      formData.append('celularSolicitante', dto.celularSolicitante);
     }
     
     if (dto.imagens && dto.imagens.length > 0) {

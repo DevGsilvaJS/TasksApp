@@ -47,7 +47,8 @@ public class ClienteService : IClienteService
             {
                 PesId = pessoa.PesId,
                 CliCodigo = dto.Codigo,
-                CliDataCadastro = DateTime.UtcNow
+                CliDataCadastro = DateTime.UtcNow,
+                CliValorContrato = dto.ValorContrato
             };
 
             await _clienteRepository.InserirAsync(cliente);
@@ -61,7 +62,8 @@ public class ClienteService : IClienteService
                 DocFederal = pessoa.PesDocFederal,
                 DocEstadual = pessoa.PesDocEstadual,
                 Codigo = cliente.CliCodigo,
-                DataCadastro = cliente.CliDataCadastro
+                DataCadastro = cliente.CliDataCadastro,
+                ValorContrato = cliente.CliValorContrato
             };
         }
         catch (Exception ex)
@@ -89,7 +91,8 @@ public class ClienteService : IClienteService
             DocFederal = pessoa.PesDocFederal,
             DocEstadual = pessoa.PesDocEstadual,
             Codigo = cliente.CliCodigo,
-            DataCadastro = cliente.CliDataCadastro
+            DataCadastro = cliente.CliDataCadastro,
+            ValorContrato = cliente.CliValorContrato
         };
     }
 
@@ -111,7 +114,8 @@ public class ClienteService : IClienteService
                     DocFederal = pessoa.PesDocFederal,
                     DocEstadual = pessoa.PesDocEstadual,
                     Codigo = cliente.CliCodigo,
-                    DataCadastro = cliente.CliDataCadastro
+                    DataCadastro = cliente.CliDataCadastro,
+                    ValorContrato = cliente.CliValorContrato
                 });
             }
         }
@@ -145,6 +149,7 @@ public class ClienteService : IClienteService
 
         // Atualizar Cliente
         cliente.CliCodigo = dto.Codigo;
+        cliente.CliValorContrato = dto.ValorContrato;
 
         await _clienteRepository.AtualizarAsync(cliente);
         await _clienteRepository.SalvarAlteracoesAsync();
@@ -157,7 +162,8 @@ public class ClienteService : IClienteService
             DocFederal = pessoa.PesDocFederal,
             DocEstadual = pessoa.PesDocEstadual,
             Codigo = cliente.CliCodigo,
-            DataCadastro = cliente.CliDataCadastro
+            DataCadastro = cliente.CliDataCadastro,
+            ValorContrato = cliente.CliValorContrato
         };
     }
 

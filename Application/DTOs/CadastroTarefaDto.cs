@@ -27,5 +27,8 @@ public class CadastroTarefaDto
     [MaxLength(255)]
     public string? Solicitante { get; set; }
 
+    [MaxLength(20)]
+    public string? CelularSolicitante { get; set; }
+
     public List<IFormFile>? Imagens { get; set; }
 }

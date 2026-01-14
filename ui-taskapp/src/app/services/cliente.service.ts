@@ -7,6 +7,7 @@ export interface CadastroClienteDto {
   docFederal?: string;
   docEstadual?: string;
   codigo: number;
+  valorContrato?: number;
 }
 
 export interface ClienteResponseDto {
@@ -17,6 +18,7 @@ export interface ClienteResponseDto {
   docEstadual?: string;
   codigo: number;
   dataCadastro?: string;
+  valorContrato?: number;
 }
 
 @Injectable({

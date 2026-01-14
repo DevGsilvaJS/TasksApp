@@ -38,6 +38,10 @@ public class Tarefa
     [MaxLength(255)]
     public string? TarSolicitante { get; set; }
 
+    [Column("TARCELULARSOLICITANTE")]
+    [MaxLength(20)]
+    public string? TarCelularSolicitante { get; set; }
+
     // Navegação
     [ForeignKey("CliId")]
     public virtual Cliente Cliente { get; set; } = null!;
