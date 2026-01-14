@@ -69,17 +69,17 @@
             <div class="form-group">
               <label>Tipo de Atendimento</label>
               <select [(ngModel)]="novoTarefa.tipoAtendimento" name="tipoAtendimento" class="form-select">
-                <option [value]="undefined">Selecione...</option>
+                <option [ngValue]="undefined">Selecione...</option>
                 @for (tipo of tipoAtendimentoOptions; track tipo.value) {
-                  <option [value]="tipo.value">{{ tipo.label }}</option>
+                  <option [ngValue]="tipo.value">{{ tipo.label }}</option>
                 }
               </select>
             </div>
             <div class="form-group">
               <label>Prioridade</label>
-              <select [(ngModel)]="novoTarefa.prioridade" name="prioridade" class="form-select" [value]="novoTarefa.prioridade">
+              <select [(ngModel)]="novoTarefa.prioridade" name="prioridade" class="form-select">
                 @for (prioridade of prioridadeOptions; track prioridade.value) {
-                  <option [value]="prioridade.value">{{ prioridade.label }}</option>
+                  <option [ngValue]="prioridade.value">{{ prioridade.label }}</option>
                 }
               </select>
             </div>

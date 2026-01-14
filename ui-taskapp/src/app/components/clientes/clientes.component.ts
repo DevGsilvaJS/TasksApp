@@ -91,13 +91,23 @@ export class ClientesComponent implements OnInit {
     this.editando = true;
     this.clienteEditando = cliente;
     this.showForm = true;
+    
+    // Formatar data para o input date (YYYY-MM-DD)
+    let dataFinalContratoFormatada: string | undefined = undefined;
+    if (cliente.dataFinalContrato) {
+      const data = new Date(cliente.dataFinalContrato);
+      if (!isNaN(data.getTime())) {
+        dataFinalContratoFormatada = data.toISOString().split('T')[0];
+      }
+    }
+    
     this.novoCliente = {
       fantasia: cliente.fantasia,
       docFederal: cliente.docFederal || '',
       docEstadual: cliente.docEstadual || '',
       codigo: cliente.codigo,
       valorContrato: cliente.valorContrato,
-      dataFinalContrato: cliente.dataFinalContrato,
+      dataFinalContrato: dataFinalContratoFormatada,
       diaPagamento: cliente.diaPagamento,
       status: cliente.status || StatusCliente.Ativo
     };

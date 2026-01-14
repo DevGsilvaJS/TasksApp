@@ -122,6 +122,12 @@ export class TarefaService {
     if (dto.celularSolicitante) {
       formData.append('celularSolicitante', dto.celularSolicitante);
     }
+    if (dto.tipoAtendimento !== undefined && dto.tipoAtendimento !== null) {
+      formData.append('tipoAtendimento', dto.tipoAtendimento.toString());
+    }
+    if (dto.prioridade !== undefined && dto.prioridade !== null) {
+      formData.append('prioridade', dto.prioridade.toString());
+    }
     
     if (dto.imagens && dto.imagens.length > 0) {
       dto.imagens.forEach((imagem, index) => {

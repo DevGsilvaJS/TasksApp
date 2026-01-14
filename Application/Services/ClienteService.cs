@@ -127,7 +127,11 @@ public class ClienteService : IClienteService
                     DocEstadual = pessoa.PesDocEstadual,
                     Codigo = cliente.CliCodigo,
                     DataCadastro = cliente.CliDataCadastro,
-                    ValorContrato = cliente.CliValorContrato
+                    ValorContrato = cliente.CliValorContrato,
+                    DataFinalContrato = cliente.CliDataFinalContrato,
+                    DiaPagamento = cliente.CliDiaPagamento,
+                    Status = cliente.CliStatus,
+                    StatusDescricao = ObterDescricaoStatus(cliente.CliStatus)
                 });
             }
         }
