@@ -10,6 +10,8 @@ public class ClienteResponseDto
     public string? DocFederal { get; set; }
     public string? DocEstadual { get; set; }
     public int Codigo { get; set; }
+    public int UsuarioId { get; set; }
+    public string UsuarioNome { get; set; } = string.Empty;
     public DateTime? DataCadastro { get; set; }
     public decimal? ValorContrato { get; set; }
     public DateTime? DataFinalContrato { get; set; }

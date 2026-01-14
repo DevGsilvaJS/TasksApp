@@ -46,7 +46,7 @@ public class DashboardService : IDashboardService
             .Select(g => new
             {
                 UsuarioId = g.Key,
-                Quantidade = g.Count()
+                Tarefas = g.ToList()
             })
             .ToList();
 
@@ -57,11 +57,31 @@ public class DashboardService : IDashboardService
             if (usuario != null)
             {
                 var pessoa = await _pessoaRepository.GetByIdAsync(usuario.PesId);
+                
+                var detalhes = new List<DetalheAtendimentoDto>();
+                foreach (var tarefa in item.Tarefas)
+                {
+                    var cliente = await _clienteRepository.GetByIdAsync(tarefa.CliId);
+                    if (cliente != null)
+                    {
+                        var pessoaCliente = await _pessoaRepository.GetByIdAsync(cliente.PesId);
+                        detalhes.Add(new DetalheAtendimentoDto
+                        {
+                            TarefaId = tarefa.TarId,
+                            Numero = tarefa.TarNumero,
+                            ClienteId = cliente.CliId,
+                            ClienteCodigo = cliente.CliCodigo,
+                            ClienteNome = pessoaCliente?.PesFantasia ?? "Desconhecido"
+                        });
+                    }
+                }
+                
                 atendimentosPorUsuarioDto.Add(new AtendimentoPorUsuarioDto
                 {
                     UsuarioId = item.UsuarioId,
                     UsuarioNome = pessoa?.PesFantasia ?? "Desconhecido",
-                    Quantidade = item.Quantidade
+                    Quantidade = item.Tarefas.Count,
+                    Detalhes = detalhes
                 });
             }
         }
@@ -127,5 +147,109 @@ public class DashboardService : IDashboardService
             ContasAPagar = contasAPagar,
             AtendimentosPorCliente = atendimentosPorClienteDto
         };
+    }
+
+    public async Task<List<ValorPorMesPorUsuarioDto>> ObterValoresPorMesPorUsuarioAsync(int? ano = null)
+    {
+        var anoFiltro = ano ?? DateTime.UtcNow.Year;
+        
+        // Buscar todos os clientes com valor de contrato
+        var todosClientes = await _clienteRepository.BuscarTodosAsync(c => 
+            c.CliValorContrato.HasValue && 
+            c.CliValorContrato.Value > 0);
+
+        var resultado = new Dictionary<(int UsuarioId, int Mes), ValorPorMesPorUsuarioDto>();
+        var meses = new[] { "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
+                           "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro" };
+
+        foreach (var cliente in todosClientes)
+        {
+            var usuario = await _usuarioRepository.GetByIdAsync(cliente.UsuId);
+            if (usuario == null) continue;
+
+            var pessoaUsuario = await _pessoaRepository.GetByIdAsync(usuario.PesId);
+            var nomeUsuario = pessoaUsuario?.PesFantasia ?? "Desconhecido";
+            var pessoaCliente = await _pessoaRepository.GetByIdAsync(cliente.PesId);
+            var valorContrato = cliente.CliValorContrato ?? 0;
+
+            // Determinar os meses em que o cliente gera receita
+            var mesesAtivos = new List<int>();
+            decimal valorPorMes = valorContrato;
+            
+            if (cliente.CliDataFinalContrato.HasValue && cliente.CliDataCadastro.HasValue)
+            {
+                // Se tem data final, calcular meses entre cadastro e data final
+                var dataInicio = cliente.CliDataCadastro.Value;
+                var dataFim = cliente.CliDataFinalContrato.Value;
+                
+                // Calcular número total de meses do contrato
+                var mesesContrato = ((dataFim.Year - dataInicio.Year) * 12) + (dataFim.Month - dataInicio.Month) + 1;
+                if (mesesContrato > 0)
+                {
+                    // Distribuir o valor total pelos meses do contrato
+                    valorPorMes = valorContrato / mesesContrato;
+                }
+                
+                // Para cada mês no ano filtro que está dentro do período do contrato
+                for (int mes = 1; mes <= 12; mes++)
+                {
+                    var dataMes = new DateTime(anoFiltro, mes, 1);
+                    var ultimoDiaMes = dataMes.AddMonths(1).AddDays(-1);
+                    
+                    // Verificar se o mês está dentro do período do contrato
+                    if (dataMes <= dataFim.Date && ultimoDiaMes >= dataInicio.Date)
+                    {
+                        mesesAtivos.Add(mes);
+                    }
+                }
+            }
+            else if (cliente.CliDataCadastro.HasValue)
+            {
+                // Se não tem data final, considerar apenas o mês de cadastro no ano filtro
+                var dataCadastro = cliente.CliDataCadastro.Value;
+                if (dataCadastro.Year == anoFiltro)
+                {
+                    mesesAtivos.Add(dataCadastro.Month);
+                }
+            }
+
+            // Adicionar o valor por mês para cada mês ativo
+            foreach (var mes in mesesAtivos)
+            {
+                var chave = (cliente.UsuId, mes);
+                
+                if (!resultado.ContainsKey(chave))
+                {
+                    resultado[chave] = new ValorPorMesPorUsuarioDto
+                    {
+                        UsuarioId = cliente.UsuId,
+                        UsuarioNome = nomeUsuario,
+                        Ano = anoFiltro,
+                        Mes = mes,
+                        MesNome = meses[mes - 1],
+                        ValorTotal = 0,
+                        QuantidadeContratos = 0,
+                        Contratos = new List<ContratoDetalheDto>()
+                    };
+                }
+
+                resultado[chave].ValorTotal += valorPorMes;
+                resultado[chave].QuantidadeContratos++;
+                resultado[chave].Contratos.Add(new ContratoDetalheDto
+                {
+                    ClienteId = cliente.CliId,
+                    ClienteCodigo = cliente.CliCodigo,
+                    ClienteNome = pessoaCliente?.PesFantasia ?? "Desconhecido",
+                    ValorContrato = valorPorMes
+                });
+            }
+        }
+
+        // Ordenar por usuário, ano e mês
+        return resultado.Values
+            .OrderBy(r => r.UsuarioNome)
+            .ThenBy(r => r.Ano)
+            .ThenBy(r => r.Mes)
+            .ToList();
     }
 }

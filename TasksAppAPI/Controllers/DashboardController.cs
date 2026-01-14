@@ -53,4 +53,23 @@ public class DashboardController : ControllerBase
             return StatusCode(500, new { message = "Erro interno do servidor" });
         }
     }
+
+    /// <summary>
+    /// Obtém valores de contratos por mês por usuário
+    /// </summary>
+    [HttpGet("valores-por-mes-usuario")]
+    [ProducesResponseType(typeof(List<ValorPorMesPorUsuarioDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObterValoresPorMesPorUsuario([FromQuery] int? ano)
+    {
+        try
+        {
+            var valores = await _dashboardService.ObterValoresPorMesPorUsuarioAsync(ano);
+            return Ok(valores);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao obter valores por mês por usuário");
+            return StatusCode(500, new { message = "Erro interno do servidor" });
+        }
+    }
 }

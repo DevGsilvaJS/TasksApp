@@ -13,6 +13,7 @@ export interface CadastroClienteDto {
   docFederal?: string;
   docEstadual?: string;
   codigo: number;
+  usuarioId: number;
   valorContrato?: number;
   dataFinalContrato?: string;
   diaPagamento?: number;
@@ -26,6 +27,8 @@ export interface ClienteResponseDto {
   docFederal?: string;
   docEstadual?: string;
   codigo: number;
+  usuarioId?: number;
+  usuarioNome?: string;
   dataCadastro?: string;
   valorContrato?: number;
   dataFinalContrato?: string;

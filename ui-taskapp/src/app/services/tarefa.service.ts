@@ -5,19 +5,27 @@ import { ApiService } from './api.service';
 export enum StatusTarefa {
   EmAberto = 1,
   Concluida = 2,
-  Cancelada = 3
+  Cancelada = 3,
+  Reativada = 4
 }
 
 export enum TipoAtendimento {
   Treinamento = 1,
   Suporte = 2,
-  Reuniao = 3
+  Reuniao = 3,
+  Cobranca = 4
 }
 
 export enum PrioridadeTarefa {
   Baixa = 1,
   Media = 2,
   Alta = 3
+}
+
+export enum TipoContato {
+  Ligacao = 1,
+  WhatsApp = 2,
+  Email = 3
 }
 
 export interface CadastroTarefaDto {
@@ -32,6 +40,7 @@ export interface CadastroTarefaDto {
   celularSolicitante?: string;
   tipoAtendimento?: TipoAtendimento;
   prioridade?: PrioridadeTarefa;
+  tipoContato?: TipoContato;
   imagens?: File[];
 }
 
@@ -70,6 +79,9 @@ export interface TarefaResponseDto {
   tipoAtendimentoDescricao?: string;
   prioridade?: PrioridadeTarefa;
   prioridadeDescricao?: string;
+  numero?: number;
+  tipoContato?: TipoContato;
+  tipoContatoDescricao?: string;
   anotacoes: AnotacaoResponseDto[];
   imagens: ImagemResponseDto[];
 }
@@ -103,7 +115,7 @@ export class TarefaService {
     formData.append('clienteId', dto.clienteId.toString());
     formData.append('usuarioId', dto.usuarioId.toString());
     formData.append('status', dto.status.toString());
-    
+
     if (dto.dataConclusao) {
       formData.append('dataConclusao', dto.dataConclusao);
     }
@@ -128,13 +140,13 @@ export class TarefaService {
     if (dto.prioridade !== undefined && dto.prioridade !== null) {
       formData.append('prioridade', dto.prioridade.toString());
     }
-    
+
     if (dto.imagens && dto.imagens.length > 0) {
       dto.imagens.forEach((imagem, index) => {
         formData.append(`imagens`, imagem);
       });
     }
-    
+
     return formData;
   }
 

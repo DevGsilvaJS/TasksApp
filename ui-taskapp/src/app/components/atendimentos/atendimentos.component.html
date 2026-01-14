@@ -26,7 +26,7 @@
           <div class="form-row">
             <div class="form-group">
               <label>Título</label>
-              <input type="text" [ngModel]="novoTarefa.titulo" (ngModelChange)="novoTarefa.titulo = $event.toUpperCase()" name="titulo" class="form-input" 
+              <input type="text" [ngModel]="novoTarefa.titulo" (ngModelChange)="novoTarefa.titulo = $event.toUpperCase()" name="titulo" class="form-input"
                      style="text-transform: uppercase;" placeholder="Digite o título da tarefa...">
             </div>
             <div class="form-group">
@@ -40,20 +40,20 @@
             </div>
             <div class="form-group">
               <label>Protocolo</label>
-              <input type="text" [ngModel]="novoTarefa.protocolo" (ngModelChange)="novoTarefa.protocolo = $event.toUpperCase()" name="protocolo" class="form-input" 
+              <input type="text" [ngModel]="novoTarefa.protocolo" (ngModelChange)="novoTarefa.protocolo = $event.toUpperCase()" name="protocolo" class="form-input"
                      style="text-transform: uppercase;" maxlength="6" placeholder="000000">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label>Solicitante</label>
-              <input type="text" [ngModel]="novoTarefa.solicitante" (ngModelChange)="novoTarefa.solicitante = $event.toUpperCase()" name="solicitante" class="form-input" 
+              <input type="text" [ngModel]="novoTarefa.solicitante" (ngModelChange)="novoTarefa.solicitante = $event.toUpperCase()" name="solicitante" class="form-input"
                      style="text-transform: uppercase;" placeholder="Nome do solicitante...">
             </div>
             <div class="form-group">
               <label>Celular do Solicitante</label>
-              <input type="text" [(ngModel)]="novoTarefa.celularSolicitante" name="celularSolicitante" 
-                     (input)="aplicarMascaraCelular($event)" maxlength="15" 
+              <input type="text" [(ngModel)]="novoTarefa.celularSolicitante" name="celularSolicitante"
+                     (input)="aplicarMascaraCelular($event)" maxlength="15"
                      class="form-input" placeholder="(11) 98327-0236">
             </div>
             <div class="form-group">
@@ -83,13 +83,22 @@
                 }
               </select>
             </div>
+            <div class="form-group">
+              <label>Contato</label>
+              <select [(ngModel)]="novoTarefa.tipoContato" name="tipoContato" class="form-select">
+                <option [ngValue]="undefined">Selecione...</option>
+                @for (contato of tipoContatoOptions; track contato.value) {
+                  <option [ngValue]="contato.value">{{ contato.label }}</option>
+                }
+              </select>
+            </div>
           </div>
           <div class="form-group">
             <label>Descrição/Anotação</label>
-            <textarea 
-              [ngModel]="novoTarefa.descricao" 
+            <textarea
+              [ngModel]="novoTarefa.descricao"
               (ngModelChange)="novoTarefa.descricao = $event.toUpperCase()"
-              name="descricao" 
+              name="descricao"
               class="form-textarea form-textarea-large"
               style="text-transform: uppercase;"
               rows="4"
@@ -97,10 +106,10 @@
           </div>
           <div class="form-group">
             <label>Imagens</label>
-            <input 
-              type="file" 
-              (change)="onImagensSelecionadas($event)" 
-              multiple 
+            <input
+              type="file"
+              (change)="onImagensSelecionadas($event)"
+              multiple
               accept="image/*"
               class="form-input">
             @if (previewImagens.length > 0) {
@@ -120,7 +129,7 @@
               </div>
             }
           </div>
-          
+
           @if (editando && tarefaEditando && tarefaEditando.anotacoes && tarefaEditando.anotacoes.length > 0) {
             <div class="form-group anotacoes-preview">
               <label>Anotações Existentes</label>
@@ -133,7 +142,7 @@
               </div>
             </div>
           }
-          
+
           <div class="form-actions">
             <button type="button" class="btn-secondary" (click)="fecharFormulario()">Cancelar</button>
             <button type="submit" class="btn-primary" [disabled]="loading">
@@ -146,9 +155,9 @@
   }
 
   <div class="search-container">
-    <input 
-      type="text" 
-      placeholder="Buscar por protocolo, título, solicitante, cliente, usuário, status ou ID..." 
+    <input
+      type="text"
+      placeholder="Buscar por protocolo, título, solicitante, cliente, usuário, status ou ID..."
       [(ngModel)]="termoBusca"
       (input)="filtrarTarefas()"
       class="search-input">
@@ -165,11 +174,13 @@
       <table class="data-table">
         <thead>
           <tr>
+            <th>Nº</th>
             <th>Protocolo</th>
             <th>Título</th>
             <th>Solicitante</th>
             <th>Celular</th>
             <th>Tipo</th>
+            <th>Contato</th>
             <th>Prioridade</th>
             <th>Cliente</th>
             <th>Usuário</th>
@@ -181,13 +192,15 @@
         <tbody>
           @for (tarefa of tarefasFiltradas; track tarefa.tarefaId) {
             <tr>
+              <td>{{ tarefa.numero || '-' }}</td>
               <td>{{ tarefa.protocolo || '-' }}</td>
               <td>{{ tarefa.titulo || '-' }}</td>
               <td>{{ tarefa.solicitante || '-' }}</td>
               <td>{{ tarefa.celularSolicitante || '-' }}</td>
               <td>{{ tarefa.tipoAtendimentoDescricao || '-' }}</td>
+              <td>{{ tarefa.tipoContatoDescricao || '-' }}</td>
               <td>
-                <span class="prioridade-badge" [ngClass]="'prioridade-' + (tarefa.prioridadeDescricao?.toLowerCase() || 'media')">
+                <span class="prioridade-badge" [ngClass]="obterClassePrioridade(tarefa.prioridadeDescricao)">
                   {{ tarefa.prioridadeDescricao || '-' }}
                 </span>
               </td>
@@ -258,8 +271,8 @@
           <div class="anotacao-form">
             <label>Nova Anotação</label>
             <div class="anotacao-input-group">
-              <textarea 
-                [(ngModel)]="novaAnotacao" 
+              <textarea
+                [(ngModel)]="novaAnotacao"
                 placeholder="Digite sua anotação aqui..."
                 class="anotacao-textarea"
                 rows="3"></textarea>
@@ -303,8 +316,8 @@
                 </svg>
               </button>
               <div class="carousel-image-container">
-                <img [src]="'http://localhost:5132' + tarefaImagens.imagens[imagemAtualIndex].urlImagem" 
-                     [alt]="'Imagem ' + (imagemAtualIndex + 1)" 
+                <img [src]="'http://localhost:5132' + tarefaImagens.imagens[imagemAtualIndex].urlImagem"
+                     [alt]="'Imagem ' + (imagemAtualIndex + 1)"
                      class="carousel-image"
                      (error)="onErroImagem($event)">
               </div>

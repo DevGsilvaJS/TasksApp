@@ -42,6 +42,19 @@ public class TarefaService : ITarefaService
         if (usuario == null)
             throw new InvalidOperationException("Usuário não encontrado.");
 
+        // Gerar número de atendimento auto incremental
+        var todasTarefas = await _tarefaRepository.ListarTodosAsync();
+        var proximoNumero = 1;
+        if (todasTarefas.Any())
+        {
+            var maiorNumero = todasTarefas
+                .Where(t => t.TarNumero.HasValue)
+                .Select(t => t.TarNumero.Value)
+                .DefaultIfEmpty(0)
+                .Max();
+            proximoNumero = maiorNumero + 1;
+        }
+
         // Criar Tarefa
         var tarefa = new Tarefa
         {
@@ -55,7 +68,9 @@ public class TarefaService : ITarefaService
             TarSolicitante = dto.Solicitante?.ToUpper(),
             TarCelularSolicitante = dto.CelularSolicitante,
             TarTipoAtendimento = dto.TipoAtendimento,
-            TarPrioridade = dto.Prioridade
+            TarPrioridade = dto.Prioridade,
+            TarNumero = proximoNumero,
+            TarTipoContato = dto.TipoContato
         };
 
         await _tarefaRepository.InserirAsync(tarefa);
@@ -128,6 +143,7 @@ public class TarefaService : ITarefaService
         tarefa.TarCelularSolicitante = dto.CelularSolicitante;
         tarefa.TarTipoAtendimento = dto.TipoAtendimento;
         tarefa.TarPrioridade = dto.Prioridade;
+        tarefa.TarTipoContato = dto.TipoContato;
 
         await _tarefaRepository.AtualizarAsync(tarefa);
         await _tarefaRepository.SalvarAlteracoesAsync();
@@ -302,6 +318,9 @@ public class TarefaService : ITarefaService
             TipoAtendimentoDescricao = ObterDescricaoTipoAtendimento(tarefa.TarTipoAtendimento),
             Prioridade = tarefa.TarPrioridade,
             PrioridadeDescricao = ObterDescricaoPrioridade(tarefa.TarPrioridade),
+            Numero = tarefa.TarNumero,
+            TipoContato = tarefa.TarTipoContato,
+            TipoContatoDescricao = ObterDescricaoTipoContato(tarefa.TarTipoContato),
             Anotacoes = anotacoesDto,
             Imagens = imagensDto
         };
@@ -314,6 +333,7 @@ public class TarefaService : ITarefaService
             StatusTarefa.EmAberto => "Em Aberto",
             StatusTarefa.Concluida => "Concluída",
             StatusTarefa.Cancelada => "Cancelada",
+            StatusTarefa.Reativada => "Reativada",
             _ => status.ToString()
         };
     }
@@ -326,6 +346,7 @@ public class TarefaService : ITarefaService
             TipoAtendimento.Treinamento => "Treinamento",
             TipoAtendimento.Suporte => "Suporte",
             TipoAtendimento.Reuniao => "Reunião",
+            TipoAtendimento.Cobranca => "Cobrança",
             _ => tipo.Value.ToString()
         };
     }
@@ -338,6 +359,18 @@ public class TarefaService : ITarefaService
             PrioridadeTarefa.Media => "Média",
             PrioridadeTarefa.Alta => "Alta",
             _ => prioridade.ToString()
+        };
+    }
+
+    private string ObterDescricaoTipoContato(TipoContato? tipo)
+    {
+        if (!tipo.HasValue) return string.Empty;
+        return tipo.Value switch
+        {
+            TipoContato.Ligacao => "Ligação",
+            TipoContato.WhatsApp => "WhatsApp",
+            TipoContato.Email => "E-mail",
+            _ => tipo.Value.ToString()
         };
     }
 

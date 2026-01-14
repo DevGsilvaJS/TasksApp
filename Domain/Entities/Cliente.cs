@@ -32,9 +32,15 @@ public class Cliente
     [Column("CLISTATUS")]
     public StatusCliente CliStatus { get; set; } = StatusCliente.Ativo;
 
+    [Column("USUID")]
+    public int UsuId { get; set; }
+
     // Navegação
     [ForeignKey("PesId")]
     public virtual Pessoa Pessoa { get; set; } = null!;
+
+    [ForeignKey("UsuId")]
+    public virtual Usuario Usuario { get; set; } = null!;
 
     public virtual ICollection<Tarefa> Tarefas { get; set; } = new List<Tarefa>();
 }

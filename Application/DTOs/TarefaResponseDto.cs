@@ -21,6 +21,9 @@ public class TarefaResponseDto
     public string TipoAtendimentoDescricao { get; set; } = string.Empty;
     public PrioridadeTarefa Prioridade { get; set; }
     public string PrioridadeDescricao { get; set; } = string.Empty;
+    public int? Numero { get; set; }
+    public TipoContato? TipoContato { get; set; }
+    public string TipoContatoDescricao { get; set; } = string.Empty;
     public List<AnotacaoResponseDto> Anotacoes { get; set; } = new();
     public List<ImagemResponseDto> Imagens { get; set; } = new();
 }

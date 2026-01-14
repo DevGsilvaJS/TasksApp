@@ -17,7 +17,7 @@ public class AnotacaoTarefa
     public int UsuId { get; set; }
 
     [Column("ANTDESCRICAO")]
-    [MaxLength(255)]
+    [MaxLength(1000)]
     public string? AntDescricao { get; set; }
 
     [Column("ANTDTCADASTRO")]

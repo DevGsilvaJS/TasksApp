@@ -48,6 +48,12 @@ public class Tarefa
     [Column("TARPRIORIDADE")]
     public PrioridadeTarefa TarPrioridade { get; set; } = PrioridadeTarefa.Media;
 
+    [Column("TARNUMERO")]
+    public int? TarNumero { get; set; }
+
+    [Column("TARTIPOCONTATO")]
+    public TipoContato? TarTipoContato { get; set; }
+
     // Navegação
     [ForeignKey("CliId")]
     public virtual Cliente Cliente { get; set; } = null!;

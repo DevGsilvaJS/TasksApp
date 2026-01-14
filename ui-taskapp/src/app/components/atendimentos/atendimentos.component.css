@@ -373,6 +373,11 @@ tbody tr:hover {
   color: #991b1b;
 }
 
+.status-badge.status-reativada {
+  background: #e9d5ff;
+  color: #6b21a8;
+}
+
 .prioridade-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
@@ -387,8 +392,8 @@ tbody tr:hover {
 }
 
 .prioridade-badge.prioridade-media {
-  background: #fef3c7;
-  color: #92400e;
+  background: #fbbf24;
+  color: #78350f;
 }
 
 .prioridade-badge.prioridade-alta {

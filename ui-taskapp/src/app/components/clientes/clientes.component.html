@@ -33,6 +33,17 @@
               <input type="text" [(ngModel)]="novoCliente.fantasia" name="fantasia" required class="form-input">
             </div>
             <div class="form-group">
+              <label>Usuário *</label>
+              <select [(ngModel)]="novoCliente.usuarioId" name="usuarioId" required class="form-select">
+                <option [value]="0">Selecione um usuário</option>
+                @for (usuario of usuarios; track usuario.usuarioId) {
+                  <option [value]="usuario.usuarioId">{{ usuario.nome }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label>Status</label>
               <select [(ngModel)]="novoCliente.status" name="status" class="form-select">
                 @for (status of statusOptions; track status.value) {
@@ -40,8 +51,6 @@
                 }
               </select>
             </div>
-          </div>
-          <div class="form-row">
             <div class="form-group">
               <label>CPF/CNPJ</label>
               <input type="text" [(ngModel)]="novoCliente.docFederal" name="docFederal" 
@@ -51,13 +60,13 @@
               <label>RG/IE</label>
               <input type="text" [(ngModel)]="novoCliente.docEstadual" name="docEstadual" class="form-input">
             </div>
+          </div>
+          <div class="form-row">
             <div class="form-group">
               <label>Valor do Contrato</label>
               <input type="number" [(ngModel)]="novoCliente.valorContrato" name="valorContrato" 
                      step="0.01" min="0" placeholder="0,00" class="form-input">
             </div>
-          </div>
-          <div class="form-row">
             <div class="form-group">
               <label>Data Final de Contrato</label>
               <input type="date" [(ngModel)]="novoCliente.dataFinalContrato" name="dataFinalContrato" class="form-input">

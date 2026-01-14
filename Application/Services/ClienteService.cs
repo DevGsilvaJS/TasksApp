@@ -10,15 +10,18 @@ public class ClienteService : IClienteService
     private readonly IRepository<Pessoa> _pessoaRepository;
     private readonly IRepository<Cliente> _clienteRepository;
     private readonly IRepository<Tarefa> _tarefaRepository;
+    private readonly IRepository<Usuario> _usuarioRepository;
 
     public ClienteService(
         IRepository<Pessoa> pessoaRepository,
         IRepository<Cliente> clienteRepository,
-        IRepository<Tarefa> tarefaRepository)
+        IRepository<Tarefa> tarefaRepository,
+        IRepository<Usuario> usuarioRepository)
     {
         _pessoaRepository = pessoaRepository;
         _clienteRepository = clienteRepository;
         _tarefaRepository = tarefaRepository;
+        _usuarioRepository = usuarioRepository;
     }
 
     public async Task<ClienteResponseDto> CadastrarClienteAsync(CadastroClienteDto dto)
@@ -30,6 +33,13 @@ public class ClienteService : IClienteService
             if (clienteExistente != null)
             {
                 throw new InvalidOperationException("Código do cliente já está em uso. Por favor, escolha outro código.");
+            }
+
+            // Validar se usuário existe
+            var usuario = await _usuarioRepository.GetByIdAsync(dto.UsuarioId);
+            if (usuario == null)
+            {
+                throw new InvalidOperationException("Usuário não encontrado.");
             }
 
             // Criar Pessoa
@@ -47,6 +57,7 @@ public class ClienteService : IClienteService
             var cliente = new Cliente
             {
                 PesId = pessoa.PesId,
+                UsuId = dto.UsuarioId,
                 CliCodigo = dto.Codigo,
                 CliDataCadastro = DateTime.UtcNow,
                 CliValorContrato = dto.ValorContrato,
@@ -58,6 +69,8 @@ public class ClienteService : IClienteService
             await _clienteRepository.InserirAsync(cliente);
             await _clienteRepository.SalvarAlteracoesAsync();
 
+            var pessoaUsuario = await _pessoaRepository.GetByIdAsync(usuario.PesId);
+
             return new ClienteResponseDto
             {
                 ClienteId = cliente.CliId,
@@ -66,6 +79,8 @@ public class ClienteService : IClienteService
                 DocFederal = pessoa.PesDocFederal,
                 DocEstadual = pessoa.PesDocEstadual,
                 Codigo = cliente.CliCodigo,
+                UsuarioId = cliente.UsuId,
+                UsuarioNome = pessoaUsuario?.PesFantasia ?? string.Empty,
                 DataCadastro = cliente.CliDataCadastro,
                 ValorContrato = cliente.CliValorContrato,
                 DataFinalContrato = cliente.CliDataFinalContrato,
@@ -91,6 +106,9 @@ public class ClienteService : IClienteService
         if (pessoa == null)
             return null;
 
+        var usuario = await _usuarioRepository.GetByIdAsync(cliente.UsuId);
+        var pessoaUsuario = usuario != null ? await _pessoaRepository.GetByIdAsync(usuario.PesId) : null;
+
         return new ClienteResponseDto
         {
             ClienteId = cliente.CliId,
@@ -99,6 +117,8 @@ public class ClienteService : IClienteService
             DocFederal = pessoa.PesDocFederal,
             DocEstadual = pessoa.PesDocEstadual,
             Codigo = cliente.CliCodigo,
+            UsuarioId = cliente.UsuId,
+            UsuarioNome = pessoaUsuario?.PesFantasia ?? string.Empty,
             DataCadastro = cliente.CliDataCadastro,
             ValorContrato = cliente.CliValorContrato,
             DataFinalContrato = cliente.CliDataFinalContrato,
@@ -118,6 +138,9 @@ public class ClienteService : IClienteService
             var pessoa = await _pessoaRepository.GetByIdAsync(cliente.PesId);
             if (pessoa != null)
             {
+                var usuario = await _usuarioRepository.GetByIdAsync(cliente.UsuId);
+                var pessoaUsuario = usuario != null ? await _pessoaRepository.GetByIdAsync(usuario.PesId) : null;
+
                 resultado.Add(new ClienteResponseDto
                 {
                     ClienteId = cliente.CliId,
@@ -126,6 +149,8 @@ public class ClienteService : IClienteService
                     DocFederal = pessoa.PesDocFederal,
                     DocEstadual = pessoa.PesDocEstadual,
                     Codigo = cliente.CliCodigo,
+                    UsuarioId = cliente.UsuId,
+                    UsuarioNome = pessoaUsuario?.PesFantasia ?? string.Empty,
                     DataCadastro = cliente.CliDataCadastro,
                     ValorContrato = cliente.CliValorContrato,
                     DataFinalContrato = cliente.CliDataFinalContrato,
@@ -152,6 +177,13 @@ public class ClienteService : IClienteService
             throw new InvalidOperationException("Código do cliente já está em uso por outro cliente.");
         }
 
+        // Validar se usuário existe
+        var usuario = await _usuarioRepository.GetByIdAsync(dto.UsuarioId);
+        if (usuario == null)
+        {
+            throw new InvalidOperationException("Usuário não encontrado.");
+        }
+
         var pessoa = await _pessoaRepository.GetByIdAsync(cliente.PesId);
         if (pessoa == null)
             throw new InvalidOperationException("Pessoa associada ao cliente não encontrada.");
@@ -165,6 +197,7 @@ public class ClienteService : IClienteService
 
         // Atualizar Cliente
         cliente.CliCodigo = dto.Codigo;
+        cliente.UsuId = dto.UsuarioId;
         cliente.CliValorContrato = dto.ValorContrato;
         cliente.CliDataFinalContrato = dto.DataFinalContrato?.ToUniversalTime();
         cliente.CliDiaPagamento = dto.DiaPagamento;
@@ -172,6 +205,8 @@ public class ClienteService : IClienteService
 
         await _clienteRepository.AtualizarAsync(cliente);
         await _clienteRepository.SalvarAlteracoesAsync();
+
+        var pessoaUsuario = await _pessoaRepository.GetByIdAsync(usuario.PesId);
 
         return new ClienteResponseDto
         {
@@ -181,6 +216,8 @@ public class ClienteService : IClienteService
             DocFederal = pessoa.PesDocFederal,
             DocEstadual = pessoa.PesDocEstadual,
             Codigo = cliente.CliCodigo,
+            UsuarioId = cliente.UsuId,
+            UsuarioNome = pessoaUsuario?.PesFantasia ?? string.Empty,
             DataCadastro = cliente.CliDataCadastro,
             ValorContrato = cliente.CliValorContrato,
             DataFinalContrato = cliente.CliDataFinalContrato,

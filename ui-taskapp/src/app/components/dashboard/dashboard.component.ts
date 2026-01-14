@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DashboardService, DashboardEstatisticasDto, PeriodoFiltro, AtendimentoPorUsuarioDto, ContaAPagarDto, AtendimentoPorClienteDto } from '../../services/dashboard.service';
+import { DashboardService, DashboardEstatisticasDto, PeriodoFiltro, AtendimentoPorUsuarioDto, ContaAPagarDto, AtendimentoPorClienteDto, ValorPorMesPorUsuarioDto } from '../../services/dashboard.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -22,15 +22,35 @@ export class DashboardComponent implements OnInit {
   showModalAtendimentosUsuario = false;
   showModalContasPagar = false;
   showModalAtendimentosCliente = false;
+  showModalValoresPorMes = false;
   
   dadosModalAtendimentosUsuario: AtendimentoPorUsuarioDto[] = [];
   dadosModalContasPagar: ContaAPagarDto[] = [];
   dadosModalAtendimentosCliente: AtendimentoPorClienteDto[] = [];
+  dadosModalValoresPorMes: ValorPorMesPorUsuarioDto[] = [];
+  
+  anoSelecionado: number = new Date().getFullYear();
 
   constructor(private dashboardService: DashboardService) { }
 
   ngOnInit() {
     this.carregarEstatisticas();
+    this.carregarValoresPorMes();
+  }
+
+  carregarValoresPorMes() {
+    this.dashboardService.obterValoresPorMesPorUsuario(this.anoSelecionado).subscribe({
+      next: (data) => {
+        this.dadosModalValoresPorMes = data;
+      },
+      error: (err) => {
+        console.error('Erro ao carregar valores por mês:', err);
+      }
+    });
+  }
+
+  onAnoChange() {
+    this.carregarValoresPorMes();
   }
 
   onPeriodoChange() {
@@ -123,6 +143,14 @@ export class DashboardComponent implements OnInit {
     this.showModalAtendimentosCliente = false;
   }
 
+  abrirModalValoresPorMes() {
+    this.showModalValoresPorMes = true;
+  }
+
+  fecharModalValoresPorMes() {
+    this.showModalValoresPorMes = false;
+  }
+
   formatarData(data: string): string {
     const date = new Date(data);
     return date.toLocaleDateString('pt-BR');
@@ -133,5 +161,10 @@ export class DashboardComponent implements OnInit {
       style: 'currency',
       currency: 'BRL'
     }).format(valor);
+  }
+
+  calcularTotalValores(): string {
+    const total = this.dadosModalValoresPorMes.reduce((sum, item) => sum + item.valorTotal, 0);
+    return this.formatarMoeda(total);
   }
 }

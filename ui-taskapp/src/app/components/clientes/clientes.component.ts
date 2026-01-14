@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ClienteService, ClienteResponseDto, CadastroClienteDto, StatusCliente } from '../../services/cliente.service';
+import { UsuarioService, UsuarioResponseDto } from '../../services/usuario.service';
 
 @Component({
   selector: 'app-clientes',
@@ -13,6 +14,7 @@ import { ClienteService, ClienteResponseDto, CadastroClienteDto, StatusCliente }
 export class ClientesComponent implements OnInit {
   clientes: ClienteResponseDto[] = [];
   clientesFiltrados: ClienteResponseDto[] = [];
+  usuarios: UsuarioResponseDto[] = [];
   showForm = false;
   loading = false;
   error: string | null = null;
@@ -27,6 +29,7 @@ export class ClientesComponent implements OnInit {
     docFederal: '',
     docEstadual: '',
     codigo: 0,
+    usuarioId: 0,
     status: StatusCliente.Ativo
   };
 
@@ -36,10 +39,25 @@ export class ClientesComponent implements OnInit {
     { value: StatusCliente.Suspenso, label: 'Suspenso', icon: '⚠' }
   ];
 
-  constructor(private clienteService: ClienteService) { }
+  constructor(
+    private clienteService: ClienteService,
+    private usuarioService: UsuarioService
+  ) { }
 
   ngOnInit() {
     this.carregarClientes();
+    this.carregarUsuarios();
+  }
+
+  carregarUsuarios() {
+    this.usuarioService.listarTodosUsuarios().subscribe({
+      next: (data) => {
+        this.usuarios = data;
+      },
+      error: (err) => {
+        console.error('Erro ao carregar usuários:', err);
+      }
+    });
   }
 
   carregarClientes() {
@@ -82,6 +100,7 @@ export class ClientesComponent implements OnInit {
       docFederal: '',
       docEstadual: '',
       codigo: 0,
+      usuarioId: 0,
       status: StatusCliente.Ativo
     };
     this.error = null;
@@ -106,6 +125,7 @@ export class ClientesComponent implements OnInit {
       docFederal: cliente.docFederal || '',
       docEstadual: cliente.docEstadual || '',
       codigo: cliente.codigo,
+      usuarioId: cliente.usuarioId || 0,
       valorContrato: cliente.valorContrato,
       dataFinalContrato: dataFinalContratoFormatada,
       diaPagamento: cliente.diaPagamento,
@@ -122,8 +142,8 @@ export class ClientesComponent implements OnInit {
   }
 
   salvarCliente() {
-    if (!this.novoCliente.fantasia || !this.novoCliente.codigo) {
-      this.error = 'Preencha todos os campos obrigatórios (Fantasia e Código)';
+    if (!this.novoCliente.fantasia || !this.novoCliente.codigo || !this.novoCliente.usuarioId || this.novoCliente.usuarioId === 0) {
+      this.error = 'Preencha todos os campos obrigatórios (Fantasia, Código e Usuário)';
       return;
     }
 

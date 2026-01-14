@@ -34,5 +34,7 @@ public class CadastroTarefaDto
 
     public PrioridadeTarefa Prioridade { get; set; } = PrioridadeTarefa.Media;
 
+    public TipoContato? TipoContato { get; set; }
+
     public List<IFormFile>? Imagens { get; set; }
 }

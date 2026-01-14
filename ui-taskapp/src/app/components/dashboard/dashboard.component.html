@@ -71,6 +71,21 @@
           <p class="card-subtitle">Total de atendimentos</p>
         </div>
       </div>
+
+      <!-- Card 4: Valores por Mês por Usuário -->
+      <div class="stat-card" (click)="abrirModalValoresPorMes()">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="card-content">
+          <h3>Valores por Mês</h3>
+          <p class="card-value">{{ calcularTotalValores() }}</p>
+          <p class="card-subtitle">Total de contratos</p>
+        </div>
+      </div>
     </div>
   }
 
@@ -95,10 +110,25 @@
               </thead>
               <tbody>
                 @for (item of dadosModalAtendimentosUsuario; track item.usuarioId) {
-                  <tr>
-                    <td>{{ item.usuarioNome }}</td>
-                    <td>{{ item.quantidade }}</td>
+                  <tr class="usuario-row">
+                    <td><strong>{{ item.usuarioNome }}</strong></td>
+                    <td><strong>{{ item.quantidade }}</strong></td>
                   </tr>
+                  @if (item.detalhes && item.detalhes.length > 0) {
+                    <tr class="detalhes-header">
+                      <td colspan="2">
+                        <strong>Detalhes:</strong>
+                      </td>
+                    </tr>
+                    @for (detalhe of item.detalhes; track detalhe.tarefaId) {
+                      <tr class="detalhe-row">
+                        <td colspan="2" class="detalhe-cell">
+                          <span class="detalhe-item">Nº: {{ detalhe.numero || '-' }}</span>
+                          <span class="detalhe-item">Cliente: {{ detalhe.clienteCodigo }} - {{ detalhe.clienteNome }}</span>
+                        </td>
+                      </tr>
+                    }
+                  }
                 }
               </tbody>
             </table>
@@ -175,6 +205,64 @@
                     <td>{{ item.clienteNome }}</td>
                     <td>{{ item.quantidade }}</td>
                   </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Valores por Mês por Usuário -->
+  @if (showModalValoresPorMes) {
+    <div class="modal-overlay" (click)="fecharModalValoresPorMes()">
+      <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Valores por Mês por Usuário</h3>
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <label>Ano:</label>
+            <input type="number" [(ngModel)]="anoSelecionado" (change)="onAnoChange()"
+                   min="2020" max="2100" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.5rem; width: 100px;">
+          </div>
+          <button class="btn-close" (click)="fecharModalValoresPorMes()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (dadosModalValoresPorMes.length === 0) {
+            <p class="empty-state">Nenhum valor encontrado para o ano selecionado.</p>
+          } @else {
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th>Usuário</th>
+                  <th>Mês</th>
+                  <th>Valor Total</th>
+                  <th>Qtd. Contratos</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of dadosModalValoresPorMes; track item.usuarioId + item.ano + item.mes) {
+                  <tr class="usuario-row">
+                    <td><strong>{{ item.usuarioNome }}</strong></td>
+                    <td><strong>{{ item.mesNome }}/{{ item.ano }}</strong></td>
+                    <td><strong>{{ formatarMoeda(item.valorTotal) }}</strong></td>
+                    <td><strong>{{ item.quantidadeContratos }}</strong></td>
+                  </tr>
+                  @if (item.contratos && item.contratos.length > 0) {
+                    <tr class="detalhes-header">
+                      <td colspan="4">
+                        <strong>Contratos:</strong>
+                      </td>
+                    </tr>
+                    @for (contrato of item.contratos; track contrato.clienteId) {
+                      <tr class="detalhe-row">
+                        <td colspan="4" class="detalhe-cell">
+                          <span class="detalhe-item">{{ contrato.clienteCodigo }} - {{ contrato.clienteNome }}</span>
+                          <span class="detalhe-item">{{ formatarMoeda(contrato.valorContrato) }}</span>
+                        </td>
+                      </tr>
+                    }
+                  }
                 }
               </tbody>
             </table>

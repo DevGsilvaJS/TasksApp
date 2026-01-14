@@ -15,6 +15,15 @@ export interface AtendimentoPorUsuarioDto {
   usuarioId: number;
   usuarioNome: string;
   quantidade: number;
+  detalhes: DetalheAtendimentoDto[];
+}
+
+export interface DetalheAtendimentoDto {
+  tarefaId: number;
+  numero?: number;
+  clienteId: number;
+  clienteCodigo: number;
+  clienteNome: string;
 }
 
 export interface ContaAPagarDto {
@@ -32,6 +41,24 @@ export interface AtendimentoPorClienteDto {
   quantidade: number;
 }
 
+export interface ValorPorMesPorUsuarioDto {
+  usuarioId: number;
+  usuarioNome: string;
+  ano: number;
+  mes: number;
+  mesNome: string;
+  valorTotal: number;
+  quantidadeContratos: number;
+  contratos: ContratoDetalheDto[];
+}
+
+export interface ContratoDetalheDto {
+  clienteId: number;
+  clienteCodigo: number;
+  clienteNome: string;
+  valorContrato: number;
+}
+
 export enum PeriodoFiltro {
   Dia = 'dia',
   Semana = 'semana',
@@ -47,18 +74,26 @@ export class DashboardService {
   obterEstatisticas(dataInicio?: Date, dataFim?: Date): Observable<DashboardEstatisticasDto> {
     let url = 'dashboard';
     const params: string[] = [];
-    
+
     if (dataInicio) {
       params.push(`dataInicio=${dataInicio.toISOString().split('T')[0]}`);
     }
     if (dataFim) {
       params.push(`dataFim=${dataFim.toISOString().split('T')[0]}`);
     }
-    
+
     if (params.length > 0) {
       url += '?' + params.join('&');
     }
-    
+
     return this.api.get<DashboardEstatisticasDto>(url);
+  }
+
+  obterValoresPorMesPorUsuario(ano?: number): Observable<ValorPorMesPorUsuarioDto[]> {
+    let url = 'dashboard/valores-por-mes-usuario';
+    if (ano) {
+      url += `?ano=${ano}`;
+    }
+    return this.api.get<ValorPorMesPorUsuarioDto[]>(url);
   }
 }

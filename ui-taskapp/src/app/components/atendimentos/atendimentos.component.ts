@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TarefaService, TarefaResponseDto, CadastroTarefaDto, StatusTarefa, TipoAtendimento, PrioridadeTarefa } from '../../services/tarefa.service';
+import { TarefaService, TarefaResponseDto, CadastroTarefaDto, StatusTarefa, TipoAtendimento, PrioridadeTarefa, TipoContato } from '../../services/tarefa.service';
 import { ClienteService, ClienteResponseDto } from '../../services/cliente.service';
 import { UsuarioService, UsuarioResponseDto } from '../../services/usuario.service';
 import { AnotacaoService, CadastroAnotacaoDto } from '../../services/anotacao.service';
@@ -18,7 +18,8 @@ export class AtendimentosComponent implements OnInit {
   StatusTarefa = StatusTarefa;
   TipoAtendimento = TipoAtendimento;
   PrioridadeTarefa = PrioridadeTarefa;
-  
+  TipoContato = TipoContato;
+
   tarefas: TarefaResponseDto[] = [];
   tarefasFiltradas: TarefaResponseDto[] = [];
   clientes: ClienteResponseDto[] = [];
@@ -42,6 +43,7 @@ export class AtendimentosComponent implements OnInit {
     celularSolicitante: undefined,
     tipoAtendimento: undefined,
     prioridade: PrioridadeTarefa.Media,
+    tipoContato: undefined,
     imagens: undefined
   };
 
@@ -58,19 +60,27 @@ export class AtendimentosComponent implements OnInit {
   statusOptions = [
     { value: StatusTarefa.EmAberto, label: 'Em Aberto' },
     { value: StatusTarefa.Concluida, label: 'Concluída' },
-    { value: StatusTarefa.Cancelada, label: 'Cancelada' }
+    { value: StatusTarefa.Cancelada, label: 'Cancelada' },
+    { value: StatusTarefa.Reativada, label: 'Reativada' }
   ];
 
   tipoAtendimentoOptions = [
     { value: TipoAtendimento.Treinamento, label: 'Treinamento' },
     { value: TipoAtendimento.Suporte, label: 'Suporte' },
-    { value: TipoAtendimento.Reuniao, label: 'Reunião' }
+    { value: TipoAtendimento.Reuniao, label: 'Reunião' },
+    { value: TipoAtendimento.Cobranca, label: 'Cobrança' }
   ];
 
   prioridadeOptions = [
     { value: PrioridadeTarefa.Baixa, label: 'Baixa' },
     { value: PrioridadeTarefa.Media, label: 'Média' },
     { value: PrioridadeTarefa.Alta, label: 'Alta' }
+  ];
+
+  tipoContatoOptions = [
+    { value: TipoContato.Ligacao, label: 'Ligação' },
+    { value: TipoContato.WhatsApp, label: 'WhatsApp' },
+    { value: TipoContato.Email, label: 'E-mail' }
   ];
 
   constructor(
@@ -177,7 +187,7 @@ export class AtendimentosComponent implements OnInit {
     this.previewImagens = [];
     this.novaAnotacao = '';
     this.error = null;
-    
+
     // Scroll para o topo do modal após um pequeno delay para garantir que o DOM foi renderizado
     setTimeout(() => {
       const modalContent = document.querySelector('.modal-content');
@@ -203,13 +213,14 @@ export class AtendimentosComponent implements OnInit {
       celularSolicitante: tarefa.celularSolicitante,
       tipoAtendimento: tarefa.tipoAtendimento,
       prioridade: tarefa.prioridade || PrioridadeTarefa.Media,
+      tipoContato: tarefa.tipoContato,
       imagens: undefined
     };
     this.imagensSelecionadas = [];
     this.previewImagens = [];
     this.novaAnotacao = '';
     this.error = null;
-    
+
     // Carregar anotações da tarefa
     this.anotacaoService.obterAnotacoesPorTarefa(tarefa.tarefaId).subscribe({
       next: (anotacoes) => {
@@ -228,7 +239,7 @@ export class AtendimentosComponent implements OnInit {
     this.showAnotacoes = true;
     this.novaAnotacao = '';
     this.error = null;
-    
+
     // Sempre carregar anotações atualizadas
     this.anotacaoService.obterAnotacoesPorTarefa(tarefa.tarefaId).subscribe({
       next: (anotacoes) => {
@@ -301,7 +312,7 @@ export class AtendimentosComponent implements OnInit {
             this.tarefaSelecionada.anotacoes = [];
           }
           this.tarefaSelecionada.anotacoes.unshift(anotacao);
-          
+
           // Atualizar também na lista de tarefas
           const tarefaNaLista = this.tarefas.find(t => t.tarefaId === this.tarefaSelecionada!.tarefaId);
           if (tarefaNaLista) {
@@ -311,7 +322,7 @@ export class AtendimentosComponent implements OnInit {
             tarefaNaLista.anotacoes.unshift(anotacao);
           }
         }
-        
+
         // Limpar campo
         this.novaAnotacao = '';
         this.loading = false;
@@ -334,7 +345,7 @@ export class AtendimentosComponent implements OnInit {
   onStatusChange(event: any) {
     const novoStatus = Number(event.target.value) as StatusTarefa;
     this.novoTarefa.status = novoStatus;
-    
+
     // Se o status for alterado para "Concluída", preencher a data de conclusão com a data atual
     if (novoStatus === StatusTarefa.Concluida && !this.novoTarefa.dataConclusao) {
       const hoje = new Date();
@@ -347,7 +358,7 @@ export class AtendimentosComponent implements OnInit {
 
   salvarTarefa() {
     console.log('Salvando tarefa:', this.novoTarefa);
-    
+
     // Validar se cliente e usuário foram selecionados (não pode ser 0)
     const clienteId = Number(this.novoTarefa.clienteId);
 
@@ -375,8 +386,8 @@ export class AtendimentosComponent implements OnInit {
     }
 
     // Na edição, usar o usuarioId original; na criação, usar o primeiro usuário
-    const usuarioIdFinal = this.editando && this.tarefaEditando 
-      ? this.tarefaEditando.usuarioId 
+    const usuarioIdFinal = this.editando && this.tarefaEditando
+      ? this.tarefaEditando.usuarioId
       : usuarioId;
 
     // Preparar dados para envio
@@ -384,7 +395,7 @@ export class AtendimentosComponent implements OnInit {
       clienteId: clienteId,
       usuarioId: usuarioIdFinal,
       status: Number(this.novoTarefa.status) as StatusTarefa,
-      dataConclusao: this.novoTarefa.status === StatusTarefa.Concluida 
+      dataConclusao: this.novoTarefa.status === StatusTarefa.Concluida
         ? (this.novoTarefa.dataConclusao || new Date().toISOString().split('T')[0])
         : undefined,
       descricao: this.novoTarefa.descricao ? this.novoTarefa.descricao.toUpperCase() : undefined,
@@ -394,6 +405,7 @@ export class AtendimentosComponent implements OnInit {
       celularSolicitante: this.novoTarefa.celularSolicitante || undefined,
       tipoAtendimento: this.novoTarefa.tipoAtendimento,
       prioridade: this.novoTarefa.prioridade || PrioridadeTarefa.Media,
+      tipoContato: this.novoTarefa.tipoContato,
       imagens: this.imagensSelecionadas.length > 0 ? this.imagensSelecionadas : undefined
     };
 
@@ -476,9 +488,21 @@ export class AtendimentosComponent implements OnInit {
         return 'status-concluida';
       case StatusTarefa.Cancelada:
         return 'status-cancelada';
+      case StatusTarefa.Reativada:
+        return 'status-reativada';
       default:
         return '';
     }
+  }
+
+  obterClassePrioridade(prioridadeDescricao?: string): string {
+    if (!prioridadeDescricao) return 'prioridade-media';
+
+    const descricaoNormalizada = prioridadeDescricao.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, ''); // Remove acentos
+
+    return `prioridade-${descricaoNormalizada}`;
   }
 
   onImagensSelecionadas(event: any) {
@@ -486,7 +510,7 @@ export class AtendimentosComponent implements OnInit {
     if (files && files.length > 0) {
       this.imagensSelecionadas = Array.from(files);
       this.previewImagens = [];
-      
+
       this.imagensSelecionadas.forEach((file: File) => {
         const reader = new FileReader();
         reader.onload = (e: any) => {
@@ -512,12 +536,12 @@ export class AtendimentosComponent implements OnInit {
   aplicarMascaraCelular(event: Event): void {
     const input = event.target as HTMLInputElement;
     let valor = input.value.replace(/\D/g, '');
-    
+
     // Limitar a 11 dígitos (DDD + 9 dígitos)
     if (valor.length > 11) {
       valor = valor.substring(0, 11);
     }
-    
+
     // Aplicar máscara: (11) 98327-0236
     if (valor.length > 0) {
       if (valor.length <= 2) {
@@ -528,7 +552,7 @@ export class AtendimentosComponent implements OnInit {
         valor = `(${valor.substring(0, 2)}) ${valor.substring(2, 7)}-${valor.substring(7)}`;
       }
     }
-    
+
     input.value = valor;
     this.novoTarefa.celularSolicitante = valor;
   }

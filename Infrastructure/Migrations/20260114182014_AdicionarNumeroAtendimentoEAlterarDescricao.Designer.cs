@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260114182014_AdicionarNumeroAtendimentoEAlterarDescricao")]
+    partial class AdicionarNumeroAtendimentoEAlterarDescricao
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -94,15 +97,9 @@ namespace Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("PESID");
 
-                    b.Property<int>("UsuId")
-                        .HasColumnType("integer")
-                        .HasColumnName("USUID");
-
                     b.HasKey("CliId");
 
                     b.HasIndex("PesId");
-
-                    b.HasIndex("UsuId");
 
                     b.ToTable("TB_CLI_CLIENTE");
                 });
@@ -317,10 +314,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("TARTIPOATENDIMENTO");
 
-                    b.Property<int?>("TarTipoContato")
-                        .HasColumnType("integer")
-                        .HasColumnName("TARTIPOCONTATO");
-
                     b.Property<string>("TarTitulo")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
@@ -397,15 +390,7 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.Usuario", "Usuario")
-                        .WithMany()
-                        .HasForeignKey("UsuId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Pessoa");
-
-                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("Domain.Entities.Email", b =>
