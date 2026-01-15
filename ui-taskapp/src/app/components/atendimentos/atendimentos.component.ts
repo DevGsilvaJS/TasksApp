@@ -5,6 +5,7 @@ import { TarefaService, TarefaResponseDto, CadastroTarefaDto, StatusTarefa, Tipo
 import { ClienteService, ClienteResponseDto } from '../../services/cliente.service';
 import { UsuarioService, UsuarioResponseDto } from '../../services/usuario.service';
 import { AnotacaoService, CadastroAnotacaoDto } from '../../services/anotacao.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-atendimentos',
@@ -87,7 +88,8 @@ export class AtendimentosComponent implements OnInit {
     private tarefaService: TarefaService,
     private clienteService: ClienteService,
     private usuarioService: UsuarioService,
-    private anotacaoService: AnotacaoService
+    private anotacaoService: AnotacaoService,
+    private authService: AuthService
   ) { }
 
   ngOnInit() {
@@ -359,7 +361,7 @@ export class AtendimentosComponent implements OnInit {
   salvarTarefa() {
     console.log('Salvando tarefa:', this.novoTarefa);
 
-    // Validar se cliente e usuário foram selecionados (não pode ser 0)
+    // Validar se cliente foi selecionado (não pode ser 0)
     const clienteId = Number(this.novoTarefa.clienteId);
 
     if (!clienteId || clienteId === 0) {
@@ -367,12 +369,10 @@ export class AtendimentosComponent implements OnInit {
       return;
     }
 
-    // Usar o primeiro usuário da lista por padrão (depois será o usuário da sessão)
-    let usuarioId = 0;
-    if (this.usuarios && this.usuarios.length > 0) {
-      usuarioId = this.usuarios[0].usuarioId;
-    } else {
-      this.error = 'Nenhum usuário disponível. Cadastre um usuário primeiro.';
+    // Obter o ID do usuário logado
+    const usuarioIdLogado = this.authService.getUsuarioId();
+    if (!usuarioIdLogado) {
+      this.error = 'Usuário não autenticado. Faça login novamente.';
       return;
     }
 
@@ -385,10 +385,10 @@ export class AtendimentosComponent implements OnInit {
       this.novoTarefa.dataConclusao = hoje.toISOString().split('T')[0];
     }
 
-    // Na edição, usar o usuarioId original; na criação, usar o primeiro usuário
+    // Na edição, usar o usuarioId original; na criação, usar o usuário logado
     const usuarioIdFinal = this.editando && this.tarefaEditando
       ? this.tarefaEditando.usuarioId
-      : usuarioId;
+      : usuarioIdLogado;
 
     // Preparar dados para envio
     const dadosEnvio: CadastroTarefaDto = {
