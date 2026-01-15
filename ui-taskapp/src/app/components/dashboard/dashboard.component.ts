@@ -41,7 +41,9 @@ export class DashboardComponent implements OnInit {
   carregarValoresPorMes() {
     this.dashboardService.obterValoresPorMesPorUsuario(this.anoSelecionado).subscribe({
       next: (data) => {
-        this.dadosModalValoresPorMes = data;
+        // Filtrar apenas o mês atual
+        const mesAtual = new Date().getMonth() + 1; // getMonth() retorna 0-11, então +1
+        this.dadosModalValoresPorMes = data.filter(item => item.mes === mesAtual);
       },
       error: (err) => {
         console.error('Erro ao carregar valores por mês:', err);

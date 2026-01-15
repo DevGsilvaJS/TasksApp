@@ -24,7 +24,8 @@ public class DuplicataService : IDuplicataService
         {
             DupNumero = dto.Numero,
             DupDataEmissao = dto.DataEmissao.ToUniversalTime(),
-            DupNumeroParcelas = dto.NumeroParcelas
+            DupNumeroParcelas = dto.NumeroParcelas,
+            DupDescricaoDespesa = dto.DescricaoDespesa
         };
 
         await _duplicataRepository.InserirAsync(duplicata);
@@ -123,6 +124,7 @@ public class DuplicataService : IDuplicataService
         duplicata.DupNumero = dto.Numero;
         duplicata.DupDataEmissao = dto.DataEmissao.ToUniversalTime();
         duplicata.DupNumeroParcelas = dto.NumeroParcelas;
+        duplicata.DupDescricaoDespesa = dto.DescricaoDespesa;
 
         await _duplicataRepository.AtualizarAsync(duplicata);
 
@@ -246,6 +248,7 @@ public class DuplicataService : IDuplicataService
             Numero = duplicata.DupNumero,
             DataEmissao = duplicata.DupDataEmissao,
             NumeroParcelas = duplicata.DupNumeroParcelas,
+            DescricaoDespesa = duplicata.DupDescricaoDespesa,
             Parcelas = parcelasDto,
             ValorTotal = valorTotal,
             ValorPago = valorPago,

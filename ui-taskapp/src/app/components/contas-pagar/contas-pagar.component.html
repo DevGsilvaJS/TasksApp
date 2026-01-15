@@ -33,6 +33,11 @@
               <input type="date" [(ngModel)]="novaDuplicata.dataEmissao" name="dataEmissao" required>
             </div>
           </div>
+          <div class="form-group">
+            <label>Descrição da Despesa</label>
+            <input type="text" [(ngModel)]="novaDuplicata.descricaoDespesa" name="descricaoDespesa" 
+                   class="form-input" placeholder="Digite a descrição da despesa..." maxlength="500">
+          </div>
           <div class="form-row">
             <div class="form-group">
               <label>Número de Parcelas *</label>
@@ -205,6 +210,7 @@
           <tr>
             <th>Número</th>
             <th>Data Emissão</th>
+            <th>Descrição da Despesa</th>
             <th>Parcelas</th>
             <th>Valor Total</th>
             <th>Valor Pago</th>
@@ -217,6 +223,7 @@
             <tr>
               <td>{{ duplicata.numero }}</td>
               <td>{{ formatarData(duplicata.dataEmissao) }}</td>
+              <td>{{ duplicata.descricaoDespesa || '-' }}</td>
               <td>{{ duplicata.numeroParcelas }}</td>
               <td>{{ formatarMoeda(duplicata.valorTotal) }}</td>
               <td class="status-paga">{{ formatarMoeda(duplicata.valorPago) }}</td>

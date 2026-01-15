@@ -6,6 +6,7 @@ public class DuplicataResponseDto
     public int Numero { get; set; }
     public DateTime DataEmissao { get; set; }
     public int NumeroParcelas { get; set; }
+    public string? DescricaoDespesa { get; set; }
     public List<ParcelaResponseDto> Parcelas { get; set; } = new();
     public double ValorTotal { get; set; }
     public double ValorPago { get; set; }

@@ -31,6 +31,7 @@ export class ContasPagarComponent implements OnInit {
     valorTotal: 0,
     multa: 0,
     juros: 0,
+    descricaoDespesa: undefined,
     dataPrimeiroVencimento: new Date().toISOString().split('T')[0]
   };
 
@@ -69,6 +70,7 @@ export class ContasPagarComponent implements OnInit {
       valorTotal: 0,
       multa: 0,
       juros: 0,
+      descricaoDespesa: undefined,
       dataPrimeiroVencimento: new Date().toISOString().split('T')[0]
     };
     this.showForm = true;
@@ -86,6 +88,7 @@ export class ContasPagarComponent implements OnInit {
       valorTotal: duplicata.valorTotal,
       multa: duplicata.parcelas[0]?.multa || 0,
       juros: duplicata.parcelas[0]?.juros || 0,
+      descricaoDespesa: duplicata.descricaoDespesa,
       dataPrimeiroVencimento: duplicata.parcelas[0]?.vencimento.split('T')[0] || new Date().toISOString().split('T')[0]
     };
     this.showForm = true;

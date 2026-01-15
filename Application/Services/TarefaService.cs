@@ -270,7 +270,7 @@ public class TarefaService : ITarefaService
             }
 
             var dataCadastro = anotacao.AntDtCadastro?.ToLocalTime() ?? DateTime.Now;
-            var descricaoFormatada = $"{dataCadastro:dd/MM/yyyy - HH:mm} - {anotacao.AntDescricao}";
+            var descricaoFormatada = $"{usuarioAnotacaoNome} - {dataCadastro:dd/MM/yyyy - HH:mm} - {anotacao.AntDescricao}";
 
             anotacoesDto.Add(new AnotacaoResponseDto
             {

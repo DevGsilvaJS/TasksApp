@@ -17,6 +17,7 @@ export interface CadastroDuplicataDto {
   valorTotal: number;
   multa?: number;
   juros?: number;
+  descricaoDespesa?: string;
   dataPrimeiroVencimento?: string;
   parcelas?: CadastroParcelaDto[];
 }
@@ -39,6 +40,7 @@ export interface DuplicataResponseDto {
   numero: number;
   dataEmissao: string;
   numeroParcelas: number;
+  descricaoDespesa?: string;
   parcelas: ParcelaResponseDto[];
   valorTotal: number;
   valorPago: number;

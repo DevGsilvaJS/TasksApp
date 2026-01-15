@@ -31,6 +31,8 @@ export class AtendimentosComponent implements OnInit {
   editando = false;
   tarefaEditando: TarefaResponseDto | null = null;
   termoBusca = '';
+  mostrarConcluidas = false;
+  private readonly STORAGE_KEY_MOSTRAR_CONCLUIDAS = 'atendimentos_mostrar_concluidas';
 
   novoTarefa: CadastroTarefaDto = {
     clienteId: 0,
@@ -93,9 +95,36 @@ export class AtendimentosComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    // Carregar preferência do sessionStorage
+    this.carregarPreferenciaMostrarConcluidas();
     this.carregarTarefas();
     this.carregarClientes();
     this.carregarUsuarios();
+  }
+
+  private carregarPreferenciaMostrarConcluidas() {
+    try {
+      const stored = sessionStorage.getItem(this.STORAGE_KEY_MOSTRAR_CONCLUIDAS);
+      if (stored !== null) {
+        this.mostrarConcluidas = JSON.parse(stored) === true;
+      }
+    } catch (error) {
+      console.error('Erro ao carregar preferência de mostrar concluídas:', error);
+      this.mostrarConcluidas = false;
+    }
+  }
+
+  private salvarPreferenciaMostrarConcluidas() {
+    try {
+      sessionStorage.setItem(this.STORAGE_KEY_MOSTRAR_CONCLUIDAS, JSON.stringify(this.mostrarConcluidas));
+    } catch (error) {
+      console.error('Erro ao salvar preferência de mostrar concluídas:', error);
+    }
+  }
+
+  onMostrarConcluidasChange() {
+    this.salvarPreferenciaMostrarConcluidas();
+    this.aplicarFiltros();
   }
 
   carregarTarefas() {
@@ -104,7 +133,7 @@ export class AtendimentosComponent implements OnInit {
     this.tarefaService.listarTodasTarefas().subscribe({
       next: (data) => {
         this.tarefas = data;
-        this.tarefasFiltradas = data;
+        this.aplicarFiltros();
         this.loading = false;
       },
       error: (err) => {
@@ -151,22 +180,33 @@ export class AtendimentosComponent implements OnInit {
     });
   }
 
-  filtrarTarefas() {
-    if (!this.termoBusca.trim()) {
-      this.tarefasFiltradas = this.tarefas;
-      return;
+  aplicarFiltros() {
+    let tarefasFiltradas = [...this.tarefas];
+
+    // Filtrar por status (mostrar apenas Em Aberto se não estiver marcado para mostrar concluídas)
+    if (!this.mostrarConcluidas) {
+      tarefasFiltradas = tarefasFiltradas.filter(t => t.status !== StatusTarefa.Concluida);
     }
 
-    const termo = this.termoBusca.toLowerCase();
-    this.tarefasFiltradas = this.tarefas.filter(t =>
-      t.clienteNome.toLowerCase().includes(termo) ||
-      t.usuarioNome.toLowerCase().includes(termo) ||
-      t.statusDescricao.toLowerCase().includes(termo) ||
-      t.tarefaId.toString().includes(termo) ||
-      (t.titulo && t.titulo.toLowerCase().includes(termo)) ||
-      (t.protocolo && t.protocolo.toLowerCase().includes(termo)) ||
-      (t.solicitante && t.solicitante.toLowerCase().includes(termo))
-    );
+    // Filtrar por termo de busca
+    if (this.termoBusca.trim()) {
+      const termo = this.termoBusca.toLowerCase();
+      tarefasFiltradas = tarefasFiltradas.filter(t =>
+        t.clienteNome.toLowerCase().includes(termo) ||
+        t.usuarioNome.toLowerCase().includes(termo) ||
+        t.statusDescricao.toLowerCase().includes(termo) ||
+        t.tarefaId.toString().includes(termo) ||
+        (t.titulo && t.titulo.toLowerCase().includes(termo)) ||
+        (t.protocolo && t.protocolo.toLowerCase().includes(termo)) ||
+        (t.solicitante && t.solicitante.toLowerCase().includes(termo))
+      );
+    }
+
+    this.tarefasFiltradas = tarefasFiltradas;
+  }
+
+  filtrarTarefas() {
+    this.aplicarFiltros();
   }
 
   abrirFormularioNovo() {
@@ -478,6 +518,17 @@ export class AtendimentosComponent implements OnInit {
   formatarData(data?: string): string {
     if (!data) return '-';
     return new Date(data).toLocaleDateString('pt-BR');
+  }
+
+  formatarDataHoraAnotacao(data?: string): string {
+    if (!data) return '';
+    const date = new Date(data);
+    const dia = date.getDate().toString().padStart(2, '0');
+    const mes = (date.getMonth() + 1).toString().padStart(2, '0');
+    const ano = date.getFullYear();
+    const horas = date.getHours().toString().padStart(2, '0');
+    const minutos = date.getMinutes().toString().padStart(2, '0');
+    return `${dia}/${mes}/${ano} - ${horas}:${minutos}`;
   }
 
   obterClasseStatus(status: StatusTarefa): string {

@@ -19,6 +19,10 @@ public class Duplicata
     [Column("DUPNUMEROPARCELAS")]
     public int DupNumeroParcelas { get; set; }
 
+    [Column("DUPDESCRICAODESPESA")]
+    [MaxLength(500)]
+    public string? DupDescricaoDespesa { get; set; }
+
     // Navegação
     public virtual ICollection<Parcela> Parcelas { get; set; } = new List<Parcela>();
 }

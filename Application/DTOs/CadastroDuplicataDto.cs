@@ -22,6 +22,9 @@ public class CadastroDuplicataDto
 
     public double? Juros { get; set; }
 
+    [MaxLength(500)]
+    public string? DescricaoDespesa { get; set; }
+
     // Se não fornecido, será usado para gerar automaticamente
     public DateTime? DataPrimeiroVencimento { get; set; }
 
