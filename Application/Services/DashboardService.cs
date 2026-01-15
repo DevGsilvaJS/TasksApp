@@ -106,6 +106,7 @@ public class DashboardService : IDashboardService
                     DuplicataId = duplicata.DupId,
                     NumeroDuplicata = duplicata.DupNumero.ToString(),
                     DataVencimento = parcela.ParVencimento,
+                    DataPagamento = parcela.ParDataPagamento,
                     Valor = (decimal)parcela.ParValor,
                     Paga = parcela.ParStatus == "Paga"
                 };
@@ -177,10 +178,14 @@ public class DashboardService : IDashboardService
                     NumeroDuplicata = duplicata.DupNumero.ToString(),
                     DataVencimento = parcela.ParVencimento,
                     Valor = (decimal)(parcela.ParValor + parcela.ParMulta + parcela.ParJuros),
-                    Paga = true
+                    Paga = true,
+                    DataPagamento = parcela.ParDataPagamento ?? parcela.ParVencimento
                 });
             }
         }
+
+        // Ordenar por data de pagamento (mais recente primeiro)
+        contasPagasDto = contasPagasDto.OrderByDescending(c => c.DataPagamento).ToList();
 
         var valorTotalContasPagas = contasPagasDto.Sum(c => c.Valor);
 

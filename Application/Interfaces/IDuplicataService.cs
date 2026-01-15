@@ -10,4 +10,5 @@ public interface IDuplicataService
     Task<DuplicataResponseDto> AtualizarDuplicataAsync(int id, CadastroDuplicataDto dto);
     Task ExcluirDuplicataAsync(int id);
     Task<ParcelaResponseDto> BaixarParcelaAsync(int parcelaId);
+    Task<ParcelaResponseDto> ReativarParcelaAsync(int parcelaId);
 }

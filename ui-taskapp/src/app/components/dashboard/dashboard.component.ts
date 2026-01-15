@@ -22,6 +22,7 @@ export class DashboardComponent implements OnInit {
   showModalAtendimentosUsuario = false;
   showModalContasPagar = false;
   showModalContasPagas = false;
+  showModalContasPagarPagas = false;
   showModalAtendimentosCliente = false;
   showModalValoresPorMes = false;
   
@@ -32,6 +33,7 @@ export class DashboardComponent implements OnInit {
   dadosModalValoresPorMes: ValorPorMesPorUsuarioDto[] = [];
   
   anoSelecionado: number = new Date().getFullYear();
+  abaContasSelecionada: 'pagar' | 'pagas' = 'pagar';
 
   constructor(private dashboardService: DashboardService) { }
 
@@ -145,6 +147,18 @@ export class DashboardComponent implements OnInit {
 
   fecharModalContasPagas() {
     this.showModalContasPagas = false;
+  }
+
+  abrirModalContasPagarPagas() {
+    if (this.estatisticas) {
+      this.dadosModalContasPagar = this.estatisticas.contasAPagar;
+      this.dadosModalContasPagas = this.estatisticas.contasPagas;
+      this.showModalContasPagarPagas = true;
+    }
+  }
+
+  fecharModalContasPagarPagas() {
+    this.showModalContasPagarPagas = false;
   }
 
   abrirModalAtendimentosCliente() {

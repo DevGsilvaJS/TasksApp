@@ -76,4 +76,8 @@ export class DuplicataService {
   baixarParcela(parcelaId: number): Observable<ParcelaResponseDto> {
     return this.api.post<ParcelaResponseDto>(`duplicata/parcelas/${parcelaId}/baixar`, {});
   }
+
+  reativarParcela(parcelaId: number): Observable<ParcelaResponseDto> {
+    return this.api.post<ParcelaResponseDto>(`duplicata/parcelas/${parcelaId}/reativar`, {});
+  }
 }

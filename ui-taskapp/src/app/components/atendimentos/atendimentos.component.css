@@ -247,12 +247,12 @@
     padding: 2.5rem;
     max-width: calc(100vw - 250px);
   }
-  
+
   .data-table {
     min-width: 100%;
     font-size: 0.9375rem;
   }
-  
+
   th, td {
     padding: 1.25rem;
   }
@@ -262,11 +262,11 @@
   .page-container {
     padding: 3rem;
   }
-  
+
   .data-table {
     font-size: 1rem;
   }
-  
+
   th, td {
     padding: 1.5rem;
   }

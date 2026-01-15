@@ -36,6 +36,7 @@ public class ContaAPagarDto
     public int DuplicataId { get; set; }
     public string NumeroDuplicata { get; set; } = string.Empty;
     public DateTime DataVencimento { get; set; }
+    public DateTime? DataPagamento { get; set; }
     public decimal Valor { get; set; }
     public bool Paga { get; set; }
 }

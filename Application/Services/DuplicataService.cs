@@ -59,7 +59,8 @@ public class DuplicataService : IDuplicataService
                 throw new InvalidOperationException("Data de primeiro vencimento é obrigatória quando não há parcelas personalizadas.");
             }
 
-            var valorPorParcela = dto.ValorTotal / dto.NumeroParcelas;
+            // O valor total informado é o valor de cada parcela, não o total dividido
+            var valorPorParcela = dto.ValorTotal;
 
             for (int i = 1; i <= dto.NumeroParcelas; i++)
             {
@@ -164,7 +165,8 @@ public class DuplicataService : IDuplicataService
                 throw new InvalidOperationException("Data de primeiro vencimento é obrigatória quando não há parcelas personalizadas.");
             }
 
-            var valorPorParcela = dto.ValorTotal / dto.NumeroParcelas;
+            // O valor total informado é o valor de cada parcela, não o total dividido
+            var valorPorParcela = dto.ValorTotal;
             for (int i = 1; i <= dto.NumeroParcelas; i++)
             {
                 var parcela = new Parcela
@@ -226,6 +228,26 @@ public class DuplicataService : IDuplicataService
 
         parcela.ParStatus = "Paga";
         parcela.ParDataPagamento = DateTime.UtcNow;
+
+        await _parcelaRepository.AtualizarAsync(parcela);
+        await _parcelaRepository.SalvarAlteracoesAsync();
+
+        return MontarParcelaResponseDto(parcela);
+    }
+
+    public async Task<ParcelaResponseDto> ReativarParcelaAsync(int parcelaId)
+    {
+        var parcela = await _parcelaRepository.GetByIdAsync(parcelaId);
+        if (parcela == null)
+            throw new InvalidOperationException("Parcela não encontrada.");
+
+        if (parcela.ParStatus != "Paga")
+        {
+            throw new InvalidOperationException("Apenas parcelas pagas podem ser reativadas.");
+        }
+
+        parcela.ParStatus = "Pendente";
+        parcela.ParDataPagamento = null;
 
         await _parcelaRepository.AtualizarAsync(parcela);
         await _parcelaRepository.SalvarAlteracoesAsync();

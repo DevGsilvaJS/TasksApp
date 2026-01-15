@@ -356,11 +356,11 @@ tfoot {
     padding: 2.5rem;
     max-width: calc(100vw - 250px);
   }
-  
+
   .data-table {
     font-size: 0.9375rem;
   }
-  
+
   th, td {
     padding: 1.25rem;
   }
@@ -370,11 +370,11 @@ tfoot {
   .page-container {
     padding: 3rem;
   }
-  
+
   .data-table {
     font-size: 1rem;
   }
-  
+
   th, td {
     padding: 1.5rem;
   }

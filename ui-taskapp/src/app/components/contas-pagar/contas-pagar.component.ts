@@ -259,6 +259,33 @@ export class ContasPagarComponent implements OnInit {
     });
   }
 
+  reativarParcela(parcela: ParcelaResponseDto) {
+    if (!confirm(`Deseja reativar a parcela ${parcela.numeroParcela}? A parcela voltará para o status "Pendente".`)) {
+      return;
+    }
+
+    this.loading = true;
+    this.error = null;
+
+    this.duplicataService.reativarParcela(parcela.parcelaId).subscribe({
+      next: () => {
+        this.carregarDuplicatas();
+        if (this.duplicataSelecionada) {
+          const duplicataAtualizada = this.duplicatas.find(d => d.duplicataId === this.duplicataSelecionada!.duplicataId);
+          if (duplicataAtualizada) {
+            this.duplicataSelecionada = duplicataAtualizada;
+          }
+        }
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = err.error?.message || 'Erro ao reativar parcela.';
+        this.loading = false;
+        console.error(err);
+      }
+    });
+  }
+
   abrirParcelas(duplicata: DuplicataResponseDto) {
     this.duplicataSelecionada = duplicata;
     this.showParcelas = true;

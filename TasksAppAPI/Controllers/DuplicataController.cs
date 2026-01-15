@@ -171,4 +171,29 @@ public class DuplicataController : ControllerBase
             return StatusCode(500, new { message = "Erro interno do servidor" });
         }
     }
+
+    /// <summary>
+    /// Reativa uma parcela paga (marca como pendente)
+    /// </summary>
+    [HttpPost("parcelas/{parcelaId}/reativar")]
+    [ProducesResponseType(typeof(ParcelaResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReativarParcela(int parcelaId)
+    {
+        try
+        {
+            var parcela = await _duplicataService.ReativarParcelaAsync(parcelaId);
+            return Ok(parcela);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao reativar parcela: {ParcelaId}", parcelaId);
+            return StatusCode(500, new { message = "Erro interno do servidor" });
+        }
+    }
 }

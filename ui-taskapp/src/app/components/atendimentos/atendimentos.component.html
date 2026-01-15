@@ -205,7 +205,7 @@
             <tr>
               <td>{{ tarefa.numero || '-' }}</td>
               <td>{{ tarefa.protocolo || '-' }}</td>
-              <td>{{ tarefa.titulo || '-' }}</td>
+              <td [title]="tarefa.titulo || '-'">{{ tarefa.titulo || '-' }}</td>
               <td>{{ tarefa.solicitante || '-' }}</td>
               <td>{{ tarefa.celularSolicitante || '-' }}</td>
               <td>{{ tarefa.tipoAtendimentoDescricao || '-' }}</td>

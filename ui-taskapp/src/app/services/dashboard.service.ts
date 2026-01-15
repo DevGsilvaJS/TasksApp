@@ -34,6 +34,7 @@ export interface ContaAPagarDto {
   duplicataId: number;
   numeroDuplicata: string;
   dataVencimento: string;
+  dataPagamento?: string;
   valor: number;
   paga: boolean;
 }
