@@ -6,8 +6,11 @@ export interface DashboardEstatisticasDto {
   totalAtendimentosPorUsuario: number;
   totalContasAPagar: number;
   totalAtendimentosPorCliente: number;
+  totalContasPagas: number;
+  valorTotalContasPagas: number;
   atendimentosPorUsuario: AtendimentoPorUsuarioDto[];
   contasAPagar: ContaAPagarDto[];
+  contasPagas: ContaAPagarDto[];
   atendimentosPorCliente: AtendimentoPorClienteDto[];
 }
 

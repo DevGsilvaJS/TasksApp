@@ -92,6 +92,14 @@
   border-color: #3b82f6;
 }
 
+.stat-card-success:hover {
+  border-color: #10b981;
+}
+
+.stat-card-success .card-icon {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
 .card-icon {
   width: 64px;
   height: 64px;
@@ -289,16 +297,16 @@
   .page-container {
     padding: 2.5rem;
   }
-  
+
   .cards-container {
     grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
   }
-  
+
   .stat-card {
     padding: 2.5rem;
   }
-  
+
   .card-value {
     font-size: 3rem;
   }
@@ -308,15 +316,15 @@
   .page-container {
     padding: 3rem;
   }
-  
+
   .cards-container {
     gap: 2.5rem;
   }
-  
+
   .stat-card {
     padding: 3rem;
   }
-  
+
   .card-value {
     font-size: 3.5rem;
   }

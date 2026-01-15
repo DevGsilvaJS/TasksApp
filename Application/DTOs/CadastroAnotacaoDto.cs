@@ -11,6 +11,6 @@ public class CadastroAnotacaoDto
     public int UsuarioId { get; set; }
 
     [Required(ErrorMessage = "Descrição é obrigatória")]
-    [MaxLength(255)]
+    [MaxLength(3000)]
     public string Descricao { get; set; } = string.Empty;
 }

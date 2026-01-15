@@ -5,8 +5,11 @@ public class DashboardEstatisticasDto
     public int TotalAtendimentosPorUsuario { get; set; }
     public int TotalContasAPagar { get; set; }
     public int TotalAtendimentosPorCliente { get; set; }
+    public int TotalContasPagas { get; set; }
+    public decimal ValorTotalContasPagas { get; set; }
     public List<AtendimentoPorUsuarioDto> AtendimentosPorUsuario { get; set; } = new();
     public List<ContaAPagarDto> ContasAPagar { get; set; } = new();
+    public List<ContaAPagarDto> ContasPagas { get; set; } = new();
     public List<AtendimentoPorClienteDto> AtendimentosPorCliente { get; set; } = new();
 }
 

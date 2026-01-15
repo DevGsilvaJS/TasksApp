@@ -21,11 +21,13 @@ export class DashboardComponent implements OnInit {
   // Modais
   showModalAtendimentosUsuario = false;
   showModalContasPagar = false;
+  showModalContasPagas = false;
   showModalAtendimentosCliente = false;
   showModalValoresPorMes = false;
   
   dadosModalAtendimentosUsuario: AtendimentoPorUsuarioDto[] = [];
   dadosModalContasPagar: ContaAPagarDto[] = [];
+  dadosModalContasPagas: ContaAPagarDto[] = [];
   dadosModalAtendimentosCliente: AtendimentoPorClienteDto[] = [];
   dadosModalValoresPorMes: ValorPorMesPorUsuarioDto[] = [];
   
@@ -134,6 +136,17 @@ export class DashboardComponent implements OnInit {
     this.showModalContasPagar = false;
   }
 
+  abrirModalContasPagas() {
+    if (this.estatisticas) {
+      this.dadosModalContasPagas = this.estatisticas.contasPagas;
+      this.showModalContasPagas = true;
+    }
+  }
+
+  fecharModalContasPagas() {
+    this.showModalContasPagas = false;
+  }
+
   abrirModalAtendimentosCliente() {
     if (this.estatisticas) {
       this.dadosModalAtendimentosCliente = this.estatisticas.atendimentosPorCliente;
@@ -159,6 +172,9 @@ export class DashboardComponent implements OnInit {
   }
 
   formatarMoeda(valor: number): string {
+    if (valor == null || isNaN(valor)) {
+      valor = 0;
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
