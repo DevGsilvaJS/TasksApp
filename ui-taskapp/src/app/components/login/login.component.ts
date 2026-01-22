@@ -27,7 +27,7 @@ export class LoginComponent implements OnInit {
   ngOnInit() {
     // Se já estiver autenticado, redirecionar
     if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/clientes']);
+      this.router.navigate(['/dashboard']);
     }
   }
 
@@ -45,7 +45,7 @@ export class LoginComponent implements OnInit {
     this.authService.login(this.loginDto).subscribe({
       next: (response) => {
         if (response.autenticado) {
-          this.router.navigate(['/clientes']);
+          this.router.navigate(['/dashboard']);
         } else {
           this.error = 'Falha na autenticação.';
           this.loading = false;

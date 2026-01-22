@@ -1,6 +1,6 @@
 <div class="page-container">
   <div class="page-header">
-    <h2>Contas a Pagar</h2>
+    <h2>Contas a Receber</h2>
     <button class="btn-primary" (click)="abrirFormularioNovo()" [disabled]="loading">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M12 5v14M5 12h14"></path>
@@ -129,7 +129,7 @@
             <span class="info-value">{{ formatarMoeda(duplicataSelecionada.valorTotal) }}</span>
           </div>
           <div class="info-item">
-            <span class="info-label">Valor Pago:</span>
+            <span class="info-label">Valor Recebido:</span>
             <span class="info-value status-paga">{{ formatarMoeda(duplicataSelecionada.valorPago) }}</span>
           </div>
           <div class="info-item">
@@ -148,7 +148,7 @@
                 <th>Valor Total</th>
                 <th>Vencimento</th>
                 <th>Status</th>
-                <th>Data Pagamento</th>
+                <th>Data Recebimento</th>
                 <th class="actions-column">Ações</th>
               </tr>
             </thead>
@@ -169,12 +169,12 @@
                   <td>{{ parcela.dataPagamento ? formatarData(parcela.dataPagamento) : '-' }}</td>
                   <td class="actions-cell">
                     @if (parcela.status === 'Pendente') {
-                      <button class="btn-baixar" (click)="baixarParcela(parcela)" title="Baixar Parcela" [disabled]="loading">
+                      <button class="btn-baixar" (click)="baixarParcela(parcela)" title="Receber Parcela" [disabled]="loading">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M9 11l3 3L22 4"></path>
                           <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                         </svg>
-                        Baixar
+                        Receber
                       </button>
                     } @else {
                       <button class="btn-reativar" (click)="reativarParcela(parcela)" title="Reativar Parcela" [disabled]="loading">
@@ -222,7 +222,7 @@
             <th>Descrição da Despesa</th>
             <th>Parcelas</th>
             <th>Valor Total</th>
-            <th>Valor Pago</th>
+            <th>Valor Recebido</th>
             <th>Valor Pendente</th>
             <th class="actions-column">Ações</th>
           </tr>

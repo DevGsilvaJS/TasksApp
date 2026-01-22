@@ -48,6 +48,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IClienteService, ClienteService>();
         services.AddScoped<ITarefaService, TarefaService>();
         services.AddScoped<IAnotacaoService, AnotacaoService>();
+        services.AddScoped<IAnotacaoGeralService, AnotacaoGeralService>();
         services.AddScoped<IDuplicataService, DuplicataService>();
         services.AddScoped<IDashboardService, DashboardService>();
 

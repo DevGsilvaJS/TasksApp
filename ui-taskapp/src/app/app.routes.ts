@@ -35,5 +35,15 @@ export const routes: Routes = [
     path: 'contas-pagar',
     loadComponent: () => import('./components/contas-pagar/contas-pagar.component').then(m => m.ContasPagarComponent),
     canActivate: [authGuard]
+  },
+  {
+    path: 'contas-receber',
+    loadComponent: () => import('./components/contas-receber/contas-receber.component').then(m => m.ContasReceberComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'anotacoes',
+    loadComponent: () => import('./components/anotacoes/anotacoes.component').then(m => m.AnotacoesComponent),
+    canActivate: [authGuard]
   }
 ];

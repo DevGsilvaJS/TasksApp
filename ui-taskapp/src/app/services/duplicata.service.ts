@@ -18,6 +18,7 @@ export interface CadastroDuplicataDto {
   multa?: number;
   juros?: number;
   descricaoDespesa?: string;
+  tipo?: string; // CP = Contas a Pagar, CR = Contas a Receber
   dataPrimeiroVencimento?: string;
   parcelas?: CadastroParcelaDto[];
 }
@@ -41,6 +42,7 @@ export interface DuplicataResponseDto {
   dataEmissao: string;
   numeroParcelas: number;
   descricaoDespesa?: string;
+  tipo?: string; // CP = Contas a Pagar, CR = Contas a Receber
   parcelas: ParcelaResponseDto[];
   valorTotal: number;
   valorPago: number;
@@ -79,5 +81,13 @@ export class DuplicataService {
 
   reativarParcela(parcelaId: number): Observable<ParcelaResponseDto> {
     return this.api.post<ParcelaResponseDto>(`duplicata/parcelas/${parcelaId}/reativar`, {});
+  }
+
+  listarDuplicatasPorTipo(tipo: string): Observable<DuplicataResponseDto[]> {
+    return this.api.get<DuplicataResponseDto[]>(`duplicata/tipo/${tipo}`);
+  }
+
+  obterProximoNumero(tipo: string): Observable<number> {
+    return this.api.get<number>(`duplicata/proximo-numero/${tipo}`);
   }
 }

@@ -93,6 +93,54 @@ public class DuplicataController : ControllerBase
     }
 
     /// <summary>
+    /// Lista duplicatas por tipo (CP = Contas a Pagar, CR = Contas a Receber)
+    /// </summary>
+    [HttpGet("tipo/{tipo}")]
+    [ProducesResponseType(typeof(IEnumerable<DuplicataResponseDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarDuplicatasPorTipo(string tipo)
+    {
+        try
+        {
+            if (tipo != "CP" && tipo != "CR")
+            {
+                return BadRequest(new { message = "Tipo inválido. Use 'CP' para Contas a Pagar ou 'CR' para Contas a Receber." });
+            }
+
+            var duplicatas = await _duplicataService.ListarDuplicatasPorTipoAsync(tipo);
+            return Ok(duplicatas);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao listar duplicatas por tipo: {Tipo}", tipo);
+            return StatusCode(500, new { message = "Erro interno do servidor" });
+        }
+    }
+
+    /// <summary>
+    /// Obtém o próximo número disponível para um tipo de duplicata
+    /// </summary>
+    [HttpGet("proximo-numero/{tipo}")]
+    [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObterProximoNumero(string tipo)
+    {
+        try
+        {
+            if (tipo != "CP" && tipo != "CR")
+            {
+                return BadRequest(new { message = "Tipo inválido. Use 'CP' para Contas a Pagar ou 'CR' para Contas a Receber." });
+            }
+
+            var proximoNumero = await _duplicataService.ObterProximoNumeroAsync(tipo);
+            return Ok(proximoNumero);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao obter próximo número para tipo: {Tipo}", tipo);
+            return StatusCode(500, new { message = "Erro interno do servidor" });
+        }
+    }
+
+    /// <summary>
     /// Atualiza uma duplicata
     /// </summary>
     [HttpPut("{id}")]

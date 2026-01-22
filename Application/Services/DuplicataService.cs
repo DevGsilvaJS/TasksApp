@@ -19,13 +19,21 @@ public class DuplicataService : IDuplicataService
 
     public async Task<DuplicataResponseDto> CadastrarDuplicataAsync(CadastroDuplicataDto dto)
     {
+        // Se número não foi informado, buscar o próximo disponível para o tipo
+        int numeroDuplicata = dto.Numero;
+        if (numeroDuplicata == 0)
+        {
+            numeroDuplicata = await ObterProximoNumeroAsync(dto.Tipo ?? "CP");
+        }
+
         // Criar Duplicata
         var duplicata = new Duplicata
         {
-            DupNumero = dto.Numero,
+            DupNumero = numeroDuplicata,
             DupDataEmissao = dto.DataEmissao.ToUniversalTime(),
             DupNumeroParcelas = dto.NumeroParcelas,
-            DupDescricaoDespesa = dto.DescricaoDespesa
+            DupDescricaoDespesa = dto.DescricaoDespesa,
+            DupTipo = dto.Tipo ?? "CP"
         };
 
         await _duplicataRepository.InserirAsync(duplicata);
@@ -106,6 +114,19 @@ public class DuplicataService : IDuplicataService
         return duplicatasDto.OrderByDescending(d => d.DataEmissao);
     }
 
+    public async Task<IEnumerable<DuplicataResponseDto>> ListarDuplicatasPorTipoAsync(string tipo)
+    {
+        var duplicatas = await _duplicataRepository.BuscarTodosAsync(d => d.DupTipo == tipo);
+        var duplicatasDto = new List<DuplicataResponseDto>();
+
+        foreach (var duplicata in duplicatas)
+        {
+            duplicatasDto.Add(await MontarDuplicataResponseDto(duplicata));
+        }
+
+        return duplicatasDto.OrderByDescending(d => d.DataEmissao);
+    }
+
     public async Task<DuplicataResponseDto> AtualizarDuplicataAsync(int id, CadastroDuplicataDto dto)
     {
         var duplicata = await _duplicataRepository.GetByIdAsync(id);
@@ -126,6 +147,7 @@ public class DuplicataService : IDuplicataService
         duplicata.DupDataEmissao = dto.DataEmissao.ToUniversalTime();
         duplicata.DupNumeroParcelas = dto.NumeroParcelas;
         duplicata.DupDescricaoDespesa = dto.DescricaoDespesa;
+        duplicata.DupTipo = dto.Tipo ?? "CP";
 
         await _duplicataRepository.AtualizarAsync(duplicata);
 
@@ -271,11 +293,25 @@ public class DuplicataService : IDuplicataService
             DataEmissao = duplicata.DupDataEmissao,
             NumeroParcelas = duplicata.DupNumeroParcelas,
             DescricaoDespesa = duplicata.DupDescricaoDespesa,
+            Tipo = duplicata.DupTipo,
             Parcelas = parcelasDto,
             ValorTotal = valorTotal,
             ValorPago = valorPago,
             ValorPendente = valorPendente
         };
+    }
+
+    public async Task<int> ObterProximoNumeroAsync(string tipo)
+    {
+        var duplicatas = await _duplicataRepository.BuscarTodosAsync(d => d.DupTipo == tipo);
+        
+        if (!duplicatas.Any())
+        {
+            return 1;
+        }
+
+        var maiorNumero = duplicatas.Max(d => d.DupNumero);
+        return maiorNumero + 1;
     }
 
     private ParcelaResponseDto MontarParcelaResponseDto(Parcela parcela)

@@ -55,24 +55,54 @@
         </div>
       </div>
 
-      <!-- Card 3: Atendimentos por Cliente -->
-      <div class="stat-card" (click)="abrirModalAtendimentosCliente()">
+      <!-- Card 3: DRE -->
+      <div class="stat-card" (click)="abrirModalDRE()">
         <div class="card-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
           </svg>
         </div>
         <div class="card-content">
-          <h3>Atendimentos por Cliente</h3>
-          <p class="card-value">{{ estatisticas.totalAtendimentosPorCliente }}</p>
-          <p class="card-subtitle">Total de atendimentos</p>
+          <h3>DRE</h3>
+          <p class="card-value">{{ formatarMoeda(estatisticas?.lucro || 0) }}</p>
+          <p class="card-subtitle">Lucro (Mês Atual)</p>
         </div>
       </div>
 
-      <!-- Card 4: Valores por Mês por Usuário -->
+      <!-- Card 4: Contas a Receber / Recebidas -->
+      <div class="stat-card" (click)="abrirModalContasReceberRecebidas()">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+            <line x1="1" y1="10" x2="23" y2="10"></line>
+          </svg>
+        </div>
+        <div class="card-content">
+          <h3>Contas a Receber / Recebidas</h3>
+          <p class="card-value">{{ estatisticas.totalContasAReceber }} / {{ estatisticas.totalContasRecebidas }}</p>
+          <p class="card-subtitle">Pendentes / Recebidas (Mês Atual)</p>
+        </div>
+      </div>
+
+      <!-- Card 5: Percentual de Atendimentos por Cliente (Mês) -->
+      <div class="stat-card" (click)="abrirModalAtendimentosClienteMes()">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18h18"></path>
+            <path d="M18 7c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z"></path>
+            <path d="M12 12c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z"></path>
+            <path d="M21 17c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z"></path>
+          </svg>
+        </div>
+        <div class="card-content">
+          <h3>Atendimentos por Cliente (Mês)</h3>
+          <p class="card-value">{{ estatisticas.atendimentosPorClienteMes.length }}</p>
+          <p class="card-subtitle">Clientes com atendimentos</p>
+        </div>
+      </div>
+
+      <!-- Card 6: Valores por Mês por Usuário -->
       <div class="stat-card" (click)="abrirModalValoresPorMes()">
         <div class="card-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -82,7 +112,7 @@
         </div>
         <div class="card-content">
           <h3>Valores por Mês</h3>
-          <p class="card-value">{{ calcularTotalValores() }}</p>
+          <p class="card-value">{{ calcularTotalValores() || 'R$ 0,00' }}</p>
           <p class="card-subtitle">Total de contratos</p>
         </div>
       </div>
@@ -278,6 +308,7 @@
                 <thead>
                   <tr>
                     <th>Número Duplicata</th>
+                    <th>Descrição</th>
                     <th>Data Vencimento</th>
                     <th>Valor</th>
                     <th>Status</th>
@@ -287,6 +318,7 @@
                   @for (item of dadosModalContasPagar; track item.parcelaId) {
                     <tr>
                       <td>{{ item.numeroDuplicata }}</td>
+                      <td>{{ item.descricaoDespesa || '-' }}</td>
                       <td>{{ formatarData(item.dataVencimento) }}</td>
                       <td>{{ formatarMoeda(item.valor) }}</td>
                       <td>
@@ -310,6 +342,7 @@
                 <thead>
                   <tr>
                     <th>Número Duplicata</th>
+                    <th>Descrição</th>
                     <th>Data Vencimento</th>
                     <th>Data Pagamento</th>
                     <th>Valor</th>
@@ -320,6 +353,7 @@
                   @for (item of dadosModalContasPagas; track item.parcelaId) {
                     <tr>
                       <td>{{ item.numeroDuplicata }}</td>
+                      <td>{{ item.descricaoDespesa || '-' }}</td>
                       <td>{{ formatarData(item.dataVencimento) }}</td>
                       <td>{{ item.dataPagamento ? formatarData(item.dataPagamento) : '-' }}</td>
                       <td>{{ formatarMoeda(item.valor) }}</td>
@@ -339,29 +373,174 @@
     </div>
   }
 
-  <!-- Modal: Atendimentos por Cliente -->
-  @if (showModalAtendimentosCliente) {
-    <div class="modal-overlay" (click)="fecharModalAtendimentosCliente()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
+  <!-- Modal: Contas a Receber / Recebidas (Unificado) -->
+  @if (showModalContasReceberRecebidas) {
+    <div class="modal-overlay" (click)="fecharModalContasReceberRecebidas()">
+      <div class="modal-content modal-large" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h3>Atendimentos por Cliente</h3>
-          <button class="btn-close" (click)="fecharModalAtendimentosCliente()">×</button>
+          <h3>Contas a Receber / Recebidas</h3>
+          <button class="btn-close" (click)="fecharModalContasReceberRecebidas()">×</button>
         </div>
         <div class="modal-body">
-          @if (dadosModalAtendimentosCliente.length === 0) {
-            <p class="empty-state">Nenhum atendimento encontrado no período selecionado.</p>
+          <!-- Resumo -->
+          <div class="summary-info" style="margin-bottom: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 0.5rem; display: flex; gap: 2rem;">
+            <div>
+              <p style="margin: 0; font-weight: 600; color: #1e293b;">
+                Pendentes: <span style="color: #f59e0b;">{{ estatisticas?.totalContasAReceber || 0 }}</span>
+              </p>
+            </div>
+            <div>
+              <p style="margin: 0; font-weight: 600; color: #1e293b;">
+                Recebidas (Mês Atual): <span style="color: #059669;">{{ estatisticas?.totalContasRecebidas || 0 }} - {{ formatarMoeda(estatisticas?.valorTotalContasRecebidas || 0) }}</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Abas -->
+          <div class="tabs-container">
+            <button 
+              class="tab-button"
+              [class.active]="abaContasReceberSelecionada === 'receber'"
+              (click)="abaContasReceberSelecionada = 'receber'">
+              Contas a Receber ({{ dadosModalContasAReceber.length }})
+            </button>
+            <button 
+              class="tab-button"
+              [class.active]="abaContasReceberSelecionada === 'recebidas'"
+              (click)="abaContasReceberSelecionada = 'recebidas'">
+              Contas Recebidas ({{ dadosModalContasRecebidas.length }})
+            </button>
+          </div>
+
+          <!-- Conteúdo: Contas a Receber -->
+          @if (abaContasReceberSelecionada === 'receber') {
+            @if (dadosModalContasAReceber.length === 0) {
+              <p class="empty-state">Nenhuma conta a receber encontrada no período selecionado.</p>
+            } @else {
+              <table class="detail-table">
+                <thead>
+                  <tr>
+                    <th>Número Duplicata</th>
+                    <th>Descrição</th>
+                    <th>Data Vencimento</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of dadosModalContasAReceber; track item.parcelaId) {
+                    <tr>
+                      <td>{{ item.numeroDuplicata }}</td>
+                      <td>{{ item.descricaoDespesa || '-' }}</td>
+                      <td>{{ formatarData(item.dataVencimento) }}</td>
+                      <td>{{ formatarMoeda(item.valor) }}</td>
+                      <td>
+                        <span class="status-badge status-pendente">
+                          Pendente
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          }
+
+          <!-- Conteúdo: Contas Recebidas -->
+          @if (abaContasReceberSelecionada === 'recebidas') {
+            @if (dadosModalContasRecebidas.length === 0) {
+              <p class="empty-state">Nenhuma conta recebida encontrada no mês atual.</p>
+            } @else {
+              <table class="detail-table">
+                <thead>
+                  <tr>
+                    <th>Número Duplicata</th>
+                    <th>Descrição</th>
+                    <th>Data Vencimento</th>
+                    <th>Data Recebimento</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of dadosModalContasRecebidas; track item.parcelaId) {
+                    <tr>
+                      <td>{{ item.numeroDuplicata }}</td>
+                      <td>{{ item.descricaoDespesa || '-' }}</td>
+                      <td>{{ formatarData(item.dataVencimento) }}</td>
+                      <td>{{ item.dataPagamento ? formatarData(item.dataPagamento) : '-' }}</td>
+                      <td>{{ formatarMoeda(item.valor) }}</td>
+                      <td>
+                        <span class="status-badge status-paga">
+                          Recebida
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: DRE -->
+  @if (showModalDRE) {
+    <div class="modal-overlay" (click)="fecharModalDRE()">
+      <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>DRE - Demonstração do Resultado do Exercício (Mês Atual)</h3>
+          <button class="btn-close" (click)="fecharModalDRE()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="dre-summary">
+            <div class="dre-item">
+              <span class="dre-label">Contas Recebidas:</span>
+              <span class="dre-value receita">{{ formatarMoeda(estatisticas?.valorTotalContasRecebidas || 0) }}</span>
+            </div>
+            <div class="dre-item">
+              <span class="dre-label">Contas Pagas:</span>
+              <span class="dre-value despesa">{{ formatarMoeda(estatisticas?.valorTotalContasPagas || 0) }}</span>
+            </div>
+            <div class="dre-item dre-total">
+              <span class="dre-label">Lucro:</span>
+              <span class="dre-value" [class.lucro-positivo]="(estatisticas?.lucro || 0) >= 0" [class.lucro-negativo]="(estatisticas?.lucro || 0) < 0">
+                {{ formatarMoeda(estatisticas?.lucro || 0) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Percentual de Atendimentos por Cliente (Mês) -->
+  @if (showModalAtendimentosClienteMes) {
+    <div class="modal-overlay" (click)="fecharModalAtendimentosClienteMes()">
+      <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Percentual de Atendimentos por Cliente (Mês Atual)</h3>
+          <button class="btn-close" (click)="fecharModalAtendimentosClienteMes()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (dadosModalAtendimentosClienteMes.length === 0) {
+            <p class="empty-state">Nenhum atendimento encontrado no mês atual.</p>
           } @else {
             <table class="detail-table">
               <thead>
                 <tr>
                   <th>Cliente</th>
+                  <th>Percentual</th>
                   <th>Quantidade</th>
                 </tr>
               </thead>
               <tbody>
-                @for (item of dadosModalAtendimentosCliente; track item.clienteId) {
+                @for (item of dadosModalAtendimentosClienteMes; track item.clienteId) {
                   <tr>
                     <td>{{ item.clienteNome }}</td>
+                    <td>{{ formatarPercentual(item.percentual) }}</td>
                     <td>{{ item.quantidade }}</td>
                   </tr>
                 }

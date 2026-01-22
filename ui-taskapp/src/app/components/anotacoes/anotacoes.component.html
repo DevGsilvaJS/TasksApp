@@ -1,0 +1,174 @@
+<div class="page-container">
+  <div class="page-header">
+    <h2>Anotações</h2>
+    <button class="btn-primary" (click)="abrirFormularioNovo()" [disabled]="loading">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 5v14M5 12h14"></path>
+      </svg>
+      Nova Anotação
+    </button>
+  </div>
+
+  @if (error) {
+    <div class="alert alert-error">
+      {{ error }}
+    </div>
+  }
+
+  @if (showForm) {
+    <div class="modal-overlay" (click)="fecharFormulario()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ editando ? 'Editar Anotação' : 'Cadastrar Nova Anotação' }}</h3>
+          <button class="btn-close" (click)="fecharFormulario()">×</button>
+        </div>
+        <form (ngSubmit)="salvarAnotacao()" class="form">
+          <div class="form-group">
+            <label>Descrição *</label>
+            <textarea 
+              [(ngModel)]="novaAnotacao.descricao" 
+              name="descricao" 
+              required 
+              class="form-input"
+              rows="4"
+              placeholder="Digite a descrição da anotação..."
+              maxlength="1000"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Link</label>
+            <input 
+              type="text" 
+              [(ngModel)]="novaAnotacao.link" 
+              name="link" 
+              class="form-input" 
+              placeholder="https://exemplo.com ou exemplo.com">
+            <small style="color: #64748b; font-size: 0.875rem;">Link importante para acesso rápido</small>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" (click)="fecharFormulario()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="loading">
+              {{ loading ? 'Salvando...' : 'Salvar' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <div class="search-container">
+    <input 
+      type="text" 
+      placeholder="Buscar por descrição ou link..." 
+      [(ngModel)]="termoBusca"
+      (input)="filtrarAnotacoes()"
+      class="search-input">
+  </div>
+
+  @if (loading && anotacoes.length === 0) {
+    <div class="loading">Carregando...</div>
+  } @else if (anotacoesFiltradas.length === 0) {
+    <div class="empty-state">
+      <p>{{ termoBusca ? 'Nenhuma anotação encontrada' : 'Nenhuma anotação cadastrada' }}</p>
+    </div>
+  } @else {
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Descrição</th>
+            <th>Link</th>
+            <th>Data Cadastro</th>
+            <th class="actions-column">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (anotacao of anotacoesFiltradas; track anotacao.anotacaoId) {
+            <tr>
+              <td>{{ anotacao.descricao }}</td>
+              <td>
+                @if (anotacao.link) {
+                  <a 
+                    href="#" 
+                    (click)="abrirLink(anotacao.link); $event.preventDefault()"
+                    class="link-anotacao"
+                    title="Abrir link">
+                    {{ anotacao.link }}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; margin-left: 4px; vertical-align: middle;">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                  </a>
+                } @else {
+                  <span style="color: #94a3b8;">-</span>
+                }
+              </td>
+              <td>{{ formatarData(anotacao.dataCadastro) }}</td>
+              <td class="actions-cell">
+                <button class="btn-edit" (click)="abrirFormularioEdicao(anotacao)" title="Editar">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+                <button class="btn-delete" (click)="excluirAnotacao(anotacao)" title="Excluir">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- Modal de Confirmação -->
+  @if (showConfirmModal) {
+    <div class="modal-overlay" (click)="fecharConfirmModal()">
+      <div class="modal-content modal-confirm" (click)="$event.stopPropagation()">
+        <div class="confirm-header">
+          <div class="confirm-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <h3>{{ confirmTitle }}</h3>
+        </div>
+        <div class="confirm-body">
+          <p>{{ confirmMessage }}</p>
+        </div>
+        <div class="confirm-actions">
+          <button type="button" class="btn-cancel" (click)="fecharConfirmModal()">Cancelar</button>
+          <button type="button" class="btn-confirm" (click)="confirmarAcao()">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal de Sucesso -->
+  @if (showSuccessModal) {
+    <div class="modal-overlay" (click)="fecharSuccessModal()">
+      <div class="modal-content modal-success" (click)="$event.stopPropagation()">
+        <div class="success-header">
+          <div class="success-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <h3>Sucesso!</h3>
+        </div>
+        <div class="success-body">
+          <p>{{ successMessage }}</p>
+        </div>
+        <div class="success-actions">
+          <button type="button" class="btn-success" (click)="fecharSuccessModal()">OK</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

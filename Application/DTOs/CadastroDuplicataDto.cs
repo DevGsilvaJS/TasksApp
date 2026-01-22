@@ -4,7 +4,7 @@ namespace Application.DTOs;
 
 public class CadastroDuplicataDto
 {
-    [Required(ErrorMessage = "Número é obrigatório")]
+    // Número é opcional - se não informado, será gerado automaticamente
     public int Numero { get; set; }
 
     [Required(ErrorMessage = "Data de emissão é obrigatória")]
@@ -24,6 +24,10 @@ public class CadastroDuplicataDto
 
     [MaxLength(500)]
     public string? DescricaoDespesa { get; set; }
+
+    [Required(ErrorMessage = "Tipo é obrigatório")]
+    [MaxLength(2)]
+    public string Tipo { get; set; } = "CP"; // CP = Contas a Pagar, CR = Contas a Receber
 
     // Se não fornecido, será usado para gerar automaticamente
     public DateTime? DataPrimeiroVencimento { get; set; }

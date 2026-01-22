@@ -4,13 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { DuplicataService, DuplicataResponseDto, CadastroDuplicataDto, ParcelaResponseDto, CadastroParcelaDto } from '../../services/duplicata.service';
 
 @Component({
-  selector: 'app-contas-pagar',
+  selector: 'app-contas-receber',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './contas-pagar.component.html',
-  styleUrl: './contas-pagar.component.css'
+  templateUrl: './contas-receber.component.html',
+  styleUrl: './contas-receber.component.css'
 })
-export class ContasPagarComponent implements OnInit {
+export class ContasReceberComponent implements OnInit {
   duplicatas: DuplicataResponseDto[] = [];
   duplicatasFiltradas: DuplicataResponseDto[] = [];
   showForm = false;
@@ -42,7 +42,7 @@ export class ContasPagarComponent implements OnInit {
     multa: 0,
     juros: 0,
     descricaoDespesa: undefined,
-    tipo: 'CP',
+    tipo: 'CR',
     dataPrimeiroVencimento: new Date().toISOString().split('T')[0]
   };
 
@@ -55,14 +55,14 @@ export class ContasPagarComponent implements OnInit {
   carregarDuplicatas() {
     this.loading = true;
     this.error = null;
-    this.duplicataService.listarDuplicatasPorTipo('CP').subscribe({
+    this.duplicataService.listarDuplicatasPorTipo('CR').subscribe({
       next: (data) => {
         this.duplicatas = data;
         this.duplicatasFiltradas = data;
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Erro ao carregar contas a pagar. Verifique se a API está rodando.';
+        this.error = 'Erro ao carregar contas a receber. Verifique se a API está rodando.';
         this.loading = false;
         console.error(err);
       }
@@ -76,7 +76,7 @@ export class ContasPagarComponent implements OnInit {
     this.parcelasManuais = [];
     
     // Buscar próximo número automaticamente
-    this.duplicataService.obterProximoNumero('CP').subscribe({
+    this.duplicataService.obterProximoNumero('CR').subscribe({
       next: (proximoNumero) => {
         this.novaDuplicata = {
           numero: proximoNumero,
@@ -86,7 +86,7 @@ export class ContasPagarComponent implements OnInit {
           multa: 0,
           juros: 0,
           descricaoDespesa: undefined,
-          tipo: 'CP',
+          tipo: 'CR',
           dataPrimeiroVencimento: new Date().toISOString().split('T')[0]
         };
         this.showForm = true;
@@ -111,7 +111,7 @@ export class ContasPagarComponent implements OnInit {
       multa: duplicata.parcelas[0]?.multa || 0,
       juros: duplicata.parcelas[0]?.juros || 0,
       descricaoDespesa: duplicata.descricaoDespesa,
-      tipo: duplicata.tipo || 'CP',
+      tipo: duplicata.tipo || 'CR',
       dataPrimeiroVencimento: duplicata.parcelas[0]?.vencimento.split('T')[0] || new Date().toISOString().split('T')[0]
     };
     this.showForm = true;
@@ -142,7 +142,6 @@ export class ContasPagarComponent implements OnInit {
 
   gerarParcelas() {
     const numParcelas = this.novaDuplicata.numeroParcelas || 1;
-    // O valor total informado é o valor de cada parcela, não o total dividido
     const valorPorParcela = this.novaDuplicata.valorTotal;
     this.parcelasManuais = [];
 
@@ -174,7 +173,6 @@ export class ContasPagarComponent implements OnInit {
 
   atualizarValorTotal() {
     if (this.gerarParcelasManual && this.parcelasManuais.length > 0) {
-      // O valor total informado é o valor de cada parcela, não o total dividido
       const valorPorParcela = this.novaDuplicata.valorTotal;
       this.parcelasManuais.forEach(p => p.valor = valorPorParcela);
     }
@@ -239,7 +237,7 @@ export class ContasPagarComponent implements OnInit {
         }, 3000);
       },
       error: (err) => {
-        this.error = err.error?.message || 'Erro ao salvar conta a pagar.';
+        this.error = err.error?.message || 'Erro ao salvar conta a receber.';
         this.loading = false;
         console.error(err);
       }
@@ -259,7 +257,7 @@ export class ContasPagarComponent implements OnInit {
           this.loading = false;
         },
         error: (err) => {
-          this.error = err.error?.message || 'Erro ao excluir conta a pagar.';
+          this.error = err.error?.message || 'Erro ao excluir conta a receber.';
           this.loading = false;
           console.error(err);
         }
@@ -269,8 +267,8 @@ export class ContasPagarComponent implements OnInit {
   }
 
   baixarParcela(parcela: ParcelaResponseDto) {
-    this.confirmTitle = 'Confirmar Baixa';
-    this.confirmMessage = `Deseja baixar a parcela ${parcela.numeroParcela}?`;
+    this.confirmTitle = 'Confirmar Recebimento';
+    this.confirmMessage = `Deseja receber a parcela ${parcela.numeroParcela}?`;
     this.confirmCallback = () => {
       this.loading = true;
       this.error = null;
@@ -287,7 +285,7 @@ export class ContasPagarComponent implements OnInit {
           this.loading = false;
         },
         error: (err) => {
-          this.error = err.error?.message || 'Erro ao baixar parcela.';
+          this.error = err.error?.message || 'Erro ao receber parcela.';
           this.loading = false;
           console.error(err);
         }

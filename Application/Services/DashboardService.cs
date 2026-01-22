@@ -36,10 +36,22 @@ public class DashboardService : IDashboardService
         var fimUtc = dataFim.ToUniversalTime().AddDays(1).AddTicks(-1); // Incluir o dia inteiro
 
         // 1. Atendimentos por usuário
-        var todasTarefas = await _tarefaRepository.BuscarTodosAsync(t => 
-            t.TarDtCadastro.HasValue && 
-            t.TarDtCadastro.Value >= inicioUtc && 
-            t.TarDtCadastro.Value <= fimUtc);
+        // Buscar todas as tarefas com data de cadastro e filtrar em memória para garantir comparação correta
+        var todasTarefasComData = await _tarefaRepository.BuscarTodosAsync(t => t.TarDtCadastro.HasValue);
+        
+        var todasTarefas = todasTarefasComData.Where(t => 
+        {
+            if (!t.TarDtCadastro.HasValue) return false;
+            
+            var dataCadastro = t.TarDtCadastro.Value;
+            // Garantir que estamos comparando em UTC
+            var dataCadastroUtc = dataCadastro.Kind == DateTimeKind.Utc 
+                ? dataCadastro 
+                : dataCadastro.ToUniversalTime();
+            
+            // Comparar com as datas de início e fim do período
+            return dataCadastroUtc >= inicioUtc && dataCadastroUtc <= fimUtc;
+        }).ToList();
 
         var atendimentosPorUsuario = todasTarefas
             .GroupBy(t => t.UsuId)
@@ -86,7 +98,7 @@ public class DashboardService : IDashboardService
             }
         }
 
-        // 2. Contas a pagar (parcelas não pagas no período)
+        // 2. Contas a pagar (parcelas não pagas no período do tipo CP)
         var todasParcelas = await _parcelaRepository.BuscarTodosAsync(p => 
             p.ParVencimento >= inicioUtc && 
             p.ParVencimento <= fimUtc && 
@@ -96,7 +108,7 @@ public class DashboardService : IDashboardService
         var duplicatasDict = todasDuplicatas.ToDictionary(d => d.DupId);
 
         var contasAPagar = todasParcelas
-            .Where(p => duplicatasDict.ContainsKey(p.DupId))
+            .Where(p => duplicatasDict.ContainsKey(p.DupId) && duplicatasDict[p.DupId].DupTipo == "CP")
             .Select(parcela =>
             {
                 var duplicata = duplicatasDict[parcela.DupId];
@@ -105,6 +117,37 @@ public class DashboardService : IDashboardService
                     ParcelaId = parcela.ParId,
                     DuplicataId = duplicata.DupId,
                     NumeroDuplicata = duplicata.DupNumero.ToString(),
+                    DescricaoDespesa = duplicata.DupDescricaoDespesa,
+                    DataVencimento = parcela.ParVencimento,
+                    DataPagamento = parcela.ParDataPagamento,
+                    Valor = (decimal)parcela.ParValor,
+                    Paga = parcela.ParStatus == "Paga"
+                };
+            })
+            .ToList();
+
+        // 2.1. Contas a receber (parcelas não recebidas do mês atual do tipo CR)
+        // O card mostra "Mês Atual", então sempre buscar do mês atual, não do período selecionado
+        var mesAtual = DateTime.UtcNow;
+        var inicioMesAtual = new DateTime(mesAtual.Year, mesAtual.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var fimMesAtual = new DateTime(mesAtual.Year, mesAtual.Month, DateTime.DaysInMonth(mesAtual.Year, mesAtual.Month), 23, 59, 59, 999, DateTimeKind.Utc);
+        
+        var parcelasAReceber = await _parcelaRepository.BuscarTodosAsync(p => 
+            p.ParVencimento >= inicioMesAtual && 
+            p.ParVencimento <= fimMesAtual && 
+            p.ParStatus == "Pendente");
+        
+        var contasAReceber = parcelasAReceber
+            .Where(p => duplicatasDict.ContainsKey(p.DupId) && duplicatasDict[p.DupId].DupTipo == "CR")
+            .Select(parcela =>
+            {
+                var duplicata = duplicatasDict[parcela.DupId];
+                return new ContaAPagarDto
+                {
+                    ParcelaId = parcela.ParId,
+                    DuplicataId = duplicata.DupId,
+                    NumeroDuplicata = duplicata.DupNumero.ToString(),
+                    DescricaoDespesa = duplicata.DupDescricaoDespesa,
                     DataVencimento = parcela.ParVencimento,
                     DataPagamento = parcela.ParDataPagamento,
                     Valor = (decimal)parcela.ParValor,
@@ -139,14 +182,10 @@ public class DashboardService : IDashboardService
             }
         }
 
-        // 4. Contas pagas no mês atual
-        var mesAtual = DateTime.UtcNow;
-        // Criar data de início do mês em UTC (primeiro dia do mês, 00:00:00)
-        var inicioMesAtual = new DateTime(mesAtual.Year, mesAtual.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-        // Criar data de fim do mês em UTC (último dia do mês, 23:59:59.999)
-        var fimMesAtual = new DateTime(mesAtual.Year, mesAtual.Month, DateTime.DaysInMonth(mesAtual.Year, mesAtual.Month), 23, 59, 59, 999, DateTimeKind.Utc);
+        // 4. Contas pagas/recebidas no mês atual
+        // (mesAtual, inicioMesAtual e fimMesAtual já foram definidos acima para Contas a Receber)
 
-        // Buscar todas as parcelas pagas
+        // Buscar todas as parcelas pagas/recebidas
         var todasParcelasPagas = await _parcelaRepository.BuscarTodosAsync(p => p.ParStatus == "Paga" && p.ParDataPagamento.HasValue);
         
         // Filtrar apenas as do mês atual, garantindo comparação correta em UTC
@@ -166,28 +205,104 @@ public class DashboardService : IDashboardService
         }).ToList();
 
         var contasPagasDto = new List<ContaAPagarDto>();
+        var contasRecebidasDto = new List<ContaAPagarDto>();
+        
         foreach (var parcela in contasPagasMes)
         {
             if (duplicatasDict.ContainsKey(parcela.DupId))
             {
                 var duplicata = duplicatasDict[parcela.DupId];
-                contasPagasDto.Add(new ContaAPagarDto
+                var contaDto = new ContaAPagarDto
                 {
                     ParcelaId = parcela.ParId,
                     DuplicataId = parcela.DupId,
                     NumeroDuplicata = duplicata.DupNumero.ToString(),
+                    DescricaoDespesa = duplicata.DupDescricaoDespesa,
                     DataVencimento = parcela.ParVencimento,
                     Valor = (decimal)(parcela.ParValor + parcela.ParMulta + parcela.ParJuros),
                     Paga = true,
                     DataPagamento = parcela.ParDataPagamento ?? parcela.ParVencimento
-                });
+                };
+                
+                // Separar por tipo
+                if (duplicata.DupTipo == "CP")
+                {
+                    contasPagasDto.Add(contaDto);
+                }
+                else if (duplicata.DupTipo == "CR")
+                {
+                    contasRecebidasDto.Add(contaDto);
+                }
             }
         }
 
         // Ordenar por data de pagamento (mais recente primeiro)
         contasPagasDto = contasPagasDto.OrderByDescending(c => c.DataPagamento).ToList();
+        contasRecebidasDto = contasRecebidasDto.OrderByDescending(c => c.DataPagamento).ToList();
 
         var valorTotalContasPagas = contasPagasDto.Sum(c => c.Valor);
+        var valorTotalContasRecebidas = contasRecebidasDto.Sum(c => c.Valor);
+
+        // 5. Atendimentos por cliente no mês atual (com percentual)
+        var todasTarefasMes = await _tarefaRepository.BuscarTodosAsync(t => t.TarDtCadastro.HasValue);
+        
+        // Filtrar apenas as do mês atual, garantindo comparação correta
+        var tarefasMesAtual = todasTarefasMes.Where(t => 
+        {
+            if (!t.TarDtCadastro.HasValue) return false;
+            
+            var dataCadastro = t.TarDtCadastro.Value;
+            // Garantir que estamos comparando em UTC
+            var dataCadastroUtc = dataCadastro.Kind == DateTimeKind.Utc 
+                ? dataCadastro 
+                : dataCadastro.ToUniversalTime();
+            
+            // Comparar apenas ano e mês para evitar problemas de timezone
+            return dataCadastroUtc.Year == mesAtual.Year && 
+                   dataCadastroUtc.Month == mesAtual.Month;
+        }).ToList();
+
+        var atendimentosPorClienteMes = tarefasMesAtual
+            .GroupBy(t => t.CliId)
+            .Select(g => new
+            {
+                ClienteId = g.Key,
+                Quantidade = g.Count()
+            })
+            .ToList();
+
+        var totalAtendimentosMes = atendimentosPorClienteMes.Sum(a => a.Quantidade);
+        var atendimentosPorClienteMesDto = new List<AtendimentoPorClienteMesDto>();
+        
+        foreach (var item in atendimentosPorClienteMes)
+        {
+            var cliente = await _clienteRepository.GetByIdAsync(item.ClienteId);
+            if (cliente != null)
+            {
+                var pessoa = await _pessoaRepository.GetByIdAsync(cliente.PesId);
+                var percentual = totalAtendimentosMes > 0 
+                    ? (decimal)item.Quantidade / totalAtendimentosMes * 100 
+                    : 0;
+                
+                atendimentosPorClienteMesDto.Add(new AtendimentoPorClienteMesDto
+                {
+                    ClienteId = item.ClienteId,
+                    ClienteNome = pessoa?.PesFantasia ?? "Desconhecido",
+                    Quantidade = item.Quantidade,
+                    Percentual = percentual
+                });
+            }
+        }
+
+        // Ordenar por quantidade (maior primeiro)
+        atendimentosPorClienteMesDto = atendimentosPorClienteMesDto
+            .OrderByDescending(a => a.Quantidade)
+            .ToList();
+
+        // Calcular lucro (Contas Recebidas - Contas Pagas)
+        // Garantir que os valores foram calculados corretamente
+        // O lucro é calculado como: Contas Recebidas (CR) - Contas Pagas (CP)
+        var lucro = valorTotalContasRecebidas - valorTotalContasPagas;
 
         return new DashboardEstatisticasDto
         {
@@ -196,10 +311,17 @@ public class DashboardService : IDashboardService
             TotalAtendimentosPorCliente = atendimentosPorClienteDto.Sum(a => a.Quantidade),
             TotalContasPagas = contasPagasDto.Count,
             ValorTotalContasPagas = valorTotalContasPagas,
+            TotalContasAReceber = contasAReceber.Count(),
+            TotalContasRecebidas = contasRecebidasDto.Count,
+            ValorTotalContasRecebidas = valorTotalContasRecebidas,
+            Lucro = lucro, // Calculado como: valorTotalContasRecebidas - valorTotalContasPagas
             AtendimentosPorUsuario = atendimentosPorUsuarioDto,
             ContasAPagar = contasAPagar,
             ContasPagas = contasPagasDto,
-            AtendimentosPorCliente = atendimentosPorClienteDto
+            ContasAReceber = contasAReceber,
+            ContasRecebidas = contasRecebidasDto,
+            AtendimentosPorCliente = atendimentosPorClienteDto,
+            AtendimentosPorClienteMes = atendimentosPorClienteMesDto
         };
     }
 

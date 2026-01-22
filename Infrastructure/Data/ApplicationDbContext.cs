@@ -16,6 +16,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Tarefa> Tarefas { get; set; }
     public DbSet<ImagemTarefa> ImagensTarefa { get; set; }
     public DbSet<AnotacaoTarefa> AnotacoesTarefas { get; set; }
+    public DbSet<Anotacao> Anotacoes { get; set; }
     public DbSet<Duplicata> Duplicatas { get; set; }
     public DbSet<Parcela> Parcelas { get; set; }
 

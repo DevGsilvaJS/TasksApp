@@ -8,10 +8,17 @@ export interface DashboardEstatisticasDto {
   totalAtendimentosPorCliente: number;
   totalContasPagas: number;
   valorTotalContasPagas: number;
+  totalContasAReceber: number;
+  totalContasRecebidas: number;
+  valorTotalContasRecebidas: number;
+  lucro: number;
   atendimentosPorUsuario: AtendimentoPorUsuarioDto[];
   contasAPagar: ContaAPagarDto[];
   contasPagas: ContaAPagarDto[];
+  contasAReceber: ContaAPagarDto[];
+  contasRecebidas: ContaAPagarDto[];
   atendimentosPorCliente: AtendimentoPorClienteDto[];
+  atendimentosPorClienteMes: AtendimentoPorClienteMesDto[];
 }
 
 export interface AtendimentoPorUsuarioDto {
@@ -33,6 +40,7 @@ export interface ContaAPagarDto {
   parcelaId: number;
   duplicataId: number;
   numeroDuplicata: string;
+  descricaoDespesa?: string;
   dataVencimento: string;
   dataPagamento?: string;
   valor: number;
@@ -43,6 +51,13 @@ export interface AtendimentoPorClienteDto {
   clienteId: number;
   clienteNome: string;
   quantidade: number;
+}
+
+export interface AtendimentoPorClienteMesDto {
+  clienteId: number;
+  clienteNome: string;
+  quantidade: number;
+  percentual: number;
 }
 
 export interface ValorPorMesPorUsuarioDto {

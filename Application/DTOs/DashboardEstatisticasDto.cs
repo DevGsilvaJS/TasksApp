@@ -7,10 +7,17 @@ public class DashboardEstatisticasDto
     public int TotalAtendimentosPorCliente { get; set; }
     public int TotalContasPagas { get; set; }
     public decimal ValorTotalContasPagas { get; set; }
+    public int TotalContasAReceber { get; set; }
+    public int TotalContasRecebidas { get; set; }
+    public decimal ValorTotalContasRecebidas { get; set; }
+    public decimal Lucro { get; set; }
     public List<AtendimentoPorUsuarioDto> AtendimentosPorUsuario { get; set; } = new();
     public List<ContaAPagarDto> ContasAPagar { get; set; } = new();
     public List<ContaAPagarDto> ContasPagas { get; set; } = new();
+    public List<ContaAPagarDto> ContasAReceber { get; set; } = new();
+    public List<ContaAPagarDto> ContasRecebidas { get; set; } = new();
     public List<AtendimentoPorClienteDto> AtendimentosPorCliente { get; set; } = new();
+    public List<AtendimentoPorClienteMesDto> AtendimentosPorClienteMes { get; set; } = new();
 }
 
 public class AtendimentoPorUsuarioDto
@@ -35,6 +42,7 @@ public class ContaAPagarDto
     public int ParcelaId { get; set; }
     public int DuplicataId { get; set; }
     public string NumeroDuplicata { get; set; } = string.Empty;
+    public string? DescricaoDespesa { get; set; }
     public DateTime DataVencimento { get; set; }
     public DateTime? DataPagamento { get; set; }
     public decimal Valor { get; set; }
@@ -46,6 +54,14 @@ public class AtendimentoPorClienteDto
     public int ClienteId { get; set; }
     public string ClienteNome { get; set; } = string.Empty;
     public int Quantidade { get; set; }
+}
+
+public class AtendimentoPorClienteMesDto
+{
+    public int ClienteId { get; set; }
+    public string ClienteNome { get; set; } = string.Empty;
+    public int Quantidade { get; set; }
+    public decimal Percentual { get; set; }
 }
 
 public class ValorPorMesPorUsuarioDto

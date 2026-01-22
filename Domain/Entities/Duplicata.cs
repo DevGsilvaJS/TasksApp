@@ -23,6 +23,11 @@ public class Duplicata
     [MaxLength(500)]
     public string? DupDescricaoDespesa { get; set; }
 
+    [Column("DUPTIPO")]
+    [MaxLength(2)]
+    [Required]
+    public string DupTipo { get; set; } = "CP"; // CP = Contas a Pagar, CR = Contas a Receber
+
     // Navegação
     public virtual ICollection<Parcela> Parcelas { get; set; } = new List<Parcela>();
 }
