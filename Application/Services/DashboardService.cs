@@ -182,57 +182,63 @@ public class DashboardService : IDashboardService
             }
         }
 
-        // 4. Contas pagas/recebidas no mês atual
-        // (mesAtual, inicioMesAtual e fimMesAtual já foram definidos acima para Contas a Receber)
+        // 4. Contas pagas (CP) e contas recebidas (CR) no mês atual
+        // CP = por vencimento (títulos que vencem no mês e já foram pagos). CR = por data de pagamento (como estava).
 
-        // Buscar todas as parcelas pagas/recebidas
-        var todasParcelasPagas = await _parcelaRepository.BuscarTodosAsync(p => p.ParStatus == "Paga" && p.ParDataPagamento.HasValue);
-        
-        // Filtrar apenas as do mês atual, garantindo comparação correta em UTC
-        var contasPagasMes = todasParcelasPagas.Where(p => 
+        // Contas a Pagar - Pagas: filtrar por vencimento no mês atual
+        var parcelasPagas = await _parcelaRepository.BuscarTodosAsync(p => p.ParStatus == "Paga");
+        var contasPagasMes = parcelasPagas.Where(p =>
         {
-            if (!p.ParDataPagamento.HasValue) return false;
-            
-            var dataPagamento = p.ParDataPagamento.Value;
-            // Garantir que estamos comparando em UTC
-            var dataPagamentoUtc = dataPagamento.Kind == DateTimeKind.Utc 
-                ? dataPagamento 
-                : dataPagamento.ToUniversalTime();
-            
-            // Comparar apenas ano e mês para evitar problemas de timezone
-            return dataPagamentoUtc.Year == mesAtual.Year && 
-                   dataPagamentoUtc.Month == mesAtual.Month;
+            var vencimentoUtc = p.ParVencimento.Kind == DateTimeKind.Utc ? p.ParVencimento : p.ParVencimento.ToUniversalTime();
+            return vencimentoUtc >= inicioMesAtual && vencimentoUtc <= fimMesAtual;
+        }).ToList();
+
+        // Contas a Receber - Recebidas: filtrar por data de pagamento no mês atual (sem alteração)
+        var parcelasRecebidas = await _parcelaRepository.BuscarTodosAsync(p => p.ParStatus == "Paga" && p.ParDataPagamento.HasValue);
+        var contasRecebidasMes = parcelasRecebidas.Where(p =>
+        {
+            var dataPagamentoUtc = p.ParDataPagamento!.Value.Kind == DateTimeKind.Utc ? p.ParDataPagamento.Value : p.ParDataPagamento.Value.ToUniversalTime();
+            return dataPagamentoUtc.Year == mesAtual.Year && dataPagamentoUtc.Month == mesAtual.Month;
         }).ToList();
 
         var contasPagasDto = new List<ContaAPagarDto>();
         var contasRecebidasDto = new List<ContaAPagarDto>();
-        
+
         foreach (var parcela in contasPagasMes)
         {
-            if (duplicatasDict.ContainsKey(parcela.DupId))
+            if (duplicatasDict.ContainsKey(parcela.DupId) && duplicatasDict[parcela.DupId].DupTipo == "CP")
             {
                 var duplicata = duplicatasDict[parcela.DupId];
-                var contaDto = new ContaAPagarDto
+                contasPagasDto.Add(new ContaAPagarDto
                 {
                     ParcelaId = parcela.ParId,
-                    DuplicataId = parcela.DupId,
+                    DuplicataId = duplicata.DupId,
                     NumeroDuplicata = duplicata.DupNumero.ToString(),
                     DescricaoDespesa = duplicata.DupDescricaoDespesa,
                     DataVencimento = parcela.ParVencimento,
                     Valor = (decimal)(parcela.ParValor + parcela.ParMulta + parcela.ParJuros),
                     Paga = true,
                     DataPagamento = parcela.ParDataPagamento ?? parcela.ParVencimento
-                };
-                
-                // Separar por tipo
-                if (duplicata.DupTipo == "CP")
+                });
+            }
+        }
+
+        foreach (var parcela in contasRecebidasMes)
+        {
+            if (duplicatasDict.ContainsKey(parcela.DupId) && duplicatasDict[parcela.DupId].DupTipo == "CR")
+            {
+                var duplicata = duplicatasDict[parcela.DupId];
+                contasRecebidasDto.Add(new ContaAPagarDto
                 {
-                    contasPagasDto.Add(contaDto);
-                }
-                else if (duplicata.DupTipo == "CR")
-                {
-                    contasRecebidasDto.Add(contaDto);
-                }
+                    ParcelaId = parcela.ParId,
+                    DuplicataId = duplicata.DupId,
+                    NumeroDuplicata = duplicata.DupNumero.ToString(),
+                    DescricaoDespesa = duplicata.DupDescricaoDespesa,
+                    DataVencimento = parcela.ParVencimento,
+                    Valor = (decimal)(parcela.ParValor + parcela.ParMulta + parcela.ParJuros),
+                    Paga = true,
+                    DataPagamento = parcela.ParDataPagamento ?? parcela.ParVencimento
+                });
             }
         }
 

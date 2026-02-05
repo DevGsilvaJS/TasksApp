@@ -44,9 +44,9 @@ export class AtendimentosComponent implements OnInit {
     protocolo: undefined,
     solicitante: undefined,
     celularSolicitante: undefined,
-    tipoAtendimento: undefined,
-    prioridade: PrioridadeTarefa.Media,
-    tipoContato: undefined,
+    tipoAtendimento: TipoAtendimento.Suporte,
+    prioridade: PrioridadeTarefa.Baixa,
+    tipoContato: TipoContato.WhatsApp,
     imagens: undefined
   };
 
@@ -223,6 +223,9 @@ export class AtendimentosComponent implements OnInit {
       protocolo: '',
       solicitante: '',
       celularSolicitante: '',
+      tipoAtendimento: TipoAtendimento.Suporte,
+      prioridade: PrioridadeTarefa.Baixa,
+      tipoContato: TipoContato.WhatsApp,
       imagens: undefined
     };
     this.imagensSelecionadas = [];
@@ -438,7 +441,7 @@ export class AtendimentosComponent implements OnInit {
       dataConclusao: this.novoTarefa.status === StatusTarefa.Concluida
         ? (this.novoTarefa.dataConclusao || new Date().toISOString().split('T')[0])
         : undefined,
-      descricao: this.novoTarefa.descricao ? this.novoTarefa.descricao.toUpperCase() : undefined,
+      descricao: this.novoTarefa.descricao ?? undefined,
       titulo: this.novoTarefa.titulo ? this.novoTarefa.titulo.toUpperCase() : undefined,
       protocolo: this.novoTarefa.protocolo ? this.novoTarefa.protocolo.toUpperCase() : undefined,
       solicitante: this.novoTarefa.solicitante ? this.novoTarefa.solicitante.toUpperCase() : undefined,

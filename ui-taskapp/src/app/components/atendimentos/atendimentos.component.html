@@ -96,11 +96,9 @@
           <div class="form-group">
             <label>Descrição/Anotação</label>
             <textarea
-              [ngModel]="novoTarefa.descricao"
-              (ngModelChange)="novoTarefa.descricao = $event.toUpperCase()"
+              [(ngModel)]="novoTarefa.descricao"
               name="descricao"
               class="form-textarea form-textarea-large"
-              style="text-transform: uppercase;"
               rows="4"
               placeholder="Digite uma descrição ou anotação para esta tarefa..."></textarea>
           </div>
