@@ -52,7 +52,8 @@ export class ContasReceberComponent implements OnInit {
     this.carregarDuplicatas();
   }
 
-  carregarDuplicatas() {
+  /** Recarrega a lista de duplicatas. Opcionalmente chama onConcluido após atualizar (ex.: atualizar parcelas na tela). */
+  carregarDuplicatas(onConcluido?: () => void) {
     this.loading = true;
     this.error = null;
     this.duplicataService.listarDuplicatasPorTipo('CR').subscribe({
@@ -60,6 +61,7 @@ export class ContasReceberComponent implements OnInit {
         this.duplicatas = data;
         this.duplicatasFiltradas = data;
         this.loading = false;
+        onConcluido?.();
       },
       error: (err) => {
         this.error = 'Erro ao carregar contas a receber. Verifique se a API está rodando.';
@@ -267,22 +269,24 @@ export class ContasReceberComponent implements OnInit {
   }
 
   baixarParcela(parcela: ParcelaResponseDto) {
-    this.confirmTitle = 'Confirmar Recebimento';
-    this.confirmMessage = `Deseja receber a parcela ${parcela.numeroParcela}?`;
+    this.confirmTitle = 'Confirmar baixa';
+    this.confirmMessage = `Deseja confirmar o recebimento (baixa) da parcela ${parcela.numeroParcela}? A parcela será marcada como recebida e a data de pagamento será registrada.`;
     this.confirmCallback = () => {
       this.loading = true;
       this.error = null;
+      this.fecharConfirmModal();
 
       this.duplicataService.baixarParcela(parcela.parcelaId).subscribe({
         next: () => {
-          this.carregarDuplicatas();
-          if (this.duplicataSelecionada) {
-            const duplicataAtualizada = this.duplicatas.find(d => d.duplicataId === this.duplicataSelecionada!.duplicataId);
-            if (duplicataAtualizada) {
-              this.duplicataSelecionada = duplicataAtualizada;
+          const duplicataIdSelecionada = this.duplicataSelecionada?.duplicataId;
+          this.carregarDuplicatas(() => {
+            if (duplicataIdSelecionada != null) {
+              const duplicataAtualizada = this.duplicatas.find(d => d.duplicataId === duplicataIdSelecionada);
+              if (duplicataAtualizada) {
+                this.duplicataSelecionada = duplicataAtualizada;
+              }
             }
-          }
-          this.loading = false;
+          });
         },
         error: (err) => {
           this.error = err.error?.message || 'Erro ao receber parcela.';
@@ -300,17 +304,19 @@ export class ContasReceberComponent implements OnInit {
     this.confirmCallback = () => {
       this.loading = true;
       this.error = null;
+      this.fecharConfirmModal();
 
       this.duplicataService.reativarParcela(parcela.parcelaId).subscribe({
         next: () => {
-          this.carregarDuplicatas();
-          if (this.duplicataSelecionada) {
-            const duplicataAtualizada = this.duplicatas.find(d => d.duplicataId === this.duplicataSelecionada!.duplicataId);
-            if (duplicataAtualizada) {
-              this.duplicataSelecionada = duplicataAtualizada;
+          const duplicataIdSelecionada = this.duplicataSelecionada?.duplicataId;
+          this.carregarDuplicatas(() => {
+            if (duplicataIdSelecionada != null) {
+              const duplicataAtualizada = this.duplicatas.find(d => d.duplicataId === duplicataIdSelecionada);
+              if (duplicataAtualizada) {
+                this.duplicataSelecionada = duplicataAtualizada;
+              }
             }
-          }
-          this.loading = false;
+          });
         },
         error: (err) => {
           this.error = err.error?.message || 'Erro ao reativar parcela.';

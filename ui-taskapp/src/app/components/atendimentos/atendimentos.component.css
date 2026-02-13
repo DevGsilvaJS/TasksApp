@@ -312,6 +312,26 @@ tbody tr:hover {
   background: #f8fafc;
 }
 
+/* Quebra visual por cliente */
+tr.grupo-cliente-row {
+  background: #e2e8f0;
+}
+
+tr.grupo-cliente-row:hover {
+  background: #e2e8f0;
+}
+
+td.grupo-cliente-cell {
+  font-weight: 600;
+  color: #334155;
+  padding: 0.75rem 1rem;
+  border-top: 2px solid #94a3b8;
+  border-bottom: 1px solid #cbd5e1;
+  vertical-align: middle;
+  white-space: normal;
+  max-width: none;
+}
+
 .actions-cell {
   display: flex;
   justify-content: center;

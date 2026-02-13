@@ -65,7 +65,7 @@
         </div>
         <div class="card-content">
           <h3>DRE</h3>
-          <p class="card-value">{{ formatarMoeda(estatisticas?.lucro || 0) }}</p>
+          <p class="card-value">{{ formatarMoeda(estatisticas.lucro) }}</p>
           <p class="card-subtitle">Lucro (Mês Atual)</p>
         </div>
       </div>
@@ -96,7 +96,7 @@
           </svg>
         </div>
         <div class="card-content">
-          <h3>Atendimentos por Cliente (Mês)</h3>
+          <h3>Atendimentos por Cliente</h3>
           <p class="card-value">{{ estatisticas.atendimentosPorClienteMes.length }}</p>
           <p class="card-subtitle">Clientes com atendimentos</p>
         </div>
@@ -506,8 +506,8 @@
             </div>
             <div class="dre-item dre-total">
               <span class="dre-label">Lucro:</span>
-              <span class="dre-value" [class.lucro-positivo]="(estatisticas?.lucro || 0) >= 0" [class.lucro-negativo]="(estatisticas?.lucro || 0) < 0">
-                {{ formatarMoeda(estatisticas?.lucro || 0) }}
+              <span class="dre-value" [class.lucro-positivo]="((estatisticas?.lucro) ?? 0) >= 0" [class.lucro-negativo]="((estatisticas?.lucro) ?? 0) < 0">
+                {{ formatarMoeda((estatisticas?.lucro) ?? 0) }}
               </span>
             </div>
           </div>
@@ -516,17 +516,17 @@
     </div>
   }
 
-  <!-- Modal: Percentual de Atendimentos por Cliente (Mês) -->
+  <!-- Modal: Atendimentos por Cliente (desde sempre) -->
   @if (showModalAtendimentosClienteMes) {
     <div class="modal-overlay" (click)="fecharModalAtendimentosClienteMes()">
       <div class="modal-content modal-large" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h3>Percentual de Atendimentos por Cliente (Mês Atual)</h3>
+          <h3>Atendimentos por Cliente</h3>
           <button class="btn-close" (click)="fecharModalAtendimentosClienteMes()">×</button>
         </div>
         <div class="modal-body">
           @if (dadosModalAtendimentosClienteMes.length === 0) {
-            <p class="empty-state">Nenhum atendimento encontrado no mês atual.</p>
+            <p class="empty-state">Nenhum atendimento encontrado.</p>
           } @else {
             <table class="detail-table">
               <thead>
