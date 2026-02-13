@@ -23,6 +23,18 @@ export class AtendimentosComponent implements OnInit {
 
   tarefas: TarefaResponseDto[] = [];
   tarefasFiltradas: TarefaResponseDto[] = [];
+  /** Agrupamento por cliente para exibir quebra no grid */
+  get tarefasAgrupadasPorCliente(): { clienteId: number; clienteNome: string; tarefas: TarefaResponseDto[] }[] {
+    const map = new Map<number, { clienteId: number; clienteNome: string; tarefas: TarefaResponseDto[] }>();
+    for (const t of this.tarefasFiltradas) {
+      const key = t.clienteId;
+      if (!map.has(key)) {
+        map.set(key, { clienteId: t.clienteId, clienteNome: t.clienteNome, tarefas: [] });
+      }
+      map.get(key)!.tarefas.push(t);
+    }
+    return Array.from(map.values());
+  }
   clientes: ClienteResponseDto[] = [];
   usuarios: UsuarioResponseDto[] = [];
   showForm = false;
@@ -32,7 +44,9 @@ export class AtendimentosComponent implements OnInit {
   tarefaEditando: TarefaResponseDto | null = null;
   termoBusca = '';
   mostrarConcluidas = false;
+  mostrarTodosUsuarios = false;
   private readonly STORAGE_KEY_MOSTRAR_CONCLUIDAS = 'atendimentos_mostrar_concluidas';
+  private readonly STORAGE_KEY_MOSTRAR_TODOS_USUARIOS = 'atendimentos_mostrar_todos_usuarios';
 
   novoTarefa: CadastroTarefaDto = {
     clienteId: 0,
@@ -95,8 +109,9 @@ export class AtendimentosComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    // Carregar preferência do sessionStorage
+    // Carregar preferências do sessionStorage
     this.carregarPreferenciaMostrarConcluidas();
+    this.carregarPreferenciaMostrarTodosUsuarios();
     this.carregarTarefas();
     this.carregarClientes();
     this.carregarUsuarios();
@@ -122,15 +137,47 @@ export class AtendimentosComponent implements OnInit {
     }
   }
 
+  private carregarPreferenciaMostrarTodosUsuarios() {
+    try {
+      const stored = sessionStorage.getItem(this.STORAGE_KEY_MOSTRAR_TODOS_USUARIOS);
+      if (stored !== null) {
+        this.mostrarTodosUsuarios = JSON.parse(stored) === true;
+      }
+    } catch (error) {
+      console.error('Erro ao carregar preferência de todos usuários:', error);
+      this.mostrarTodosUsuarios = false;
+    }
+  }
+
+  private salvarPreferenciaMostrarTodosUsuarios() {
+    try {
+      sessionStorage.setItem(this.STORAGE_KEY_MOSTRAR_TODOS_USUARIOS, JSON.stringify(this.mostrarTodosUsuarios));
+    } catch (error) {
+      console.error('Erro ao salvar preferência de todos usuários:', error);
+    }
+  }
+
   onMostrarConcluidasChange() {
     this.salvarPreferenciaMostrarConcluidas();
-    this.aplicarFiltros();
+    this.carregarTarefas();
+  }
+
+  onMostrarTodosUsuariosChange() {
+    this.salvarPreferenciaMostrarTodosUsuarios();
+    this.carregarTarefas();
   }
 
   carregarTarefas() {
     this.loading = true;
     this.error = null;
-    this.tarefaService.listarTodasTarefas().subscribe({
+    // 1) Padrão: apenas atendimentos do usuário logado (meu usuid)
+    // 2) Se "Todos usuários" marcado: não envia usuarioId → API retorna de todos
+    // 3) Se "Concluídas" marcado: incluirConcluidas true → API inclui concluídas
+    const usuarioId = this.mostrarTodosUsuarios ? undefined : (this.authService.getUsuarioId() ?? undefined);
+    this.tarefaService.listarTarefas({
+      usuarioId,
+      incluirConcluidas: this.mostrarConcluidas
+    }).subscribe({
       next: (data) => {
         this.tarefas = data;
         this.aplicarFiltros();
@@ -183,12 +230,7 @@ export class AtendimentosComponent implements OnInit {
   aplicarFiltros() {
     let tarefasFiltradas = [...this.tarefas];
 
-    // Filtrar por status (mostrar apenas Em Aberto se não estiver marcado para mostrar concluídas)
-    if (!this.mostrarConcluidas) {
-      tarefasFiltradas = tarefasFiltradas.filter(t => t.status !== StatusTarefa.Concluida);
-    }
-
-    // Filtrar por termo de busca
+    // Filtrar apenas por termo de busca (usuário e concluídas já vêm filtrados da API)
     if (this.termoBusca.trim()) {
       const termo = this.termoBusca.toLowerCase();
       tarefasFiltradas = tarefasFiltradas.filter(t =>
@@ -351,24 +393,13 @@ export class AtendimentosComponent implements OnInit {
 
     this.anotacaoService.cadastrarAnotacao(dto).subscribe({
       next: (anotacao) => {
-        // Adicionar anotação à lista
+        // tarefaSelecionada é a mesma referência do item em this.tarefas; atualizar só aqui evita duplicata
         if (this.tarefaSelecionada) {
           if (!this.tarefaSelecionada.anotacoes) {
             this.tarefaSelecionada.anotacoes = [];
           }
           this.tarefaSelecionada.anotacoes.unshift(anotacao);
-
-          // Atualizar também na lista de tarefas
-          const tarefaNaLista = this.tarefas.find(t => t.tarefaId === this.tarefaSelecionada!.tarefaId);
-          if (tarefaNaLista) {
-            if (!tarefaNaLista.anotacoes) {
-              tarefaNaLista.anotacoes = [];
-            }
-            tarefaNaLista.anotacoes.unshift(anotacao);
-          }
         }
-
-        // Limpar campo
         this.novaAnotacao = '';
         this.loading = false;
       },

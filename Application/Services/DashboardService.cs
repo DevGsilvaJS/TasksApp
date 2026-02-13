@@ -156,8 +156,9 @@ public class DashboardService : IDashboardService
             })
             .ToList();
 
-        // 3. Atendimentos por cliente
-        var atendimentosPorCliente = todasTarefas
+        // 3. Atendimentos por cliente (desde sempre, não por período/mês)
+        var todasTarefasSempre = todasTarefasComData.ToList();
+        var atendimentosPorCliente = todasTarefasSempre
             .GroupBy(t => t.CliId)
             .Select(g => new
             {
@@ -249,59 +250,16 @@ public class DashboardService : IDashboardService
         var valorTotalContasPagas = contasPagasDto.Sum(c => c.Valor);
         var valorTotalContasRecebidas = contasRecebidasDto.Sum(c => c.Valor);
 
-        // 5. Atendimentos por cliente no mês atual (com percentual)
-        var todasTarefasMes = await _tarefaRepository.BuscarTodosAsync(t => t.TarDtCadastro.HasValue);
-        
-        // Filtrar apenas as do mês atual, garantindo comparação correta
-        var tarefasMesAtual = todasTarefasMes.Where(t => 
-        {
-            if (!t.TarDtCadastro.HasValue) return false;
-            
-            var dataCadastro = t.TarDtCadastro.Value;
-            // Garantir que estamos comparando em UTC
-            var dataCadastroUtc = dataCadastro.Kind == DateTimeKind.Utc 
-                ? dataCadastro 
-                : dataCadastro.ToUniversalTime();
-            
-            // Comparar apenas ano e mês para evitar problemas de timezone
-            return dataCadastroUtc.Year == mesAtual.Year && 
-                   dataCadastroUtc.Month == mesAtual.Month;
-        }).ToList();
-
-        var atendimentosPorClienteMes = tarefasMesAtual
-            .GroupBy(t => t.CliId)
-            .Select(g => new
+        // 5. Atendimentos por cliente desde sempre (com percentual) — mesma base da seção 3
+        var totalAtendimentosSempre = atendimentosPorClienteDto.Sum(a => a.Quantidade);
+        var atendimentosPorClienteMesDto = atendimentosPorClienteDto
+            .Select(a => new AtendimentoPorClienteMesDto
             {
-                ClienteId = g.Key,
-                Quantidade = g.Count()
+                ClienteId = a.ClienteId,
+                ClienteNome = a.ClienteNome,
+                Quantidade = a.Quantidade,
+                Percentual = totalAtendimentosSempre > 0 ? (decimal)a.Quantidade / totalAtendimentosSempre * 100 : 0
             })
-            .ToList();
-
-        var totalAtendimentosMes = atendimentosPorClienteMes.Sum(a => a.Quantidade);
-        var atendimentosPorClienteMesDto = new List<AtendimentoPorClienteMesDto>();
-        
-        foreach (var item in atendimentosPorClienteMes)
-        {
-            var cliente = await _clienteRepository.GetByIdAsync(item.ClienteId);
-            if (cliente != null)
-            {
-                var pessoa = await _pessoaRepository.GetByIdAsync(cliente.PesId);
-                var percentual = totalAtendimentosMes > 0 
-                    ? (decimal)item.Quantidade / totalAtendimentosMes * 100 
-                    : 0;
-                
-                atendimentosPorClienteMesDto.Add(new AtendimentoPorClienteMesDto
-                {
-                    ClienteId = item.ClienteId,
-                    ClienteNome = pessoa?.PesFantasia ?? "Desconhecido",
-                    Quantidade = item.Quantidade,
-                    Percentual = percentual
-                });
-            }
-        }
-
-        // Ordenar por quantidade (maior primeiro)
-        atendimentosPorClienteMesDto = atendimentosPorClienteMesDto
             .OrderByDescending(a => a.Quantidade)
             .ToList();
 

@@ -75,15 +75,17 @@ public class TarefaController : ControllerBase
     }
 
     /// <summary>
-    /// Lista todas as tarefas
+    /// Lista todas as tarefas (sem filtros).
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<TarefaResponseDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ListarTodasTarefas()
+    public async Task<IActionResult> ListarTarefas([FromQuery] int? usuarioId, [FromQuery] bool? incluirConcluidas)
     {
         try
         {
-            var tarefas = await _tarefaService.ListarTodasTarefasAsync();
+            // Se não informar parâmetros, mantém comportamento anterior: todas as tarefas
+            var incluir = incluirConcluidas ?? true;
+            var tarefas = await _tarefaService.ListarTarefasAsync(usuarioId, incluir);
             return Ok(tarefas);
         }
         catch (Exception ex)

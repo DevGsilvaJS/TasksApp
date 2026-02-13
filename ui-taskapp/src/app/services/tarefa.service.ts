@@ -105,6 +105,20 @@ export class TarefaService {
     return this.api.get<TarefaResponseDto[]>('tarefa');
   }
 
+  /**
+   * Lista tarefas com filtros opcionais.
+   * @param usuarioId - Se informado, apenas tarefas deste usuário; se não informado, todos os usuários.
+   * @param incluirConcluidas - Se true, inclui concluídas; se false, apenas não concluídas.
+   */
+  listarTarefas(params?: { usuarioId?: number; incluirConcluidas?: boolean }): Observable<TarefaResponseDto[]> {
+    const q: Record<string, string> = {};
+    // Só envia usuarioId quando for número (evita enviar "undefined" quando Todos Usuários está marcado)
+    if (typeof params?.usuarioId === 'number') q['usuarioId'] = String(params.usuarioId);
+    if (params?.incluirConcluidas !== undefined && params?.incluirConcluidas !== null) q['incluirConcluidas'] = String(params.incluirConcluidas);
+    const query = Object.keys(q).length ? '?' + new URLSearchParams(q).toString() : '';
+    return this.api.get<TarefaResponseDto[]>(`tarefa${query}`);
+  }
+
   atualizarTarefa(id: number, dto: CadastroTarefaDto): Observable<TarefaResponseDto> {
     const formData = this.criarFormData(dto);
     return this.api.putFormData<TarefaResponseDto>(`tarefa/${id}`, formData);

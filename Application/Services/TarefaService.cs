@@ -105,14 +105,20 @@ public class TarefaService : ITarefaService
 
     public async Task<IEnumerable<TarefaResponseDto>> ListarTodasTarefasAsync()
     {
-        var tarefas = await _tarefaRepository.ListarTodosAsync();
-        var resultado = new List<TarefaResponseDto>();
+        return await ListarTarefasAsync(usuarioId: null, incluirConcluidas: true);
+    }
 
-        foreach (var tarefa in tarefas)
+    public async Task<IEnumerable<TarefaResponseDto>> ListarTarefasAsync(int? usuarioId, bool incluirConcluidas)
+    {
+        var tarefas = await _tarefaRepository.ListarTodosAsync();
+        var filtradas = tarefas.Where(t =>
+            (!usuarioId.HasValue || t.UsuId == usuarioId.Value) &&
+            (incluirConcluidas || t.TarStatus != StatusTarefa.Concluida));
+        var resultado = new List<TarefaResponseDto>();
+        foreach (var tarefa in filtradas)
         {
             resultado.Add(await MontarTarefaResponseDto(tarefa));
         }
-
         return resultado;
     }
 

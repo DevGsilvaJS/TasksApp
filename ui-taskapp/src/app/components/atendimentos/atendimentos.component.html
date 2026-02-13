@@ -165,6 +165,14 @@
     <label class="checkbox-label">
       <input
         type="checkbox"
+        [(ngModel)]="mostrarTodosUsuarios"
+        (change)="onMostrarTodosUsuariosChange()"
+        class="checkbox-input">
+      <span>Todos Usuários</span>
+    </label>
+    <label class="checkbox-label">
+      <input
+        type="checkbox"
         [(ngModel)]="mostrarConcluidas"
         (change)="onMostrarConcluidasChange()"
         class="checkbox-input">
@@ -199,29 +207,33 @@
           </tr>
         </thead>
         <tbody>
-          @for (tarefa of tarefasFiltradas; track tarefa.tarefaId) {
-            <tr>
-              <td>{{ tarefa.numero || '-' }}</td>
-              <td>{{ tarefa.protocolo || '-' }}</td>
-              <td [title]="tarefa.titulo || '-'">{{ tarefa.titulo || '-' }}</td>
-              <td>{{ tarefa.solicitante || '-' }}</td>
-              <td>{{ tarefa.celularSolicitante || '-' }}</td>
-              <td>{{ tarefa.tipoAtendimentoDescricao || '-' }}</td>
-              <td>{{ tarefa.tipoContatoDescricao || '-' }}</td>
-              <td>
-                <span class="prioridade-badge" [ngClass]="obterClassePrioridade(tarefa.prioridadeDescricao)">
-                  {{ tarefa.prioridadeDescricao || '-' }}
-                </span>
-              </td>
-              <td>{{ tarefa.clienteNome }}</td>
-              <td>{{ tarefa.usuarioNome }}</td>
-              <td>
-                <span class="status-badge" [ngClass]="obterClasseStatus(tarefa.status)">
-                  {{ tarefa.statusDescricao }}
-                </span>
-              </td>
-              <td>{{ formatarData(tarefa.dataCadastro) }}</td>
-              <td class="actions-cell">
+          @for (grupo of tarefasAgrupadasPorCliente; track grupo.clienteId) {
+            <tr class="grupo-cliente-row">
+              <td colspan="13" class="grupo-cliente-cell">{{ grupo.clienteNome }} ({{ grupo.tarefas.length }} {{ grupo.tarefas.length === 1 ? 'atendimento' : 'atendimentos' }})</td>
+            </tr>
+            @for (tarefa of grupo.tarefas; track tarefa.tarefaId) {
+              <tr>
+                <td>{{ tarefa.numero || '-' }}</td>
+                <td>{{ tarefa.protocolo || '-' }}</td>
+                <td [title]="tarefa.titulo || '-'">{{ tarefa.titulo || '-' }}</td>
+                <td>{{ tarefa.solicitante || '-' }}</td>
+                <td>{{ tarefa.celularSolicitante || '-' }}</td>
+                <td>{{ tarefa.tipoAtendimentoDescricao || '-' }}</td>
+                <td>{{ tarefa.tipoContatoDescricao || '-' }}</td>
+                <td>
+                  <span class="prioridade-badge" [ngClass]="obterClassePrioridade(tarefa.prioridadeDescricao)">
+                    {{ tarefa.prioridadeDescricao || '-' }}
+                  </span>
+                </td>
+                <td>{{ tarefa.clienteNome }}</td>
+                <td>{{ tarefa.usuarioNome }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="obterClasseStatus(tarefa.status)">
+                    {{ tarefa.statusDescricao }}
+                  </span>
+                </td>
+                <td>{{ formatarData(tarefa.dataCadastro) }}</td>
+                <td class="actions-cell">
                 <div class="actions-group">
                   <button class="btn-notes" (click)="abrirAnotacoes(tarefa)" title="Anotações">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -263,6 +275,7 @@
                 </div>
               </td>
             </tr>
+            }
           }
         </tbody>
       </table>
