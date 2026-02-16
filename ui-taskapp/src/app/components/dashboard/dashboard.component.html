@@ -17,6 +17,27 @@
     </div>
   }
 
+  <!-- Lembrete: Reuniões pendentes (exibe enquanto status não for concluído ou tipo não for alterado) -->
+  @if (reunioesPendentes.length > 0) {
+    <div class="lembrete-reunioes">
+      <div class="lembrete-reunioes-header">
+        <h3>Reuniões</h3>
+        <a routerLink="/atendimentos" class="lembrete-reunioes-link">Ver atendimentos</a>
+      </div>
+      <p class="lembrete-reunioes-desc">Reuniões em aberto sob sua responsabilidade:</p>
+      <ul class="lembrete-reunioes-lista">
+        @for (r of reunioesPendentes; track r.tarefaId) {
+          <li>
+            <span class="lembrete-cliente">{{ r.clienteNome }}</span>
+            @if (r.titulo) {
+              <span class="lembrete-titulo"> — {{ r.titulo }}</span>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
   @if (loading) {
     <div class="loading">
       <p>Carregando estatísticas...</p>
@@ -114,6 +135,24 @@
           <h3>Valores por Mês</h3>
           <p class="card-value">{{ calcularTotalValores() || 'R$ 0,00' }}</p>
           <p class="card-subtitle">Total de contratos</p>
+        </div>
+      </div>
+
+      <!-- Card 7: Notas de serviço (pendentes de envio no mês) -->
+      <div class="stat-card" (click)="abrirModalNotasServico()">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <div class="card-content">
+          <h3>Notas de serviço</h3>
+          <p class="card-value">{{ quantidadeNotasPendentes() }} / {{ dadosModalNotasServico.length }}</p>
+          <p class="card-subtitle">Pendentes / Total (mês atual)</p>
         </div>
       </div>
 
@@ -546,6 +585,86 @@
                 }
               </tbody>
             </table>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Notas de serviço do mês -->
+  @if (showModalNotasServico) {
+    <div class="modal-overlay modal-notas-overlay" (click)="fecharModalNotasServico()">
+      <div class="modal-content modal-large modal-notas-servico" (click)="$event.stopPropagation()">
+        <div class="modal-header modal-notas-header">
+          <div class="modal-notas-header-inner">
+            <div class="modal-notas-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </div>
+            <div>
+              <h3>Notas de serviço</h3>
+              <p class="modal-notas-subtitle">{{ mesAnoNotas.mes }}/{{ mesAnoNotas.ano }} · {{ quantidadeNotasPendentes() }} pendente(s)</p>
+            </div>
+          </div>
+          <button class="btn-close" (click)="fecharModalNotasServico()" aria-label="Fechar">×</button>
+        </div>
+        <div class="modal-body modal-notas-body">
+          @if (loadingNotasServico) {
+            <div class="notas-empty">
+              <span class="notas-loading-spinner"></span>
+              <p>Carregando...</p>
+            </div>
+          } @else if (dadosModalNotasServico.length === 0) {
+            <div class="notas-empty">
+              <span class="notas-empty-icon">📄</span>
+              <p>Nenhum cliente com dia de NF de serviço neste mês.</p>
+            </div>
+          } @else {
+            <div class="notas-grid-wrapper">
+              <table class="notas-grid">
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Cliente / Nome</th>
+                    <th>Dia</th>
+                    <th>Enviado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of dadosModalNotasServico; track item.clienteId + item.ano + item.mes) {
+                    <tr [class.nota-row-enviada]="item.enviado" [class.nota-row-editando]="isItemEmEnvio(item)">
+                      <td class="notas-cell-codigo">{{ item.clienteCodigo }}</td>
+                      <td class="notas-cell-nome">{{ item.fantasia }}</td>
+                      <td class="notas-cell-dia">{{ item.diaNfServico }}º</td>
+                      <td class="notas-cell-acao">
+                        @if (item.enviado) {
+                          <span class="nota-badge-enviado">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            {{ item.dataEnvio ? formatarData(item.dataEnvio) : 'Enviado' }}
+                          </span>
+                        } @else if (isItemEmEnvio(item)) {
+                          <div class="nota-form-envio nota-form-envio-linha">
+                            <input type="date" [(ngModel)]="dataEnvioEscolhida" class="nota-form-input" [max]="maxDataEnvio()" />
+                            <button type="button" class="nota-btn-cancelar" (click)="cancelarFormEnvio()">Cancelar</button>
+                            <button type="button" class="nota-btn-confirmar" (click)="confirmarEnvioNota()" [disabled]="salvandoEnvio">{{ salvandoEnvio ? 'Salvando...' : 'Confirmar' }}</button>
+                          </div>
+                        } @else {
+                          <button type="button" class="nota-btn-marcar" (click)="abrirFormEnvio(item)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Marcar como enviado
+                          </button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
           }
         </div>
       </div>

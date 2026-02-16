@@ -29,6 +29,9 @@ public class CadastroDuplicataDto
     [MaxLength(2)]
     public string Tipo { get; set; } = "CP"; // CP = Contas a Pagar, CR = Contas a Receber
 
+    /// <summary>Cliente (opcional; usado em Contas a Receber para agrupar por cliente).</summary>
+    public int? ClienteId { get; set; }
+
     // Se não fornecido, será usado para gerar automaticamente
     public DateTime? DataPrimeiroVencimento { get; set; }
 

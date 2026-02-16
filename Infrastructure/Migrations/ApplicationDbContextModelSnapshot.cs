@@ -50,6 +50,35 @@ namespace Infrastructure.Migrations
                     b.ToTable("TB_ANO_ANOTACAO");
                 });
 
+            modelBuilder.Entity("Domain.Entities.AnotacaoCliente", b =>
+                {
+                    b.Property<int>("AncId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("ANCID");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AncId"));
+
+                    b.Property<string>("AncDescricao")
+                        .HasMaxLength(3000)
+                        .HasColumnType("character varying(3000)")
+                        .HasColumnName("ANCDESCRICAO");
+
+                    b.Property<DateTime?>("AncDtCadastro")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ANCDTCADASTRO");
+
+                    b.Property<int>("CliId")
+                        .HasColumnType("integer")
+                        .HasColumnName("CLIID");
+
+                    b.HasKey("AncId");
+
+                    b.HasIndex("CliId");
+
+                    b.ToTable("TB_ANC_ANOTACAO_CLIENTE");
+                });
+
             modelBuilder.Entity("Domain.Entities.AnotacaoTarefa", b =>
                 {
                     b.Property<int>("AntId")
@@ -106,6 +135,10 @@ namespace Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("CLIDATAFINALCONTRATO");
 
+                    b.Property<int?>("CliDiaNfServico")
+                        .HasColumnType("integer")
+                        .HasColumnName("CLIDIANFSERVICO");
+
                     b.Property<int?>("CliDiaPagamento")
                         .HasColumnType("integer")
                         .HasColumnName("CLIDIAPAGAMENTO");
@@ -135,6 +168,37 @@ namespace Infrastructure.Migrations
                     b.ToTable("TB_CLI_CLIENTE");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Das", b =>
+                {
+                    b.Property<int>("DasId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("DASID");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DasId"));
+
+                    b.Property<DateTime?>("DasDataVencimento")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("DASDATAVENCIMENTO");
+
+                    b.Property<DateTime?>("DasDtCadastro")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("DASDTCADASTRO");
+
+                    b.Property<string>("DasReferencia")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("DASREFERENCIA");
+
+                    b.Property<int>("DasStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("DASSTATUS");
+
+                    b.HasKey("DasId");
+
+                    b.ToTable("TB_DAS");
+                });
+
             modelBuilder.Entity("Domain.Entities.Duplicata", b =>
                 {
                     b.Property<int>("DupId")
@@ -143,6 +207,10 @@ namespace Infrastructure.Migrations
                         .HasColumnName("DUPID");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DupId"));
+
+                    b.Property<int?>("CliId")
+                        .HasColumnType("integer")
+                        .HasColumnName("CLIID");
 
                     b.Property<DateTime>("DupDataEmissao")
                         .HasColumnType("timestamp with time zone")
@@ -168,6 +236,8 @@ namespace Infrastructure.Migrations
                         .HasColumnName("DUPTIPO");
 
                     b.HasKey("DupId");
+
+                    b.HasIndex("CliId");
 
                     b.ToTable("TB_DUP_DUPLICATA");
                 });
@@ -195,6 +265,38 @@ namespace Infrastructure.Migrations
                     b.HasIndex("PesId");
 
                     b.ToTable("TB_EMAIL");
+                });
+
+            modelBuilder.Entity("Domain.Entities.EnvioNotaServico", b =>
+                {
+                    b.Property<int>("EnsId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("ENSID");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("EnsId"));
+
+                    b.Property<int>("CliId")
+                        .HasColumnType("integer")
+                        .HasColumnName("CLIID");
+
+                    b.Property<int>("EnsAno")
+                        .HasColumnType("integer")
+                        .HasColumnName("ENSANO");
+
+                    b.Property<DateTime?>("EnsDataEnvio")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ENSDATAENVIO");
+
+                    b.Property<int>("EnsMes")
+                        .HasColumnType("integer")
+                        .HasColumnName("ENSMES");
+
+                    b.HasKey("EnsId");
+
+                    b.HasIndex("CliId");
+
+                    b.ToTable("TB_ENS_ENVIO_NOTA_SERVICO");
                 });
 
             modelBuilder.Entity("Domain.Entities.ImagemTarefa", b =>
@@ -409,6 +511,17 @@ namespace Infrastructure.Migrations
                     b.ToTable("TB_USU_USUARIO");
                 });
 
+            modelBuilder.Entity("Domain.Entities.AnotacaoCliente", b =>
+                {
+                    b.HasOne("Domain.Entities.Cliente", "Cliente")
+                        .WithMany("AnotacoesCliente")
+                        .HasForeignKey("CliId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cliente");
+                });
+
             modelBuilder.Entity("Domain.Entities.AnotacaoTarefa", b =>
                 {
                     b.HasOne("Domain.Entities.Tarefa", "Tarefa")
@@ -447,6 +560,15 @@ namespace Infrastructure.Migrations
                     b.Navigation("Usuario");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Duplicata", b =>
+                {
+                    b.HasOne("Domain.Entities.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("CliId");
+
+                    b.Navigation("Cliente");
+                });
+
             modelBuilder.Entity("Domain.Entities.Email", b =>
                 {
                     b.HasOne("Domain.Entities.Pessoa", "Pessoa")
@@ -456,6 +578,17 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Pessoa");
+                });
+
+            modelBuilder.Entity("Domain.Entities.EnvioNotaServico", b =>
+                {
+                    b.HasOne("Domain.Entities.Cliente", "Cliente")
+                        .WithMany("EnviosNotaServico")
+                        .HasForeignKey("CliId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cliente");
                 });
 
             modelBuilder.Entity("Domain.Entities.ImagemTarefa", b =>
@@ -512,6 +645,10 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Cliente", b =>
                 {
+                    b.Navigation("AnotacoesCliente");
+
+                    b.Navigation("EnviosNotaServico");
+
                     b.Navigation("Tarefas");
                 });
 

@@ -17,6 +17,9 @@ export interface CadastroClienteDto {
   valorContrato?: number;
   dataFinalContrato?: string;
   diaPagamento?: number;
+  /** Dia do mês (1-31) da NF de serviço. */
+  diaNfServico?: number;
+  emails?: string[];
   status?: StatusCliente;
 }
 
@@ -33,6 +36,9 @@ export interface ClienteResponseDto {
   valorContrato?: number;
   dataFinalContrato?: string;
   diaPagamento?: number;
+  /** Dia do mês (1-31) da NF de serviço. */
+  diaNfServico?: number;
+  emails?: string[];
   status?: StatusCliente;
   statusDescricao?: string;
 }

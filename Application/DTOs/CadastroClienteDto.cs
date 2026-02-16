@@ -27,5 +27,15 @@ public class CadastroClienteDto
 
     public int? DiaPagamento { get; set; }
 
+    /// <summary>
+    /// Dia do mês (1-31) em que vence a NF de serviço. Mensal.
+    /// </summary>
+    public int? DiaNfServico { get; set; }
+
+    /// <summary>
+    /// E-mails do cliente (armazenados na tabela TB_EMAIL via Pessoa).
+    /// </summary>
+    public List<string>? Emails { get; set; }
+
     public StatusCliente Status { get; set; } = StatusCliente.Ativo;
 }

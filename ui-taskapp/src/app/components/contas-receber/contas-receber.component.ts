@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DuplicataService, DuplicataResponseDto, CadastroDuplicataDto, ParcelaResponseDto, CadastroParcelaDto } from '../../services/duplicata.service';
+import { ClienteService, ClienteResponseDto } from '../../services/cliente.service';
 
 @Component({
   selector: 'app-contas-receber',
@@ -13,6 +14,21 @@ import { DuplicataService, DuplicataResponseDto, CadastroDuplicataDto, ParcelaRe
 export class ContasReceberComponent implements OnInit {
   duplicatas: DuplicataResponseDto[] = [];
   duplicatasFiltradas: DuplicataResponseDto[] = [];
+  clientes: ClienteResponseDto[] = [];
+
+  /** Agrupamento por cliente para exibir quebra no grid (igual atendimentos) */
+  get duplicatasAgrupadasPorCliente(): { clienteId: number | null; clienteNome: string; duplicatas: DuplicataResponseDto[] }[] {
+    const map = new Map<number | null, { clienteId: number | null; clienteNome: string; duplicatas: DuplicataResponseDto[] }>();
+    for (const d of this.duplicatasFiltradas) {
+      const key = d.clienteId ?? null;
+      const nome = d.clienteNome?.trim() || 'Sem cliente';
+      if (!map.has(key)) {
+        map.set(key, { clienteId: key, clienteNome: nome, duplicatas: [] });
+      }
+      map.get(key)!.duplicatas.push(d);
+    }
+    return Array.from(map.values()).sort((a, b) => a.clienteNome.localeCompare(b.clienteNome));
+  }
   showForm = false;
   showParcelas = false;
   loading = false;
@@ -43,13 +59,21 @@ export class ContasReceberComponent implements OnInit {
     juros: 0,
     descricaoDespesa: undefined,
     tipo: 'CR',
+    clienteId: undefined,
     dataPrimeiroVencimento: new Date().toISOString().split('T')[0]
   };
 
-  constructor(private duplicataService: DuplicataService) { }
+  constructor(
+    private duplicataService: DuplicataService,
+    private clienteService: ClienteService
+  ) { }
 
   ngOnInit() {
     this.carregarDuplicatas();
+    this.clienteService.listarTodosClientes().subscribe({
+      next: (data) => this.clientes = data,
+      error: () => {}
+    });
   }
 
   /** Recarrega a lista de duplicatas. Opcionalmente chama onConcluido após atualizar (ex.: atualizar parcelas na tela). */
@@ -89,6 +113,7 @@ export class ContasReceberComponent implements OnInit {
           juros: 0,
           descricaoDespesa: undefined,
           tipo: 'CR',
+          clienteId: undefined,
           dataPrimeiroVencimento: new Date().toISOString().split('T')[0]
         };
         this.showForm = true;
@@ -114,6 +139,7 @@ export class ContasReceberComponent implements OnInit {
       juros: duplicata.parcelas[0]?.juros || 0,
       descricaoDespesa: duplicata.descricaoDespesa,
       tipo: duplicata.tipo || 'CR',
+      clienteId: duplicata.clienteId,
       dataPrimeiroVencimento: duplicata.parcelas[0]?.vencimento.split('T')[0] || new Date().toISOString().split('T')[0]
     };
     this.showForm = true;
@@ -220,6 +246,9 @@ export class ContasReceberComponent implements OnInit {
       this.novaDuplicata.numero = 0;
     }
 
+    // Garantir tipo CR (Contas a Receber) ao salvar nesta tela
+    this.novaDuplicata.tipo = 'CR';
+
     this.loading = true;
     this.error = null;
 
@@ -229,14 +258,15 @@ export class ContasReceberComponent implements OnInit {
 
     operacao.subscribe({
       next: () => {
-        this.carregarDuplicatas();
-        this.fecharFormulario();
-        this.loading = false;
-        this.successMessage = this.editando ? 'Duplicata atualizada com sucesso!' : 'Duplicata cadastrada com sucesso!';
-        this.showSuccessModal = true;
-        setTimeout(() => {
-          this.fecharSuccessModal();
-        }, 3000);
+        // Recarrega a lista e só então fecha o formulário e mostra sucesso
+        this.carregarDuplicatas(() => {
+          this.fecharFormulario();
+          this.successMessage = this.editando ? 'Duplicata atualizada com sucesso!' : 'Duplicata cadastrada com sucesso!';
+          this.showSuccessModal = true;
+          setTimeout(() => {
+            this.fecharSuccessModal();
+          }, 3000);
+        });
       },
       error: (err) => {
         this.error = err.error?.message || 'Erro ao salvar conta a receber.';

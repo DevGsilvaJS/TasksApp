@@ -57,6 +57,65 @@
   border: 1px solid #fecaca;
 }
 
+.lembrete-reunioes {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.lembrete-reunioes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.lembrete-reunioes-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.lembrete-reunioes-link {
+  font-size: 0.875rem;
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.lembrete-reunioes-link:hover {
+  text-decoration: underline;
+}
+
+.lembrete-reunioes-desc {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.lembrete-reunioes-lista {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.lembrete-reunioes-lista li {
+  margin-bottom: 0.35rem;
+  color: #1e293b;
+}
+
+.lembrete-cliente {
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.lembrete-titulo {
+  color: #64748b;
+  font-size: 0.9375rem;
+}
+
 .loading {
   text-align: center;
   padding: 3rem;
@@ -412,4 +471,313 @@
 
 .dre-value.lucro-negativo {
   color: #dc2626;
+}
+
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+tr.nota-enviada {
+  background: #f0fdf4;
+}
+
+/* ----- Modal Notas de Serviço ----- */
+.modal-notas-overlay {
+  backdrop-filter: blur(4px);
+}
+
+.modal-notas-servico {
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
+}
+
+.modal-notas-header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-bottom: none;
+  padding: 1.25rem 1.5rem;
+}
+
+.modal-notas-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.modal-notas-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+.modal-notas-header h3 {
+  color: #f1f5f9;
+  font-size: 1.25rem;
+  margin: 0 0 0.15rem 0;
+}
+
+.modal-notas-subtitle {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #94a3b8;
+}
+
+.modal-notas-header .btn-close {
+  color: #94a3b8;
+}
+
+.modal-notas-header .btn-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.modal-notas-body {
+  padding: 1.25rem;
+  background: #f8fafc;
+}
+
+.notas-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #64748b;
+}
+
+.notas-empty-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 0.75rem;
+  opacity: 0.7;
+}
+
+.notas-loading-spinner {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid #e2e8f0;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: notas-spin 0.8s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes notas-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Grid Notas de serviço */
+.notas-grid-wrapper {
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+}
+
+.notas-grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.notas-grid thead {
+  background: #f1f5f9;
+}
+
+.notas-grid th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.notas-grid th:nth-child(1) { width: 90px; }
+.notas-grid th:nth-child(2) { min-width: 160px; }
+.notas-grid th:nth-child(3) { width: 70px; }
+.notas-grid th:nth-child(4) { min-width: 180px; }
+
+.notas-grid tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.notas-grid tbody tr:hover {
+  background: #f8fafc;
+}
+
+.nota-row-enviada {
+  background: #f0fdf4 !important;
+}
+
+.nota-row-enviada:hover {
+  background: #dcfce7 !important;
+}
+
+.nota-row-editando {
+  background: #eff6ff !important;
+}
+
+.notas-grid td {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.notas-grid th {
+  white-space: nowrap;
+}
+
+.notas-cell-codigo {
+  font-weight: 600;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+.notas-cell-nome {
+  font-weight: 500;
+  color: #1e293b;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notas-cell-dia {
+  font-variant-numeric: tabular-nums;
+  color: #475569;
+}
+
+.notas-cell-acao {
+  white-space: nowrap;
+}
+
+.nota-badge-enviado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  color: #059669;
+  font-weight: 500;
+  background: rgba(5, 150, 105, 0.12);
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.nota-badge-enviado svg {
+  flex-shrink: 0;
+}
+
+.nota-btn-marcar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.nota-btn-marcar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.nota-form-envio {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Formulário de envio em uma única linha (data + Cancelar + Confirmar) */
+.nota-form-envio-linha {
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nota-form-envio-linha .nota-form-input {
+  min-width: 132px;
+  flex-shrink: 0;
+}
+
+.nota-form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.25rem;
+}
+
+.nota-form-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  min-width: 140px;
+}
+
+.nota-form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.nota-form-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.nota-btn-cancelar {
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  color: #64748b;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.nota-btn-cancelar:hover {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.nota-btn-confirmar {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.nota-btn-confirmar:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.nota-btn-confirmar:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }

@@ -16,6 +16,9 @@ public class ClienteResponseDto
     public decimal? ValorContrato { get; set; }
     public DateTime? DataFinalContrato { get; set; }
     public int? DiaPagamento { get; set; }
+    /// <summary>Dia do mês (1-31) da NF de serviço.</summary>
+    public int? DiaNfServico { get; set; }
     public StatusCliente Status { get; set; }
     public string StatusDescricao { get; set; } = string.Empty;
+    public List<string> Emails { get; set; } = new();
 }

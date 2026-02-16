@@ -11,17 +11,20 @@ public class ClienteService : IClienteService
     private readonly IRepository<Cliente> _clienteRepository;
     private readonly IRepository<Tarefa> _tarefaRepository;
     private readonly IRepository<Usuario> _usuarioRepository;
+    private readonly IRepository<Email> _emailRepository;
 
     public ClienteService(
         IRepository<Pessoa> pessoaRepository,
         IRepository<Cliente> clienteRepository,
         IRepository<Tarefa> tarefaRepository,
-        IRepository<Usuario> usuarioRepository)
+        IRepository<Usuario> usuarioRepository,
+        IRepository<Email> emailRepository)
     {
         _pessoaRepository = pessoaRepository;
         _clienteRepository = clienteRepository;
         _tarefaRepository = tarefaRepository;
         _usuarioRepository = usuarioRepository;
+        _emailRepository = emailRepository;
     }
 
     public async Task<ClienteResponseDto> CadastrarClienteAsync(CadastroClienteDto dto)
@@ -63,13 +66,17 @@ public class ClienteService : IClienteService
                 CliValorContrato = dto.ValorContrato,
                 CliDataFinalContrato = dto.DataFinalContrato?.ToUniversalTime(),
                 CliDiaPagamento = dto.DiaPagamento,
+                CliDiaNfServico = dto.DiaNfServico,
                 CliStatus = dto.Status
             };
 
             await _clienteRepository.InserirAsync(cliente);
             await _clienteRepository.SalvarAlteracoesAsync();
 
+            await SalvarEmailsPessoaAsync(pessoa.PesId, dto.Emails);
+
             var pessoaUsuario = await _pessoaRepository.GetByIdAsync(usuario.PesId);
+            var emails = await ObterEmailsPessoaAsync(pessoa.PesId);
 
             return new ClienteResponseDto
             {
@@ -85,8 +92,10 @@ public class ClienteService : IClienteService
                 ValorContrato = cliente.CliValorContrato,
                 DataFinalContrato = cliente.CliDataFinalContrato,
                 DiaPagamento = cliente.CliDiaPagamento,
+                DiaNfServico = cliente.CliDiaNfServico,
                 Status = cliente.CliStatus,
-                StatusDescricao = ObterDescricaoStatus(cliente.CliStatus)
+                StatusDescricao = ObterDescricaoStatus(cliente.CliStatus),
+                Emails = emails
             };
         }
         catch (Exception ex)
@@ -109,6 +118,7 @@ public class ClienteService : IClienteService
         var usuario = await _usuarioRepository.GetByIdAsync(cliente.UsuId);
         var pessoaUsuario = usuario != null ? await _pessoaRepository.GetByIdAsync(usuario.PesId) : null;
 
+        var emails = await ObterEmailsPessoaAsync(pessoa.PesId);
         return new ClienteResponseDto
         {
             ClienteId = cliente.CliId,
@@ -123,8 +133,10 @@ public class ClienteService : IClienteService
             ValorContrato = cliente.CliValorContrato,
             DataFinalContrato = cliente.CliDataFinalContrato,
             DiaPagamento = cliente.CliDiaPagamento,
+            DiaNfServico = cliente.CliDiaNfServico,
             Status = cliente.CliStatus,
-            StatusDescricao = ObterDescricaoStatus(cliente.CliStatus)
+            StatusDescricao = ObterDescricaoStatus(cliente.CliStatus),
+            Emails = emails
         };
     }
 
@@ -141,6 +153,7 @@ public class ClienteService : IClienteService
                 var usuario = await _usuarioRepository.GetByIdAsync(cliente.UsuId);
                 var pessoaUsuario = usuario != null ? await _pessoaRepository.GetByIdAsync(usuario.PesId) : null;
 
+                var emails = await ObterEmailsPessoaAsync(pessoa.PesId);
                 resultado.Add(new ClienteResponseDto
                 {
                     ClienteId = cliente.CliId,
@@ -155,8 +168,10 @@ public class ClienteService : IClienteService
                     ValorContrato = cliente.CliValorContrato,
                     DataFinalContrato = cliente.CliDataFinalContrato,
                     DiaPagamento = cliente.CliDiaPagamento,
+                    DiaNfServico = cliente.CliDiaNfServico,
                     Status = cliente.CliStatus,
-                    StatusDescricao = ObterDescricaoStatus(cliente.CliStatus)
+                    StatusDescricao = ObterDescricaoStatus(cliente.CliStatus),
+                    Emails = emails
                 });
             }
         }
@@ -201,12 +216,15 @@ public class ClienteService : IClienteService
         cliente.CliValorContrato = dto.ValorContrato;
         cliente.CliDataFinalContrato = dto.DataFinalContrato?.ToUniversalTime();
         cliente.CliDiaPagamento = dto.DiaPagamento;
+        cliente.CliDiaNfServico = dto.DiaNfServico;
         cliente.CliStatus = dto.Status;
 
         await _clienteRepository.AtualizarAsync(cliente);
+        await SalvarEmailsPessoaAsync(pessoa.PesId, dto.Emails);
         await _clienteRepository.SalvarAlteracoesAsync();
 
         var pessoaUsuario = await _pessoaRepository.GetByIdAsync(usuario.PesId);
+        var emails = await ObterEmailsPessoaAsync(pessoa.PesId);
 
         return new ClienteResponseDto
         {
@@ -222,9 +240,41 @@ public class ClienteService : IClienteService
             ValorContrato = cliente.CliValorContrato,
             DataFinalContrato = cliente.CliDataFinalContrato,
             DiaPagamento = cliente.CliDiaPagamento,
+            DiaNfServico = cliente.CliDiaNfServico,
             Status = cliente.CliStatus,
-            StatusDescricao = ObterDescricaoStatus(cliente.CliStatus)
+            StatusDescricao = ObterDescricaoStatus(cliente.CliStatus),
+            Emails = emails
         };
+    }
+
+    private async Task<List<string>> ObterEmailsPessoaAsync(int pesId)
+    {
+        var emails = await _emailRepository.BuscarTodosAsync(e => e.PesId == pesId);
+        return emails
+            .Select(e => e.EmlDescricao ?? string.Empty)
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .ToList();
+    }
+
+    private async Task SalvarEmailsPessoaAsync(int pesId, List<string>? novosEmails)
+    {
+        var existentes = await _emailRepository.BuscarTodosAsync(e => e.PesId == pesId);
+        foreach (var email in existentes)
+            await _emailRepository.ExcluirAsync(email);
+
+        if (novosEmails != null)
+        {
+            foreach (var descricao in novosEmails.Where(s => !string.IsNullOrWhiteSpace(s)))
+            {
+                await _emailRepository.InserirAsync(new Email
+                {
+                    PesId = pesId,
+                    EmlDescricao = descricao.Trim()
+                });
+            }
+        }
+
+        await _emailRepository.SalvarAlteracoesAsync();
     }
 
     public async Task ExcluirClienteAsync(int id)

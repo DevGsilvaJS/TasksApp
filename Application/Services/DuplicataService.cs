@@ -8,13 +8,19 @@ public class DuplicataService : IDuplicataService
 {
     private readonly IRepository<Duplicata> _duplicataRepository;
     private readonly IRepository<Parcela> _parcelaRepository;
+    private readonly IRepository<Cliente> _clienteRepository;
+    private readonly IRepository<Pessoa> _pessoaRepository;
 
     public DuplicataService(
         IRepository<Duplicata> duplicataRepository,
-        IRepository<Parcela> parcelaRepository)
+        IRepository<Parcela> parcelaRepository,
+        IRepository<Cliente> clienteRepository,
+        IRepository<Pessoa> pessoaRepository)
     {
         _duplicataRepository = duplicataRepository;
         _parcelaRepository = parcelaRepository;
+        _clienteRepository = clienteRepository;
+        _pessoaRepository = pessoaRepository;
     }
 
     public async Task<DuplicataResponseDto> CadastrarDuplicataAsync(CadastroDuplicataDto dto)
@@ -33,7 +39,8 @@ public class DuplicataService : IDuplicataService
             DupDataEmissao = dto.DataEmissao.ToUniversalTime(),
             DupNumeroParcelas = dto.NumeroParcelas,
             DupDescricaoDespesa = dto.DescricaoDespesa,
-            DupTipo = dto.Tipo ?? "CP"
+            DupTipo = dto.Tipo ?? "CP",
+            CliId = dto.ClienteId
         };
 
         await _duplicataRepository.InserirAsync(duplicata);
@@ -148,6 +155,7 @@ public class DuplicataService : IDuplicataService
         duplicata.DupNumeroParcelas = dto.NumeroParcelas;
         duplicata.DupDescricaoDespesa = dto.DescricaoDespesa;
         duplicata.DupTipo = dto.Tipo ?? "CP";
+        duplicata.CliId = dto.ClienteId;
 
         await _duplicataRepository.AtualizarAsync(duplicata);
 
@@ -286,6 +294,17 @@ public class DuplicataService : IDuplicataService
         var valorPago = parcelasDto.Where(p => p.Status == "Paga").Sum(p => p.ValorTotal);
         var valorPendente = valorTotal - valorPago;
 
+        string? clienteNome = null;
+        if (duplicata.CliId.HasValue)
+        {
+            var cliente = await _clienteRepository.GetByIdAsync(duplicata.CliId.Value);
+            if (cliente != null)
+            {
+                var pessoa = await _pessoaRepository.GetByIdAsync(cliente.PesId);
+                clienteNome = pessoa?.PesFantasia ?? "—";
+            }
+        }
+
         return new DuplicataResponseDto
         {
             DuplicataId = duplicata.DupId,
@@ -294,6 +313,8 @@ public class DuplicataService : IDuplicataService
             NumeroParcelas = duplicata.DupNumeroParcelas,
             DescricaoDespesa = duplicata.DupDescricaoDespesa,
             Tipo = duplicata.DupTipo,
+            ClienteId = duplicata.CliId,
+            ClienteNome = clienteNome,
             Parcelas = parcelasDto,
             ValorTotal = valorTotal,
             ValorPago = valorPago,

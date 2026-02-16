@@ -77,6 +77,19 @@
                      min="1" max="31" placeholder="Dia (1-31)" class="form-input">
             </div>
           </div>
+          <div class="form-row">
+            <div class="form-group form-group-full">
+              <label>E-mail</label>
+              <input type="email" [(ngModel)]="emailCliente" name="emailCliente" 
+                     placeholder="exemplo@email.com" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>Dia da NF de serviço</label>
+              <input type="number" [(ngModel)]="novoCliente.diaNfServico" name="diaNfServico" 
+                     min="1" max="31" placeholder="Dia (1-31)" class="form-input"
+                     title="Dia do mês em que vence a nota de serviço (mensal)">
+            </div>
+          </div>
           <div class="form-actions">
             <button type="button" class="btn-secondary" (click)="fecharFormulario()">Cancelar</button>
             <button type="submit" class="btn-primary" [disabled]="loading">
@@ -110,11 +123,13 @@
           <tr>
             <th>Código</th>
             <th>Fantasia</th>
+            <th>E-mail</th>
             <th>CPF/CNPJ</th>
             <th>RG/IE</th>
             <th>Valor Contrato</th>
             <th>Data Final Contrato</th>
             <th>Dia Pagamento</th>
+            <th>Dia NF Serviço</th>
             <th>Status</th>
             <th>Data Cadastro</th>
             <th class="actions-column">Ações</th>
@@ -125,11 +140,13 @@
             <tr>
               <td>{{ cliente.codigo }}</td>
               <td>{{ cliente.fantasia }}</td>
+              <td>{{ obterPrimeiroEmail(cliente) }}</td>
               <td>{{ formatarCNPJParaExibicao(cliente.docFederal) }}</td>
               <td>{{ cliente.docEstadual || '-' }}</td>
               <td>{{ formatarMoeda(cliente.valorContrato) }}</td>
               <td>{{ formatarData(cliente.dataFinalContrato) }}</td>
               <td>{{ cliente.diaPagamento ? cliente.diaPagamento + 'º' : '-' }}</td>
+              <td>{{ cliente.diaNfServico ? cliente.diaNfServico + 'º' : '-' }}</td>
               <td>
                 @if (cliente.status === StatusCliente.Ativo) {
                   <span class="status-icon status-ativo" title="Ativo">✓</span>
@@ -160,7 +177,7 @@
         </tbody>
         <tfoot>
           <tr class="total-row">
-            <td colspan="4" class="total-label"><strong>Total:</strong></td>
+            <td colspan="6" class="total-label"><strong>Total:</strong></td>
             <td class="total-value"><strong>{{ formatarMoeda(calcularTotalValorContrato()) }}</strong></td>
             <td colspan="2"></td>
           </tr>

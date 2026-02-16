@@ -1,3 +1,96 @@
+<!-- Pop-up de alertas ao abrir o sistema: exibe um por vez (pendencias depois reuniões) -->
+@if (showPopupAlertas && alertaAtual) {
+  <div class="modal-overlay-pendencias" (click)="avancarAlerta()">
+    <div class="modal-content modal-pendencias" (click)="$event.stopPropagation()">
+      @if (alertaAtual.tipo === 'pendencias') {
+        <div class="pendencias-header">
+          <div class="pendencias-header-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+          </div>
+          <div class="pendencias-header-text">
+            <h3>Lembrete do mês</h3>
+            <p>Você tem pendências para não esquecer</p>
+          </div>
+          <button type="button" class="pendencias-btn-close" (click)="avancarAlerta()" aria-label="Fechar">×</button>
+        </div>
+        <div class="pendencias-body">
+          @if (alertaAtual.data.notasServicoPendentesMes.length) {
+            <section class="pendencias-section">
+              <h4 class="pendencias-section-title">
+                <span class="pendencias-section-icon pendencias-icon-doc">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                </span>
+                Notas de serviço pendentes
+              </h4>
+              <ul class="pendencias-lista">
+                @for (item of alertaAtual.data.notasServicoPendentesMes; track item.clienteId) {
+                  <li class="pendencias-item">
+                    <span class="pendencias-item-nome">{{ item.fantasia }}</span>
+                    <span class="pendencias-item-badge">dia {{ item.diaNfServico }}º</span>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+          @if (alertaAtual.data.dasPendentesOuAtrasadas.length) {
+            <section class="pendencias-section">
+              <h4 class="pendencias-section-title">
+                <span class="pendencias-section-icon pendencias-icon-cal">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </span>
+                DAS pendentes ou atrasadas
+              </h4>
+              <p class="pendencias-das-info">{{ alertaAtual.data.dasPendentesOuAtrasadas.length }} item(ns) na aba DAS.</p>
+            </section>
+          }
+          <p class="pendencias-dica">Acesse o <strong>Dashboard</strong> para marcar as notas como enviadas e a aba <strong>DAS</strong> para atualizar status.</p>
+          <button type="button" class="pendencias-btn-ok" (click)="avancarAlerta()">Entendi</button>
+        </div>
+      }
+      @if (alertaAtual.tipo === 'reunioes') {
+        <div class="pendencias-header">
+          <div class="pendencias-header-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+          </div>
+          <div class="pendencias-header-text">
+            <h3>Reuniões</h3>
+            <p>Reuniões em aberto sob sua responsabilidade</p>
+          </div>
+          <button type="button" class="pendencias-btn-close" (click)="avancarAlerta()" aria-label="Fechar">×</button>
+        </div>
+        <div class="pendencias-body">
+          <section class="pendencias-section">
+            <h4 class="pendencias-section-title">
+              <span class="pendencias-section-icon pendencias-icon-cal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              </span>
+              Reuniões pendentes
+            </h4>
+            <ul class="pendencias-lista">
+              @for (r of alertaAtual.data; track r.tarefaId) {
+                <li class="pendencias-item">
+                  <span class="pendencias-item-nome">{{ r.clienteNome }}</span>
+                  @if (r.titulo) {
+                    <span class="pendencias-item-badge">{{ r.titulo }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+          <p class="pendencias-dica">Acesse <strong>Atendimentos</strong> para concluir ou alterar as reuniões.</p>
+          <button type="button" class="pendencias-btn-ok" (click)="avancarAlerta()">Entendi</button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
 @if (isAuthenticated) {
   <div class="app-container">
     <aside class="sidebar">

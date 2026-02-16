@@ -28,6 +28,12 @@ public class Duplicata
     [Required]
     public string DupTipo { get; set; } = "CP"; // CP = Contas a Pagar, CR = Contas a Receber
 
+    [Column("CLIID")]
+    public int? CliId { get; set; }
+
+    [ForeignKey("CliId")]
+    public virtual Cliente? Cliente { get; set; }
+
     // Navegação
     public virtual ICollection<Parcela> Parcelas { get; set; } = new List<Parcela>();
 }

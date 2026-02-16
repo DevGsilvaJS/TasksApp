@@ -29,6 +29,12 @@ public class Cliente
     [Column("CLIDIAPAGAMENTO")]
     public int? CliDiaPagamento { get; set; }
 
+    /// <summary>
+    /// Dia do mês (1-31) em que vence a NF de serviço do cliente. Mensal.
+    /// </summary>
+    [Column("CLIDIANFSERVICO")]
+    public int? CliDiaNfServico { get; set; }
+
     [Column("CLISTATUS")]
     public StatusCliente CliStatus { get; set; } = StatusCliente.Ativo;
 
@@ -43,4 +49,6 @@ public class Cliente
     public virtual Usuario Usuario { get; set; } = null!;
 
     public virtual ICollection<Tarefa> Tarefas { get; set; } = new List<Tarefa>();
+    public virtual ICollection<AnotacaoCliente> AnotacoesCliente { get; set; } = new List<AnotacaoCliente>();
+    public virtual ICollection<EnvioNotaServico> EnviosNotaServico { get; set; } = new List<EnvioNotaServico>();
 }

@@ -19,6 +19,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<Anotacao> Anotacoes { get; set; }
     public DbSet<Duplicata> Duplicatas { get; set; }
     public DbSet<Parcela> Parcelas { get; set; }
+    public DbSet<AnotacaoCliente> AnotacoesCliente { get; set; }
+    public DbSet<Das> Das { get; set; }
+    public DbSet<EnvioNotaServico> EnviosNotaServico { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -27,6 +30,11 @@ public class ApplicationDbContext : DbContext
         // Configurar enum StatusTarefa como inteiro no banco
         modelBuilder.Entity<Tarefa>()
             .Property(t => t.TarStatus)
+            .HasConversion<int>();
+
+        // Configurar enum StatusDas como inteiro no banco
+        modelBuilder.Entity<Das>()
+            .Property(d => d.DasStatus)
             .HasConversion<int>();
     }
 }

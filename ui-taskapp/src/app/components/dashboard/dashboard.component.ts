@@ -1,12 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { DashboardService, DashboardEstatisticasDto, PeriodoFiltro, AtendimentoPorUsuarioDto, ContaAPagarDto, AtendimentoPorClienteDto, AtendimentoPorClienteMesDto, ValorPorMesPorUsuarioDto } from '../../services/dashboard.service';
+import { NotaServicoService, NotaServicoItemDto } from '../../services/nota-servico.service';
+import { AuthService } from '../../services/auth.service';
+import { TarefaService, TarefaResponseDto, TipoAtendimento } from '../../services/tarefa.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -28,6 +32,15 @@ export class DashboardComponent implements OnInit {
   showModalAtendimentosClienteMes = false;
   showModalValoresPorMes = false;
   showModalDRE = false;
+  showModalNotasServico = false;
+
+  dadosModalNotasServico: NotaServicoItemDto[] = [];
+  loadingNotasServico = false;
+  mesAnoNotas = { ano: new Date().getFullYear(), mes: new Date().getMonth() + 1 };
+  /** Item em edição para marcar data de envio (clienteId, ano, mes) */
+  itemEmEnvio: { clienteId: number; ano: number; mes: number } | null = null;
+  dataEnvioEscolhida = '';
+  salvandoEnvio = false;
   
   dadosModalAtendimentosUsuario: AtendimentoPorUsuarioDto[] = [];
   dadosModalContasPagar: ContaAPagarDto[] = [];
@@ -42,11 +55,39 @@ export class DashboardComponent implements OnInit {
   abaContasSelecionada: 'pagar' | 'pagas' = 'pagar';
   abaContasReceberSelecionada: 'receber' | 'recebidas' = 'receber';
 
-  constructor(private dashboardService: DashboardService) { }
+  /** Reuniões do usuário logado que ainda não foram concluídas (lembrete no dashboard). */
+  reunioesPendentes: TarefaResponseDto[] = [];
+  loadingReunioes = false;
+  TipoAtendimento = TipoAtendimento;
+
+  constructor(
+    private dashboardService: DashboardService,
+    private notaServicoService: NotaServicoService,
+    private authService: AuthService,
+    private tarefaService: TarefaService
+  ) { }
 
   ngOnInit() {
     this.carregarEstatisticas();
     this.carregarValoresPorMes();
+    this.carregarNotasServico();
+    this.carregarReunioesPendentes();
+  }
+
+  /** Carrega reuniões (tipo REUNIÃO) do usuário logado que não estão concluídas. Exibidas como lembrete até status concluído ou tipo alterado. */
+  carregarReunioesPendentes() {
+    const usuarioId = this.authService.getUsuarioId();
+    if (usuarioId == null) return;
+    this.loadingReunioes = true;
+    this.tarefaService.listarTarefas({ usuarioId, incluirConcluidas: false }).subscribe({
+      next: (tarefas) => {
+        this.reunioesPendentes = tarefas.filter(t => t.tipoAtendimento === TipoAtendimento.Reuniao);
+        this.loadingReunioes = false;
+      },
+      error: () => {
+        this.loadingReunioes = false;
+      }
+    });
   }
 
   carregarValoresPorMes() {
@@ -230,6 +271,76 @@ export class DashboardComponent implements OnInit {
 
   fecharModalValoresPorMes() {
     this.showModalValoresPorMes = false;
+  }
+
+  carregarNotasServico() {
+    this.loadingNotasServico = true;
+    const { ano, mes } = this.mesAnoNotas;
+    this.notaServicoService.listarNotasDoMes(ano, mes).subscribe({
+      next: (data) => {
+        this.dadosModalNotasServico = data;
+        this.loadingNotasServico = false;
+      },
+      error: () => {
+        this.loadingNotasServico = false;
+      }
+    });
+  }
+
+  abrirModalNotasServico() {
+    this.showModalNotasServico = true;
+    this.carregarNotasServico();
+  }
+
+  fecharModalNotasServico() {
+    this.showModalNotasServico = false;
+    this.itemEmEnvio = null;
+    this.dataEnvioEscolhida = '';
+  }
+
+  quantidadeNotasPendentes(): number {
+    return this.dadosModalNotasServico.filter(n => !n.enviado).length;
+  }
+
+  abrirFormEnvio(item: NotaServicoItemDto) {
+    if (item.enviado) return;
+    this.itemEmEnvio = { clienteId: item.clienteId, ano: item.ano, mes: item.mes };
+    this.dataEnvioEscolhida = new Date().toISOString().split('T')[0];
+  }
+
+  cancelarFormEnvio() {
+    this.itemEmEnvio = null;
+    this.dataEnvioEscolhida = '';
+  }
+
+  isItemEmEnvio(item: NotaServicoItemDto): boolean {
+    return this.itemEmEnvio !== null &&
+      this.itemEmEnvio.clienteId === item.clienteId &&
+      this.itemEmEnvio.ano === item.ano &&
+      this.itemEmEnvio.mes === item.mes;
+  }
+
+  confirmarEnvioNota() {
+    if (!this.itemEmEnvio || !this.dataEnvioEscolhida) return;
+    this.salvandoEnvio = true;
+    this.notaServicoService.marcarComoEnviado(
+      this.itemEmEnvio.clienteId,
+      this.itemEmEnvio.ano,
+      this.itemEmEnvio.mes,
+      this.dataEnvioEscolhida
+    ).subscribe({
+      next: () => {
+        this.salvandoEnvio = false;
+        this.itemEmEnvio = null;
+        this.dataEnvioEscolhida = '';
+        this.carregarNotasServico();
+      },
+      error: () => { this.salvandoEnvio = false; }
+    });
+  }
+
+  maxDataEnvio(): string {
+    return new Date().toISOString().split('T')[0];
   }
 
   formatarData(data: string): string {

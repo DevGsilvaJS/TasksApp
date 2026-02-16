@@ -350,6 +350,10 @@ tfoot {
   margin-bottom: 0;
 }
 
+.form-row .form-group-full {
+  grid-column: span 2;
+}
+
 /* Responsividade para monitores grandes */
 @media (min-width: 1920px) {
   .page-container {

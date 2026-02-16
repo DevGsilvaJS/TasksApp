@@ -19,6 +19,7 @@ export interface CadastroDuplicataDto {
   juros?: number;
   descricaoDespesa?: string;
   tipo?: string; // CP = Contas a Pagar, CR = Contas a Receber
+  clienteId?: number;
   dataPrimeiroVencimento?: string;
   parcelas?: CadastroParcelaDto[];
 }
@@ -43,6 +44,8 @@ export interface DuplicataResponseDto {
   numeroParcelas: number;
   descricaoDespesa?: string;
   tipo?: string; // CP = Contas a Pagar, CR = Contas a Receber
+  clienteId?: number;
+  clienteNome?: string;
   parcelas: ParcelaResponseDto[];
   valorTotal: number;
   valorPago: number;

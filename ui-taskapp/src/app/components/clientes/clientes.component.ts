@@ -21,6 +21,7 @@ export class ClientesComponent implements OnInit {
   editando = false;
   clienteEditando: ClienteResponseDto | null = null;
   termoBusca = '';
+  emailCliente = '';
 
   StatusCliente = StatusCliente;
 
@@ -87,7 +88,8 @@ export class ClientesComponent implements OnInit {
     this.clientesFiltrados = this.clientes.filter(c =>
       c.fantasia.toLowerCase().includes(termo) ||
       c.docFederal?.toLowerCase().includes(termo) ||
-      c.codigo.toString().includes(termo)
+      c.codigo.toString().includes(termo) ||
+      c.emails?.some(e => e.toLowerCase().includes(termo))
     );
   }
 
@@ -95,6 +97,7 @@ export class ClientesComponent implements OnInit {
     this.editando = false;
     this.clienteEditando = null;
     this.showForm = true;
+    this.emailCliente = '';
     this.novoCliente = {
       fantasia: '',
       docFederal: '',
@@ -111,7 +114,7 @@ export class ClientesComponent implements OnInit {
     this.clienteEditando = cliente;
     this.showForm = true;
     
-    // Formatar data para o input date (YYYY-MM-DD)
+    // Formatar datas para o input date (YYYY-MM-DD)
     let dataFinalContratoFormatada: string | undefined = undefined;
     if (cliente.dataFinalContrato) {
       const data = new Date(cliente.dataFinalContrato);
@@ -119,7 +122,7 @@ export class ClientesComponent implements OnInit {
         dataFinalContratoFormatada = data.toISOString().split('T')[0];
       }
     }
-    
+    this.emailCliente = cliente.emails?.[0] ?? '';
     this.novoCliente = {
       fantasia: cliente.fantasia,
       docFederal: cliente.docFederal || '',
@@ -129,6 +132,8 @@ export class ClientesComponent implements OnInit {
       valorContrato: cliente.valorContrato,
       dataFinalContrato: dataFinalContratoFormatada,
       diaPagamento: cliente.diaPagamento,
+      diaNfServico: cliente.diaNfServico ?? undefined,
+      emails: cliente.emails?.length ? [...cliente.emails] : undefined,
       status: cliente.status || StatusCliente.Ativo
     };
     this.error = null;
@@ -145,6 +150,11 @@ export class ClientesComponent implements OnInit {
     if (!this.novoCliente.fantasia || !this.novoCliente.codigo || !this.novoCliente.usuarioId || this.novoCliente.usuarioId === 0) {
       this.error = 'Preencha todos os campos obrigatórios (Fantasia, Código e Usuário)';
       return;
+    }
+
+    this.novoCliente.emails = this.emailCliente?.trim() ? [this.emailCliente.trim()] : [];
+    if (this.novoCliente.diaNfServico != null && (this.novoCliente.diaNfServico < 1 || this.novoCliente.diaNfServico > 31)) {
+      this.novoCliente.diaNfServico = undefined;
     }
 
     this.loading = true;
@@ -250,5 +260,12 @@ export class ClientesComponent implements OnInit {
     return this.clientesFiltrados
       .filter(c => c.valorContrato !== null && c.valorContrato !== undefined)
       .reduce((total, c) => total + (c.valorContrato || 0), 0);
+  }
+
+  obterPrimeiroEmail(cliente: ClienteResponseDto): string {
+    if (cliente.emails?.length) {
+      return cliente.emails[0];
+    }
+    return '-';
   }
 }
