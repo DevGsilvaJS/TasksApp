@@ -2,6 +2,7 @@ using Infrastructure.Extensions;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using TasksAppAPI.Scripts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -137,6 +138,25 @@ catch (Exception ex)
     {
         throw; // Falha o deploy se migrations não funcionarem em produção
     }
+}
+
+// ======================
+// Atualização CR (1x): vincular duplicatas CR aos clientes da lista (por código na descrição)
+// ======================
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Console.WriteLine("🔄 Executando atualização das CR para clientes configurados...");
+        await AtualizacaoCrClientesRunner.ExecutarUmaVezAsync(db);
+        Console.WriteLine("✅ Atualização CR concluída.");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"⚠️ Erro na atualização CR: {ex.Message}");
+    // Não interrompe a aplicação
 }
 
 // ======================

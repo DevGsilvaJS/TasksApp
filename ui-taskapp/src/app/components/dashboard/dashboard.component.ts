@@ -1,16 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { DashboardService, DashboardEstatisticasDto, PeriodoFiltro, AtendimentoPorUsuarioDto, ContaAPagarDto, AtendimentoPorClienteDto, AtendimentoPorClienteMesDto, ValorPorMesPorUsuarioDto } from '../../services/dashboard.service';
 import { NotaServicoService, NotaServicoItemDto } from '../../services/nota-servico.service';
-import { AuthService } from '../../services/auth.service';
-import { TarefaService, TarefaResponseDto, TipoAtendimento } from '../../services/tarefa.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -55,39 +52,15 @@ export class DashboardComponent implements OnInit {
   abaContasSelecionada: 'pagar' | 'pagas' = 'pagar';
   abaContasReceberSelecionada: 'receber' | 'recebidas' = 'receber';
 
-  /** Reuniões do usuário logado que ainda não foram concluídas (lembrete no dashboard). */
-  reunioesPendentes: TarefaResponseDto[] = [];
-  loadingReunioes = false;
-  TipoAtendimento = TipoAtendimento;
-
   constructor(
     private dashboardService: DashboardService,
-    private notaServicoService: NotaServicoService,
-    private authService: AuthService,
-    private tarefaService: TarefaService
+    private notaServicoService: NotaServicoService
   ) { }
 
   ngOnInit() {
     this.carregarEstatisticas();
     this.carregarValoresPorMes();
     this.carregarNotasServico();
-    this.carregarReunioesPendentes();
-  }
-
-  /** Carrega reuniões (tipo REUNIÃO) do usuário logado que não estão concluídas. Exibidas como lembrete até status concluído ou tipo alterado. */
-  carregarReunioesPendentes() {
-    const usuarioId = this.authService.getUsuarioId();
-    if (usuarioId == null) return;
-    this.loadingReunioes = true;
-    this.tarefaService.listarTarefas({ usuarioId, incluirConcluidas: false }).subscribe({
-      next: (tarefas) => {
-        this.reunioesPendentes = tarefas.filter(t => t.tipoAtendimento === TipoAtendimento.Reuniao);
-        this.loadingReunioes = false;
-      },
-      error: () => {
-        this.loadingReunioes = false;
-      }
-    });
   }
 
   carregarValoresPorMes() {

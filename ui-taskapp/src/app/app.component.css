@@ -277,6 +277,18 @@
   border: 1px solid #e2e8f0;
 }
 
+.pendencias-item-reuniao {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.pendencias-item-descricao {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin-left: 0;
+}
+
 .pendencias-das-info {
   margin: 0;
   font-size: 0.9375rem;

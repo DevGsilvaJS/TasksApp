@@ -22,7 +22,6 @@ export class AppComponent implements OnInit {
   title = 'TAREFAS GA';
   isAuthenticated = false;
   usuarioNome = '';
-  /** Fila de alertas: exibe um pop-up por vez (primeiro pendencias, depois reuniões). */
   filaAlertas: AlertaItem[] = [];
   currentAlertaIndex = 0;
   private popupAlertasMostrado = false;
@@ -64,7 +63,7 @@ export class AppComponent implements OnInit {
       forkJoin({ pendencias: pendencias$, reunioes: reunioes$ }).subscribe({
         next: ({ pendencias, reunioes }) => {
           const fila: AlertaItem[] = [];
-          if (pendencias.notasServicoPendentesMes?.length > 0 || pendencias.dasPendentesOuAtrasadas?.length > 0) {
+          if ((pendencias.notasServicoPendentesMes?.length ?? 0) > 0 || (pendencias.dasPendentesOuAtrasadas?.length ?? 0) > 0) {
             fila.push({ tipo: 'pendencias', data: pendencias });
           }
           const reunioesFiltradas = reunioes.filter(t => t.tipoAtendimento === TipoAtendimento.Reuniao);
@@ -78,7 +77,7 @@ export class AppComponent implements OnInit {
     } else {
       pendencias$.subscribe({
         next: (data) => {
-          if (data.notasServicoPendentesMes?.length > 0 || data.dasPendentesOuAtrasadas?.length > 0) {
+          if ((data.notasServicoPendentesMes?.length ?? 0) > 0 || (data.dasPendentesOuAtrasadas?.length ?? 0) > 0) {
             this.filaAlertas = [{ tipo: 'pendencias', data }];
             this.currentAlertaIndex = 0;
           }
