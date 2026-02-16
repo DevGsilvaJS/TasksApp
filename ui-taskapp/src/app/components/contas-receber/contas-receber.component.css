@@ -23,7 +23,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
-  background: #3b82f6;
+  background: var(--theme-primary);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -33,7 +33,7 @@
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--theme-primary-hover);
 }
 
 .btn-primary:disabled {
@@ -74,7 +74,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(30, 27, 75, 0.5);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -88,7 +89,8 @@
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(102, 126, 234, 0.2);
+  border-top: 4px solid var(--theme-primary);
 }
 
 .modal-large {
@@ -101,14 +103,16 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--theme-gradient);
+  color: white;
+  border-bottom: none;
 }
 
 .modal-header h3 {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: white;
 }
 
 .btn-close {
@@ -123,6 +127,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 0.375rem;
+  transition: background 0.2s, color 0.2s;
+}
+
+.modal-header .btn-close {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.modal-header .btn-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
 }
 
 .btn-close:hover {
@@ -531,7 +546,7 @@ td.grupo-cliente-cell {
   display: flex;
   justify-content: center;
   margin-bottom: 1rem;
-  color: #f59e0b;
+  color: var(--theme-primary);
 }
 
 .confirm-header h3 {
@@ -578,7 +593,7 @@ td.grupo-cliente-cell {
 
 .btn-confirm {
   padding: 0.625rem 1.25rem;
-  background: #ef4444;
+  background: var(--theme-primary);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -588,7 +603,7 @@ td.grupo-cliente-cell {
 }
 
 .btn-confirm:hover {
-  background: #dc2626;
+  background: var(--theme-primary-hover);
 }
 
 /* Modal de Sucesso */
@@ -606,7 +621,7 @@ td.grupo-cliente-cell {
   display: flex;
   justify-content: center;
   margin-bottom: 1rem;
-  color: #10b981;
+  color: var(--theme-primary);
 }
 
 .success-header h3 {

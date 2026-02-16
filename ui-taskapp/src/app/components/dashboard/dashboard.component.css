@@ -41,7 +41,7 @@
 
 .periodo-select:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -113,7 +113,7 @@
 .stat-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  border-color: #3b82f6;
+  border-color: var(--theme-primary);
 }
 
 .stat-card-success:hover {
@@ -128,7 +128,7 @@
   width: 64px;
   height: 64px;
   border-radius: 0.75rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: var(--theme-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -175,7 +175,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(30, 27, 75, 0.5);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -189,7 +190,8 @@
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(102, 126, 234, 0.2);
+  border-top: 4px solid var(--theme-primary);
 }
 
 .modal-large {
@@ -201,14 +203,16 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--theme-gradient);
+  color: white;
+  border-bottom: none;
 }
 
 .modal-header h3 {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: white;
 }
 
 .btn-close {
@@ -224,7 +228,16 @@
   align-items: center;
   justify-content: center;
   border-radius: 0.375rem;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s;
+}
+
+.modal-header .btn-close {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.modal-header .btn-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
 }
 
 .btn-close:hover {
@@ -294,13 +307,13 @@
 }
 
 .tab-button:hover {
-  color: #3b82f6;
+  color: var(--theme-primary);
 }
 
 .tab-button.active {
-  color: #3b82f6;
+  color: var(--theme-primary);
   font-weight: 600;
-  border-bottom-color: #3b82f6;
+  border-bottom-color: var(--theme-primary);
 }
 
 .usuario-row {
@@ -405,7 +418,7 @@
 
 .dre-item.dre-total {
   background: #f1f5f9;
-  border: 2px solid #3b82f6;
+  border: 2px solid var(--theme-primary);
   font-weight: 600;
   margin-top: 0.5rem;
 }
@@ -459,7 +472,7 @@ tr.nota-enviada {
 }
 
 .modal-notas-header {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: var(--theme-gradient);
   border-bottom: none;
   padding: 1.25rem 1.5rem;
 }
@@ -525,7 +538,7 @@ tr.nota-enviada {
   width: 2rem;
   height: 2rem;
   border: 3px solid #e2e8f0;
-  border-top-color: #3b82f6;
+  border-top-color: var(--theme-primary);
   border-radius: 50%;
   animation: notas-spin 0.8s linear infinite;
   margin-bottom: 1rem;
@@ -649,7 +662,7 @@ tr.nota-enviada {
   font-size: 0.875rem;
   font-weight: 500;
   color: white;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: var(--theme-gradient);
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
@@ -702,7 +715,7 @@ tr.nota-enviada {
 
 .nota-form-input:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--theme-primary);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
@@ -732,14 +745,15 @@ tr.nota-enviada {
   font-size: 0.875rem;
   font-weight: 500;
   color: white;
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background: var(--theme-gradient);
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
+  transition: filter 0.2s;
 }
 
 .nota-btn-confirmar:hover:not(:disabled) {
-  filter: brightness(1.05);
+  filter: brightness(1.08);
 }
 
 .nota-btn-confirmar:disabled {
