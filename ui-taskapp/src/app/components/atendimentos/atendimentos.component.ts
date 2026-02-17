@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TableModule } from 'primeng/table';
 import { TarefaService, TarefaResponseDto, CadastroTarefaDto, StatusTarefa, TipoAtendimento, PrioridadeTarefa, TipoContato } from '../../services/tarefa.service';
 import { ClienteService, ClienteResponseDto } from '../../services/cliente.service';
 import { UsuarioService, UsuarioResponseDto } from '../../services/usuario.service';
@@ -10,7 +11,7 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-atendimentos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TableModule],
   templateUrl: './atendimentos.component.html',
   styleUrl: './atendimentos.component.css'
 })
@@ -23,6 +24,19 @@ export class AtendimentosComponent implements OnInit {
 
   tarefas: TarefaResponseDto[] = [];
   tarefasFiltradas: TarefaResponseDto[] = [];
+
+  /** Dados para a tabela PrimeNG: ordenados pelo campo de agrupamento quando ativo. */
+  get tarefasParaTabela(): TarefaResponseDto[] {
+    if (!this.tarefasFiltradas.length) return [];
+    if (!this.agruparPor) return this.tarefasFiltradas;
+    const field = this.agruparPor;
+    return [...this.tarefasFiltradas].sort((a, b) => {
+      const va = (a as any)[field] ?? '';
+      const vb = (b as any)[field] ?? '';
+      return String(va).localeCompare(String(vb));
+    });
+  }
+
   /** Agrupamento por cliente para exibir quebra no grid */
   get tarefasAgrupadasPorCliente(): { clienteId: number; clienteNome: string; tarefas: TarefaResponseDto[] }[] {
     const map = new Map<number, { clienteId: number; clienteNome: string; tarefas: TarefaResponseDto[] }>();
@@ -73,6 +87,48 @@ export class AtendimentosComponent implements OnInit {
   showImagens = false;
   tarefaImagens: TarefaResponseDto | null = null;
   imagemAtualIndex = 0;
+
+  /** Opções do "Agrupar por" (substitui o "Drag here to set row groups" do Enterprise) */
+  agruparPorOpcoes: { value: string; label: string }[] = [
+    { value: '', label: 'Nenhum' },
+    { value: 'clienteNome', label: 'Cliente' },
+    { value: 'usuarioNome', label: 'Usuário' },
+    { value: 'tipoAtendimentoDescricao', label: 'Tipo' }
+  ];
+  agruparPor = 'clienteNome';
+
+  getAgruparPorLabel(): string {
+    const opt = this.agruparPorOpcoes.find(o => o.value === this.agruparPor);
+    return opt ? opt.label : this.agruparPor || 'Nenhum';
+  }
+
+  /** Valor exibido no cabeçalho do grupo (PrimeNG pode passar objeto ou string). */
+  getGroupHeaderValue(rowData: any): string {
+    if (rowData == null) return '';
+    if (typeof rowData === 'string') return rowData;
+    if (typeof rowData === 'object' && this.agruparPor && rowData[this.agruparPor] != null) {
+      return String(rowData[this.agruparPor]);
+    }
+    return String(rowData);
+  }
+
+  /** Classes da linha por status e prioridade (PrimeNG Table). */
+  getRowClass(row: TarefaResponseDto): string {
+    if (!row) return '';
+    const statusClass = this.obterClasseLinhaStatus(row) || '';
+    const prioridadeClass = this.obterClasseLinhaPrioridade(row);
+    return [statusClass, prioridadeClass].filter(Boolean).join(' ');
+  }
+
+  /** Classe da linha por prioridade (Alta, Média, Baixa) para cor de linha. */
+  obterClasseLinhaPrioridade(tarefa: TarefaResponseDto | null | undefined): string {
+    if (!tarefa?.prioridadeDescricao) return '';
+    const d = (tarefa.prioridadeDescricao || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (d === 'alta') return 'row-prioridade-alta';
+    if (d === 'media') return 'row-prioridade-media';
+    if (d === 'baixa') return 'row-prioridade-baixa';
+    return '';
+  }
 
   statusOptions = [
     { value: StatusTarefa.EmAberto, label: 'Em Aberto' },
@@ -588,6 +644,22 @@ export class AtendimentosComponent implements OnInit {
       .replace(/[\u0300-\u036f]/g, ''); // Remove acentos
 
     return `prioridade-${descricaoNormalizada}`;
+  }
+
+  /** Classe da linha inteira por status (para AG Grid getRowClass). */
+  obterClasseLinhaStatus(tarefa: TarefaResponseDto | null | undefined): string {
+    if (!tarefa) return 'row-status-aberto';
+    const pelaDescricao = (desc: string): string => {
+      const d = (desc || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (d.includes('aberto')) return 'row-status-aberto';
+      if (d.includes('concluida')) return 'row-status-concluida';
+      if (d.includes('cancelada')) return 'row-status-cancelada';
+      if (d.includes('reativada')) return 'row-status-reativada';
+      return 'row-status-aberto';
+    };
+    const classe = this.obterClasseStatus(tarefa.status);
+    if (classe) return 'row-' + classe;
+    return pelaDescricao(tarefa.statusDescricao || '');
   }
 
   onImagensSelecionadas(event: any) {

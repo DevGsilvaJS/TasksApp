@@ -187,98 +187,100 @@
       <p>{{ termoBusca ? 'Nenhuma tarefa encontrada' : 'Nenhuma tarefa cadastrada' }}</p>
     </div>
   } @else {
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Nº</th>
-            <th>Protocolo</th>
-            <th>Título</th>
-            <th>Solicitante</th>
-            <th>Celular</th>
-            <th>Tipo</th>
-            <th>Contato</th>
-            <th>Prioridade</th>
-            <th>Cliente</th>
-            <th>Usuário</th>
-            <th>Status</th>
-            <th>Data Cadastro</th>
-            <th class="actions-column">Ações</th>
+    <div class="grid-group-row">
+      <select
+        [ngModel]="agruparPor"
+        (ngModelChange)="agruparPor = $event"
+        class="grid-group-select"
+        title="Agrupar por coluna">
+        @for (opt of agruparPorOpcoes; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+    <div class="table-container p-table-wrapper">
+      <p-table
+        [value]="tarefasParaTabela"
+        [groupRowsBy]="agruparPor || null"
+        rowGroupMode="subheader"
+        [sortField]="agruparPor || 'numero'"
+        [sortOrder]="1"
+        dataKey="tarefaId"
+        styleClass="p-datatable-sm p-datatable-striped"
+        [scrollable]="true"
+        scrollHeight="flex"
+        [tableStyle]="{ 'min-width': '50rem' }">
+        <ng-template pTemplate="groupheader" let-rowData>
+          <tr class="p-row-group-header">
+            <td [attr.colspan]="10">
+              @if (agruparPor) {
+                <strong>{{ getAgruparPorLabel() }}: {{ getGroupHeaderValue(rowData) }}</strong>
+              }
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          @for (grupo of tarefasAgrupadasPorCliente; track grupo.clienteId) {
-            <tr class="grupo-cliente-row">
-              <td colspan="13" class="grupo-cliente-cell">{{ grupo.clienteNome }} ({{ grupo.tarefas.length }} {{ grupo.tarefas.length === 1 ? 'atendimento' : 'atendimentos' }})</td>
-            </tr>
-            @for (tarefa of grupo.tarefas; track tarefa.tarefaId) {
-              <tr>
-                <td>{{ tarefa.numero || '-' }}</td>
-                <td>{{ tarefa.protocolo || '-' }}</td>
-                <td [title]="tarefa.titulo || '-'">{{ tarefa.titulo || '-' }}</td>
-                <td>{{ tarefa.solicitante || '-' }}</td>
-                <td>{{ tarefa.celularSolicitante || '-' }}</td>
-                <td>{{ tarefa.tipoAtendimentoDescricao || '-' }}</td>
-                <td>{{ tarefa.tipoContatoDescricao || '-' }}</td>
-                <td>
-                  <span class="prioridade-badge" [ngClass]="obterClassePrioridade(tarefa.prioridadeDescricao)">
-                    {{ tarefa.prioridadeDescricao || '-' }}
-                  </span>
-                </td>
-                <td>{{ tarefa.clienteNome }}</td>
-                <td>{{ tarefa.usuarioNome }}</td>
-                <td>
-                  <span class="status-badge" [ngClass]="obterClasseStatus(tarefa.status)">
-                    {{ tarefa.statusDescricao }}
-                  </span>
-                </td>
-                <td>{{ formatarData(tarefa.dataCadastro) }}</td>
-                <td class="actions-cell">
-                <div class="actions-group">
-                  <button class="btn-notes" (click)="abrirAnotacoes(tarefa)" title="Anotações">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"></path>
-                    </svg>
-                    @if (tarefa.anotacoes && tarefa.anotacoes.length > 0) {
-                      <span class="badge-count">{{ tarefa.anotacoes.length }}</span>
-                    }
-                  </button>
-                  @if (tarefa.imagens && tarefa.imagens.length > 0) {
-                    <button class="btn-images" (click)="abrirImagens(tarefa)" title="Ver Imagens">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                        <path d="M21 15l-5-5L5 21"></path>
-                      </svg>
-                      <span class="badge-count">{{ tarefa.imagens.length }}</span>
-                    </button>
+        </ng-template>
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="numero">Nº <p-sortIcon field="numero"></p-sortIcon></th>
+            <th pSortableColumn="protocolo">Protocolo <p-sortIcon field="protocolo"></p-sortIcon></th>
+            <th pSortableColumn="titulo">Título <p-sortIcon field="titulo"></p-sortIcon></th>
+            <th pSortableColumn="clienteNome">Cliente <p-sortIcon field="clienteNome"></p-sortIcon></th>
+            <th pSortableColumn="solicitante">Solicitante <p-sortIcon field="solicitante"></p-sortIcon></th>
+            <th pSortableColumn="celularSolicitante">Celular</th>
+            <th pSortableColumn="tipoAtendimentoDescricao">Tipo <p-sortIcon field="tipoAtendimentoDescricao"></p-sortIcon></th>
+            <th pSortableColumn="prioridadeDescricao">Prioridade</th>
+            <th pSortableColumn="usuarioNome">Usuário <p-sortIcon field="usuarioNome"></p-sortIcon></th>
+            <th style="width: 200px">Ações</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-rowData>
+          <tr [ngClass]="getRowClass(rowData)">
+            <td>{{ rowData.numero }}</td>
+            <td>{{ rowData.protocolo }}</td>
+            <td>{{ rowData.titulo }}</td>
+            <td>{{ rowData.clienteNome }}</td>
+            <td>{{ rowData.solicitante }}</td>
+            <td>{{ rowData.celularSolicitante }}</td>
+            <td>{{ rowData.tipoAtendimentoDescricao }}</td>
+            <td>
+              <span class="prioridade-badge" [ngClass]="obterClassePrioridade(rowData.prioridadeDescricao)">{{ rowData.prioridadeDescricao }}</span>
+            </td>
+            <td>{{ rowData.usuarioNome }}</td>
+            <td>
+              <div class="actions-group">
+                <button type="button" class="btn-notes" (click)="abrirAnotacoes(rowData)" title="Anotações">
+                  <i class="pi pi-file"></i>
+                  @if (rowData.anotacoes?.length) {
+                    <span class="badge-count">{{ rowData.anotacoes.length }}</span>
                   }
-                  @if (tarefa.status !== StatusTarefa.Concluida) {
-                    <button class="btn-status" (click)="alterarStatus(tarefa, StatusTarefa.Concluida)" title="Marcar como Concluída">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 6L9 17l-5-5"></path>
-                      </svg>
-                    </button>
-                  }
-                  <button class="btn-edit" (click)="abrirFormularioEdicao(tarefa)" title="Editar">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
+                </button>
+                @if (rowData.imagens?.length) {
+                  <button type="button" class="btn-images" (click)="abrirImagens(rowData)" title="Ver Imagens">
+                    <i class="pi pi-image"></i>
+                    <span class="badge-count">{{ rowData.imagens.length }}</span>
                   </button>
-                  <button class="btn-delete" (click)="excluirTarefa(tarefa)" title="Excluir">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
+                }
+                @if (rowData.status !== StatusTarefa.Concluida) {
+                  <button type="button" class="btn-status" (click)="alterarStatus(rowData, StatusTarefa.Concluida)" title="Marcar como Concluída">
+                    <i class="pi pi-check"></i>
                   </button>
-                </div>
-              </td>
-            </tr>
-            }
-          }
-        </tbody>
-      </table>
+                }
+                <button type="button" class="btn-edit" (click)="abrirFormularioEdicao(rowData)" title="Editar">
+                  <i class="pi pi-pencil"></i>
+                </button>
+                <button type="button" class="btn-delete" (click)="excluirTarefa(rowData)" title="Excluir">
+                  <i class="pi pi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="10">Nenhuma tarefa.</td>
+          </tr>
+        </ng-template>
+      </p-table>
     </div>
   }
 

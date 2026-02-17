@@ -17,7 +17,7 @@
           <button type="button" class="pendencias-btn-close" (click)="avancarAlerta()" aria-label="Fechar">×</button>
         </div>
         <div class="pendencias-body">
-          @if ((alertaAtual.data.notasServicoPendentesMes ?? []).length > 0) {
+          @if (alertaAtual.data.notasServicoPendentesMes.length > 0) {
             <section class="pendencias-section">
               <h4 class="pendencias-section-title">
                 <span class="pendencias-section-icon pendencias-icon-doc">
@@ -35,7 +35,7 @@
               </ul>
             </section>
           }
-          @if ((alertaAtual.data.dasPendentesOuAtrasadas ?? []).length > 0) {
+          @if (alertaAtual.data.dasPendentesOuAtrasadas.length > 0) {
             <section class="pendencias-section">
               <h4 class="pendencias-section-title">
                 <span class="pendencias-section-icon pendencias-icon-cal">
@@ -43,7 +43,7 @@
                 </span>
                 DAS pendentes ou atrasadas
               </h4>
-              <p class="pendencias-das-info">{{ (alertaAtual.data.dasPendentesOuAtrasadas ?? []).length }} item(ns) na aba DAS.</p>
+              <p class="pendencias-das-info">{{ alertaAtual.data.dasPendentesOuAtrasadas.length }} item(ns) na aba DAS.</p>
             </section>
           }
           <p class="pendencias-dica">Acesse o <strong>Dashboard</strong> para marcar as notas como enviadas e a aba <strong>DAS</strong> para atualizar status.</p>
