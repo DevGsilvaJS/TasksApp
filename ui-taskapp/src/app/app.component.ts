@@ -19,7 +19,7 @@ export type AlertaItem =
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit {
-  title = 'TAREFAS GA';
+  title = 'GA CONSULTORIA';
   isAuthenticated = false;
   usuarioNome = '';
   filaAlertas: AlertaItem[] = [];

@@ -11,7 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 // ======================
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "GA CONSULTORIA", Version = "v1" });
+});
 
 // CORS simples (Angular + API juntos)
 builder.Services.AddCors(options =>
@@ -270,11 +273,15 @@ catch (Exception ex)
 
 // ======================
 // Importação da planilha de possíveis clientes (pasta Planilha)
+// Em produção: /app/Planilha. Em dev: raiz do projeto (TasksApp/Planilha) ou TasksAppAPI/Planilha.
 // ======================
 try
 {
+    var baseDir = app.Environment.ContentRootPath ?? AppContext.BaseDirectory ?? ".";
     var planilhaPath = Environment.GetEnvironmentVariable("PlanilhaPath")
-        ?? Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath ?? AppContext.BaseDirectory, "..", "Planilha"));
+        ?? (Directory.Exists(Path.Combine(baseDir, "Planilha"))
+            ? Path.GetFullPath(Path.Combine(baseDir, "Planilha"))
+            : Path.GetFullPath(Path.Combine(baseDir, "..", "Planilha")));
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
