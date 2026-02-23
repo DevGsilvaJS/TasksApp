@@ -20,4 +20,24 @@
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 
+  <!-- Copia a pasta Planilha (raiz do repo) para o output/publish para o Render encontrar em produção -->
+  <Target Name="CopyPlanilhaToOutput" AfterTargets="Build">
+    <PropertyGroup>
+      <PlanilhaSource Condition="Exists('$(MSBuildProjectDirectory)\..\Planilha')">$(MSBuildProjectDirectory)\..\Planilha</PlanilhaSource>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(PlanilhaSource)' != ''">
+      <PlanilhaFiles Include="$(PlanilhaSource)\**\*.*" />
+    </ItemGroup>
+    <Copy Condition="'$(PlanilhaSource)' != ''" SourceFiles="@(PlanilhaFiles)" DestinationFolder="$(OutputPath)\Planilha\%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="CopyPlanilhaToPublish" AfterTargets="Publish">
+    <PropertyGroup>
+      <PlanilhaSource Condition="Exists('$(MSBuildProjectDirectory)\..\Planilha')">$(MSBuildProjectDirectory)\..\Planilha</PlanilhaSource>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(PlanilhaSource)' != ''">
+      <PlanilhaFiles Include="$(PlanilhaSource)\**\*.*" />
+    </ItemGroup>
+    <Copy Condition="'$(PlanilhaSource)' != ''" SourceFiles="@(PlanilhaFiles)" DestinationFolder="$(PublishDir)\Planilha\%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>

@@ -278,10 +278,20 @@ catch (Exception ex)
 try
 {
     var baseDir = app.Environment.ContentRootPath ?? AppContext.BaseDirectory ?? ".";
-    var planilhaPath = Environment.GetEnvironmentVariable("PlanilhaPath")
-        ?? (Directory.Exists(Path.Combine(baseDir, "Planilha"))
-            ? Path.GetFullPath(Path.Combine(baseDir, "Planilha"))
-            : Path.GetFullPath(Path.Combine(baseDir, "..", "Planilha")));
+    var planilhaPath = Environment.GetEnvironmentVariable("PlanilhaPath");
+    if (string.IsNullOrWhiteSpace(planilhaPath))
+    {
+        var planilhaNoApp = Path.Combine(baseDir, "Planilha");
+        var planilhaNoPai = Path.GetFullPath(Path.Combine(baseDir, "..", "Planilha"));
+        planilhaPath = Directory.Exists(planilhaNoApp)
+            ? Path.GetFullPath(planilhaNoApp)
+            : planilhaNoPai;
+    }
+    else
+    {
+        planilhaPath = Path.GetFullPath(planilhaPath);
+    }
+    Console.WriteLine($"[Planilha] Caminho usado: {planilhaPath}");
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
