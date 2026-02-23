@@ -41,6 +41,10 @@ export class AppComponent implements OnInit {
     return this.filaAlertas.length > 0 && this.alertaAtual !== null;
   }
 
+  get isAdmin(): boolean {
+    return this.authService.isAdministrador();
+  }
+
   ngOnInit() {
     this.authService.usuario$.subscribe(usuario => {
       this.isAuthenticated = usuario !== null;

@@ -40,6 +40,9 @@ appsettings.Production.json
 .DS_Store
 Thumbs.db
 
+## Planilha (dados locais / produção; descomente para não subir no git)
+# Planilha/
+
 ## Build
 *.zip
 *.tar.gz

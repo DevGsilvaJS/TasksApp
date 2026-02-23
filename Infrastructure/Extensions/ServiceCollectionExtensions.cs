@@ -55,6 +55,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDasService, DasService>();
         services.AddScoped<IAlertasService, AlertasService>();
         services.AddScoped<INotaServicoService, NotaServicoService>();
+        services.AddScoped<IPossivelClienteService, PossivelClienteService>();
+        services.AddScoped<ICadastroAtendimentoService, CadastroAtendimentoService>();
 
         return services;
     }

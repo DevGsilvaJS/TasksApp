@@ -340,6 +340,7 @@ public class TarefaService : ITarefaService
             StatusTarefa.Concluida => "Concluída",
             StatusTarefa.Cancelada => "Cancelada",
             StatusTarefa.Reativada => "Reativada",
+            StatusTarefa.AguardandoCliente => "Aguardando Cliente",
             _ => status.ToString()
         };
     }

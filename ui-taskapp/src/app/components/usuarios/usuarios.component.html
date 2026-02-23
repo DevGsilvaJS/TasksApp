@@ -19,10 +19,10 @@
     <div class="modal-overlay" (click)="fecharFormulario()">
       <div class="modal-content" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h3>Cadastrar Novo Usuário</h3>
+          <h3>{{ tituloModal }}</h3>
           <button class="btn-close" (click)="fecharFormulario()">×</button>
         </div>
-        <form (ngSubmit)="cadastrarUsuario()" class="form">
+        <form (ngSubmit)="salvar()" class="form">
           <div class="form-group">
             <label>Nome *</label>
             <input type="text" [(ngModel)]="novoUsuario.nome" name="nome" required>
@@ -43,9 +43,24 @@
             <label>Login *</label>
             <input type="text" [(ngModel)]="novoUsuario.login" name="login" required>
           </div>
+          @if (!editando) {
+            <div class="form-group">
+              <label>Senha *</label>
+              <input type="password" [(ngModel)]="novoUsuario.senha" name="senha" required>
+            </div>
+          } @else {
+            <div class="form-group">
+              <label>Nova senha</label>
+              <input type="password" [(ngModel)]="senhaEdicao" name="senhaEdicao" placeholder="Deixe em branco para não alterar">
+            </div>
+          }
           <div class="form-group">
-            <label>Senha *</label>
-            <input type="password" [(ngModel)]="novoUsuario.senha" name="senha" required>
+            <label>Perfil *</label>
+            <select [(ngModel)]="novoUsuario.perfil" name="perfil" required>
+              @for (p of perfisOpcoes; track p.value) {
+                <option [ngValue]="p.value">{{ p.label }}</option>
+              }
+            </select>
           </div>
           <div class="form-actions">
             <button type="button" class="btn-secondary" (click)="fecharFormulario()">Cancelar</button>
@@ -73,7 +88,9 @@
             <th>Nome</th>
             <th>Sobrenome</th>
             <th>Login</th>
+            <th>Perfil</th>
             <th>CPF/CNPJ</th>
+            <th class="col-acoes">Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -83,7 +100,13 @@
               <td>{{ usuario.nome }}</td>
               <td>{{ usuario.sobrenome || '-' }}</td>
               <td>{{ usuario.login }}</td>
+              <td>{{ labelPerfil(usuario.perfil) }}</td>
               <td>{{ usuario.docFederal || '-' }}</td>
+              <td>
+                <button type="button" class="btn-edit" (click)="abrirEdicao(usuario)" title="Editar">
+                  Editar
+                </button>
+              </td>
             </tr>
           }
         </tbody>

@@ -78,6 +78,13 @@ export interface ContratoDetalheDto {
   valorContrato: number;
 }
 
+export interface TelemarketingContatosDto {
+  contatosNoDia: number;
+  contatosSemanaAtual: number;
+  contatosMesAtual: number;
+  contatosAnoAtual: number;
+}
+
 export enum PeriodoFiltro {
   Dia = 'dia',
   Semana = 'semana',
@@ -89,6 +96,10 @@ export enum PeriodoFiltro {
 })
 export class DashboardService {
   constructor(private api: ApiService) { }
+
+  obterContatosTelemarketing(): Observable<TelemarketingContatosDto> {
+    return this.api.get<TelemarketingContatosDto>('dashboard/contatos-telemarketing');
+  }
 
   obterEstatisticas(dataInicio?: Date, dataFim?: Date): Observable<DashboardEstatisticasDto> {
     let url = 'dashboard';

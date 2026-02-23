@@ -13,6 +13,7 @@ export interface LoginResponseDto {
   login: string;
   nome: string;
   autenticado: boolean;
+  perfil: number | null;
 }
 
 @Injectable({
@@ -63,6 +64,18 @@ export class AuthService {
   getUsuarioId(): number | null {
     const usuario = this.getUsuario();
     return usuario ? usuario.usuarioId : null;
+  }
+
+  getPerfil(): number {
+    const usuario = this.getUsuario();
+    return usuario && usuario.perfil != null ? usuario.perfil : 2; // 2 = Administrador (ver tudo)
+  }
+
+  /** true = vê todos os módulos (Administrador = 2 ou perfil null) */
+  isAdministrador(): boolean {
+    const usuario = this.getUsuario();
+    if (!usuario) return false;
+    return usuario.perfil === 2 || usuario.perfil == null;
   }
 
   private salvarUsuario(usuario: LoginResponseDto): void {

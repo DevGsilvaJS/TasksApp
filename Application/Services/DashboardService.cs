@@ -12,6 +12,7 @@ public class DashboardService : IDashboardService
     private readonly IRepository<Usuario> _usuarioRepository;
     private readonly IRepository<Cliente> _clienteRepository;
     private readonly IRepository<Pessoa> _pessoaRepository;
+    private readonly IRepository<PossivelClienteAnotacao> _anotacaoTelemarketingRepository;
 
     public DashboardService(
         IRepository<Tarefa> tarefaRepository,
@@ -19,7 +20,8 @@ public class DashboardService : IDashboardService
         IRepository<Duplicata> duplicataRepository,
         IRepository<Usuario> usuarioRepository,
         IRepository<Cliente> clienteRepository,
-        IRepository<Pessoa> pessoaRepository)
+        IRepository<Pessoa> pessoaRepository,
+        IRepository<PossivelClienteAnotacao> anotacaoTelemarketingRepository)
     {
         _tarefaRepository = tarefaRepository;
         _parcelaRepository = parcelaRepository;
@@ -27,6 +29,7 @@ public class DashboardService : IDashboardService
         _usuarioRepository = usuarioRepository;
         _clienteRepository = clienteRepository;
         _pessoaRepository = pessoaRepository;
+        _anotacaoTelemarketingRepository = anotacaoTelemarketingRepository;
     }
 
     public async Task<DashboardEstatisticasDto> ObterEstatisticasAsync(DateTime dataInicio, DateTime dataFim)
@@ -384,5 +387,53 @@ public class DashboardService : IDashboardService
             .ThenBy(r => r.Ano)
             .ThenBy(r => r.Mes)
             .ToList();
+    }
+
+    public async Task<TelemarketingContatosDto> ObterContatosTelemarketingAsync()
+    {
+        // Usar horário local do servidor para "dia/semana/mês/ano atual" (ex.: Brasil)
+        var nowLocal = DateTime.Now;
+        var hojeInicioLocal = new DateTime(nowLocal.Year, nowLocal.Month, nowLocal.Day, 0, 0, 0, DateTimeKind.Local);
+        var hojeFimLocal = hojeInicioLocal.AddDays(1).AddTicks(-1);
+        var hojeInicioUtc = hojeInicioLocal.ToUniversalTime();
+        var hojeFimUtc = hojeFimLocal.ToUniversalTime();
+
+        // Semana atual: domingo a hoje (fim do dia)
+        var diaSemana = (int)nowLocal.DayOfWeek;
+        var inicioSemanaLocal = hojeInicioLocal.AddDays(-diaSemana);
+        var inicioSemanaUtc = inicioSemanaLocal.ToUniversalTime();
+
+        // Mês atual
+        var inicioMesLocal = new DateTime(nowLocal.Year, nowLocal.Month, 1, 0, 0, 0, DateTimeKind.Local);
+        var inicioMesUtc = inicioMesLocal.ToUniversalTime();
+
+        // Ano atual
+        var inicioAnoLocal = new DateTime(nowLocal.Year, 1, 1, 0, 0, 0, DateTimeKind.Local);
+        var inicioAnoUtc = inicioAnoLocal.ToUniversalTime();
+
+        var todas = await _anotacaoTelemarketingRepository.BuscarTodosAsync(_ => true);
+        var lista = todas.ToList();
+
+        DateTime ToUtc(DateTime d)
+        {
+            return d.Kind == DateTimeKind.Utc ? d : d.Kind == DateTimeKind.Local ? d.ToUniversalTime() : DateTime.SpecifyKind(d, DateTimeKind.Utc);
+        }
+
+        int ContarNoPeriodo(DateTime inicioUtc, DateTime fimUtc)
+        {
+            return lista.Count(a =>
+            {
+                var dt = ToUtc(a.PcaDtCadastro);
+                return dt >= inicioUtc && dt <= fimUtc;
+            });
+        }
+
+        return new TelemarketingContatosDto
+        {
+            ContatosNoDia = ContarNoPeriodo(hojeInicioUtc, hojeFimUtc),
+            ContatosSemanaAtual = ContarNoPeriodo(inicioSemanaUtc, hojeFimUtc),
+            ContatosMesAtual = ContarNoPeriodo(inicioMesUtc, hojeFimUtc),
+            ContatosAnoAtual = ContarNoPeriodo(inicioAnoUtc, hojeFimUtc)
+        };
     }
 }

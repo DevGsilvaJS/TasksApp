@@ -92,6 +92,11 @@
   flex-shrink: 0;
 }
 
+.nav-item-sub {
+  padding-left: 2.25rem;
+  font-size: 0.9375rem;
+}
+
 .main-content {
   flex: 1;
   overflow-y: auto;

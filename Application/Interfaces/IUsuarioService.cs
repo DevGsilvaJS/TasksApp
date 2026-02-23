@@ -5,6 +5,7 @@ namespace Application.Interfaces;
 public interface IUsuarioService
 {
     Task<UsuarioResponseDto> CadastrarUsuarioAsync(CadastroUsuarioDto dto);
+    Task<UsuarioResponseDto> AtualizarUsuarioAsync(int id, AtualizarUsuarioDto dto);
     Task<UsuarioResponseDto?> ObterUsuarioPorIdAsync(int id);
     Task<UsuarioResponseDto?> ObterUsuarioPorLoginAsync(string login);
     Task<IEnumerable<UsuarioResponseDto>> ListarTodosUsuariosAsync();

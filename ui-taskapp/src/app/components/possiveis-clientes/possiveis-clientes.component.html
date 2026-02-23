@@ -1,0 +1,305 @@
+<div class="page-container">
+  <div class="page-header">
+    <h2>Comercial</h2>
+    <p class="page-subtitle">Cadastros importados da planilha para trabalho de ligação</p>
+  </div>
+
+  @if (error) {
+    <div class="modal-overlay" (click)="fecharModalErro()">
+      <div class="modal-content modal-erro" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Erro</h3>
+          <button type="button" class="btn-close" (click)="fecharModalErro()">×</button>
+        </div>
+        <div class="modal-erro-body">
+          <p>{{ error }}</p>
+        </div>
+        <div class="modal-erro-actions">
+          <button type="button" class="btn-modal btn-primary" (click)="fecharModalErro()">OK</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="search-container">
+    <input
+      type="text"
+      placeholder="Buscar por código, loja, fantasia, razão social, CNPJ, e-mail ou celular..."
+      [(ngModel)]="termoBusca"
+      (input)="filtrar()"
+      class="search-input">
+  </div>
+
+  @if (loading && lista.length === 0) {
+    <div class="loading">Carregando...</div>
+  } @else if (listaFiltrada.length === 0) {
+    <div class="empty-state">
+      <p>{{ termoBusca || hasFiltrosColuna ? 'Nenhum registro encontrado' : 'Nenhum possível cliente importado' }}</p>
+    </div>
+  } @else {
+    <div class="grid-group-row">
+      @if (hasFiltrosColuna) {
+        <button type="button" class="filter-clear-all-btn" (click)="limparFiltrosColuna()" title="Limpar filtros das colunas">Limpar filtros</button>
+      }
+    </div>
+    <div class="table-container p-table-wrapper">
+      <p-table
+        [value]="listaFiltrada"
+        dataKey="pocId"
+        styleClass="p-datatable-sm p-datatable-striped"
+        [paginator]="true"
+        [rows]="20"
+        [rowsPerPageOptions]="[10, 20, 50]"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registro(s)"
+        [scrollable]="true"
+        scrollHeight="flex"
+        [tableStyle]="{ 'min-width': '85rem' }">
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="pocCodigo">
+              Código <p-sortIcon field="pocCodigo"></p-sortIcon>
+              <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('pocCodigo', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
+            </th>
+            <th pSortableColumn="pocLoja">
+              Loja <p-sortIcon field="pocLoja"></p-sortIcon>
+              <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('pocLoja', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
+            </th>
+            <th pSortableColumn="pocFantasia">
+              Fantasia <p-sortIcon field="pocFantasia"></p-sortIcon>
+              <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('pocFantasia', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
+            </th>
+            <th>Celular</th>
+            <th pSortableColumn="pocStatusAtendimento">
+              Status Último atendimento <p-sortIcon field="pocStatusAtendimento"></p-sortIcon>
+              <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('statusAtendimentoLabel', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
+            </th>
+            <th class="col-acoes">Ações</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-rowData>
+          <tr>
+            <td>{{ rowData.pocCodigo }}</td>
+            <td>{{ valorOuTraco(rowData.pocLoja) }}</td>
+            <td>{{ valorOuTraco(rowData.pocFantasia) }}</td>
+            <td>{{ valorOuTraco(rowData.pocCelDdd) }} {{ valorOuTraco(rowData.pocCelular) }}</td>
+            <td class="status-atend-cell">{{ labelStatusAtendimento(rowData) }}</td>
+            <td>
+              <div class="actions-group">
+                @if (temWhatsApp(rowData)) {
+                  <button type="button" class="btn-whatsapp" (click)="abrirModalAtendimento(rowData)" title="Atendimento (WhatsApp, anotações e status)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  </button>
+                }
+                <button type="button" class="btn-edit" (click)="abrirCadastro(rowData)" title="Editar cadastro">
+                  <i class="pi pi-pencil"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="6">Nenhum registro.</td>
+          </tr>
+        </ng-template>
+      </p-table>
+
+      <p-overlayPanel #opFiltroColuna [style]="{ width: '280px' }" (onHide)="filtroColunaAtivo = null">
+        <ng-template pTemplate="content">
+          @if (filtroColunaAtivo) {
+            <div class="filter-panel">
+              <label class="filter-panel-select-all">
+                <input type="checkbox" [checked]="isSelecionarTodosFiltroColuna(filtroColunaAtivo)" (change)="toggleSelecionarTodosFiltroColuna(filtroColunaAtivo)" />
+                <span>Selecionar todos</span>
+              </label>
+              <div class="filter-panel-list">
+                @for (valor of getValoresDistintosColuna(filtroColunaAtivo); track valor) {
+                  <label class="filter-panel-item">
+                    <input type="checkbox" [checked]="isValorSelecionadoFiltroColuna(filtroColunaAtivo, valor)" (change)="toggleValorFiltroColuna(filtroColunaAtivo, valor)" />
+                    <span>{{ valor || '—' }}</span>
+                  </label>
+                }
+              </div>
+              <div class="filter-panel-actions">
+                <button type="button" class="filter-panel-btn-ok" (click)="aplicarFiltroColuna()">OK</button>
+                <button type="button" class="filter-panel-btn-cancel" (click)="cancelarFiltroColuna()">Cancelar</button>
+              </div>
+            </div>
+          }
+        </ng-template>
+      </p-overlayPanel>
+    </div>
+  }
+
+  @if (showModal && itemSelecionado) {
+    <div class="modal-overlay" (click)="fecharModal()">
+      <div class="modal-content modal-cadastro" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Dados do cadastro — {{ itemSelecionado.pocCodigo }}{{ itemSelecionado.pocLoja ? ' · ' + itemSelecionado.pocLoja : '' }}</h3>
+          <button class="btn-close" (click)="fecharModal()">×</button>
+        </div>
+        <div class="cadastro-grid">
+          <div class="cadastro-field">
+            <label>Código</label>
+            <span>{{ itemSelecionado.pocCodigo }}</span>
+          </div>
+          <div class="cadastro-field">
+            <label>Loja</label>
+            <span>{{ valorOuTraco(itemSelecionado.pocLoja) }}</span>
+          </div>
+          <div class="cadastro-field">
+            <label>Status</label>
+            <span>{{ valorOuTraco(itemSelecionado.pocStatus) }}</span>
+          </div>
+          <div class="cadastro-field">
+            <label>Fantasia</label>
+            <span>{{ valorOuTraco(itemSelecionado.pocFantasia) }}</span>
+          </div>
+          <div class="cadastro-field">
+            <label>Razão Social</label>
+            <span>{{ valorOuTraco(itemSelecionado.pocRazaoSocial) }}</span>
+          </div>
+          <div class="cadastro-field">
+            <label>CNPJ</label>
+            <span>{{ formatarCnpj(itemSelecionado.pocCnpj) }}</span>
+          </div>
+          <div class="cadastro-field">
+            <label>E-mail comercial</label>
+            <span>{{ valorOuTraco(itemSelecionado.pocEmailComercial) }}</span>
+          </div>
+          <div class="cadastro-field cadastro-field-full">
+            <label>Celular</label>
+            <span>{{ formatarCelular(itemSelecionado) }}</span>
+          </div>
+          <div class="cadastro-field">
+            <label>Data de importação</label>
+            <span>{{ formatarData(itemSelecionado.pocDataImportacao) }}</span>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="fecharModal()">Fechar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showModalStatus && itemParaStatus) {
+    <div class="modal-overlay" (click)="fecharModalStatus()">
+      <div class="modal-content modal-status" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Status de Atendimento Comercial — {{ itemParaStatus.pocCodigo }}{{ itemParaStatus.pocLoja ? ' · ' + itemParaStatus.pocLoja : '' }}</h3>
+          <button class="btn-close" (click)="fecharModalStatus()">×</button>
+        </div>
+        <div class="status-body">
+          <p class="status-intro">Consultoria: defina em qual etapa está o contato com este possível cliente.</p>
+          <div class="status-opcoes">
+            @for (op of statusOpcoes; track op.valor) {
+              <label class="status-option" [class.selected]="statusAtendimentoSelecionado === op.valor">
+                <input type="radio" name="statusAtendimento" [value]="op.valor" [(ngModel)]="statusAtendimentoSelecionado">
+                <span class="status-num">{{ op.valor }}.</span>
+                <span class="status-label">{{ op.label }}</span>
+                <span class="status-desc">{{ op.label }}</span>
+              </label>
+            }
+          </div>
+          @if (statusAtendimentoSelecionado === 8) {
+            <div class="form-group motivo-perda">
+              <label>Motivo da perda (opcional)</label>
+              <textarea [(ngModel)]="motivoPerda" name="motivoPerda" rows="3" placeholder="Ex.: Sem orçamento, já tem fornecedor..." class="form-input"></textarea>
+            </div>
+          }
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="fecharModalStatus()">Cancelar</button>
+          <button type="button" class="btn-primary" (click)="salvarStatus()" [disabled]="savingStatus">
+            {{ savingStatus ? 'Salvando...' : 'Salvar status' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showModalAtendimento && itemParaAtendimento) {
+    <div class="modal-overlay" (click)="fecharModalAtendimento()">
+      <div class="modal-content modal-atendimento" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Atendimento — {{ itemParaAtendimento.pocCodigo }}{{ itemParaAtendimento.pocLoja ? ' · ' + itemParaAtendimento.pocLoja : '' }}</h3>
+          <button class="btn-close" (click)="fecharModalAtendimento()" type="button" aria-label="Fechar">×</button>
+        </div>
+        <div class="atendimento-body">
+          <section class="atendimento-form-novo">
+            <h4 class="atendimento-section-title">Nova anotação e status</h4>
+            <div class="form-novo-grid">
+              <div class="form-group-atendimento">
+                <label>Anotação <span class="obrigatorio">*</span></label>
+                <textarea [(ngModel)]="novaAnotacaoAtendimento" name="novaAnotacaoAtendimento" rows="3" placeholder="Digite a anotação (obrigatório)..." class="anotacao-textarea"></textarea>
+              </div>
+              <div class="form-group-atendimento">
+                <label>Status de atendimento <span class="obrigatorio">*</span></label>
+                <div class="status-opcoes status-opcoes-compact">
+                  @for (op of statusOpcoes; track op.valor) {
+                    <label class="status-option" [class.selected]="statusAtendimentoSelecionado === op.valor">
+                      <input type="radio" name="statusAtendimentoModal" [value]="op.valor" [(ngModel)]="statusAtendimentoSelecionado">
+                      <span class="status-num">{{ op.valor }}.</span>
+                      <span class="status-label">{{ op.label }}</span>
+                    </label>
+                  }
+                </div>
+                @if (statusAtendimentoSelecionado === 8) {
+                  <div class="motivo-perda">
+                    <label>Motivo da perda (opcional)</label>
+                    <textarea [(ngModel)]="motivoPerda" name="motivoPerdaModal" rows="2" placeholder="Ex.: Sem orçamento, já tem fornecedor..." class="form-input"></textarea>
+                  </div>
+                }
+              </div>
+            </div>
+          </section>
+
+          <section class="atendimento-historico">
+            <h4 class="atendimento-section-title">Histórico de anotações e status</h4>
+            <div class="historico-status-atual">
+              <span class="historico-label">Status atual:</span>
+              <strong>{{ labelStatusAtendimento(itemParaAtendimento) }}</strong>
+            </div>
+            <div class="anotacoes-list">
+              @if (anotacoesAtendimento.length === 0) {
+                <p class="anotacoes-empty">Nenhuma anotação ainda. Preencha anotação e status acima e clique em Salvar.</p>
+              } @else {
+                <ul class="anotacoes-items">
+                  @for (a of anotacoesAtendimento; track a.pcaId) {
+                    <li class="anotacao-item">
+                      <span class="anotacao-meta">{{ a.usuarioNome || 'Usuário' }} — {{ formatarDataHora(a.dataCadastro) }}</span>
+                      @if (anotacaoEditandoId === a.pcaId) {
+                        <div class="anotacao-editar">
+                          <textarea [(ngModel)]="textoEditando" name="textoEditando{{ a.pcaId }}" rows="3" class="anotacao-textarea anotacao-textarea-edit"></textarea>
+                          <div class="anotacao-editar-actions">
+                            <button type="button" class="btn-secondary btn-sm" (click)="cancelarEdicaoAnotacao()">Cancelar</button>
+                            <button type="button" class="btn-primary btn-sm" (click)="salvarEdicaoAnotacao()" [disabled]="!textoEditando.trim() || savingEdicaoAnotacao">
+                              {{ savingEdicaoAnotacao ? 'Salvando...' : 'Salvar' }}
+                            </button>
+                          </div>
+                        </div>
+                      } @else {
+                        <p class="anotacao-texto">{{ a.descricao || '—' }}</p>
+                        <button type="button" class="btn-editar-msg" (click)="iniciarEdicaoAnotacao(a)" title="Editar mensagem">
+                          <i class="pi pi-pencil"></i> Editar
+                        </button>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          </section>
+        </div>
+        <div class="form-actions form-actions-atendimento">
+          <button type="button" class="btn-modal btn-secondary" (click)="fecharModalAtendimento()">Fechar</button>
+          <button type="button" class="btn-modal btn-primary" (click)="salvarAnotacaoEStatus()" [disabled]="!podeSalvarAtendimento() || savingAtendimento">
+            {{ savingAtendimento ? 'Salvando...' : 'Salvar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

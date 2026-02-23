@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { UsuarioService, UsuarioResponseDto, CadastroUsuarioDto } from '../../services/usuario.service';
+import { UsuarioService, UsuarioResponseDto, CadastroUsuarioDto, AtualizarUsuarioDto, PERFIS_OPCOES, PERFIL_COMERCIAL } from '../../services/usuario.service';
 
 @Component({
   selector: 'app-usuarios',
@@ -13,8 +13,12 @@ import { UsuarioService, UsuarioResponseDto, CadastroUsuarioDto } from '../../se
 export class UsuariosComponent implements OnInit {
   usuarios: UsuarioResponseDto[] = [];
   showForm = false;
+  editando = false;
+  usuarioEditando: UsuarioResponseDto | null = null;
   loading = false;
   error: string | null = null;
+
+  readonly perfisOpcoes = PERFIS_OPCOES;
 
   novoUsuario: CadastroUsuarioDto = {
     nome: '',
@@ -22,8 +26,11 @@ export class UsuariosComponent implements OnInit {
     docFederal: '',
     docEstadual: '',
     login: '',
-    senha: ''
+    senha: '',
+    perfil: PERFIL_COMERCIAL
   };
+
+  senhaEdicao = '';
 
   constructor(private usuarioService: UsuarioService) { }
 
@@ -48,6 +55,8 @@ export class UsuariosComponent implements OnInit {
   }
 
   abrirFormulario() {
+    this.editando = false;
+    this.usuarioEditando = null;
     this.showForm = true;
     this.novoUsuario = {
       nome: '',
@@ -55,34 +64,89 @@ export class UsuariosComponent implements OnInit {
       docFederal: '',
       docEstadual: '',
       login: '',
-      senha: ''
+      senha: '',
+      perfil: PERFIL_COMERCIAL
     };
+    this.senhaEdicao = '';
+  }
+
+  abrirEdicao(usuario: UsuarioResponseDto) {
+    this.editando = true;
+    this.usuarioEditando = usuario;
+    this.showForm = true;
+    this.novoUsuario = {
+      nome: usuario.nome,
+      sobrenome: usuario.sobrenome ?? '',
+      docFederal: usuario.docFederal ?? '',
+      docEstadual: usuario.docEstadual ?? '',
+      login: usuario.login,
+      senha: '',
+      perfil: usuario.perfil
+    };
+    this.senhaEdicao = '';
   }
 
   fecharFormulario() {
     this.showForm = false;
+    this.editando = false;
+    this.usuarioEditando = null;
     this.error = null;
   }
 
-  cadastrarUsuario() {
-    if (!this.novoUsuario.nome || !this.novoUsuario.login || !this.novoUsuario.senha) {
-      this.error = 'Preencha todos os campos obrigatórios (Nome, Login e Senha)';
+  get tituloModal(): string {
+    return this.editando ? 'Editar Usuário' : 'Cadastrar Novo Usuário';
+  }
+
+  labelPerfil(perfil: number): string {
+    return PERFIS_OPCOES.find(p => p.value === perfil)?.label ?? '—';
+  }
+
+  salvar() {
+    if (!this.novoUsuario.nome?.trim() || !this.novoUsuario.login?.trim()) {
+      this.error = 'Preencha Nome e Login.';
+      return;
+    }
+    if (!this.editando && !this.novoUsuario.senha) {
+      this.error = 'Senha é obrigatória para novo usuário.';
       return;
     }
 
     this.loading = true;
     this.error = null;
 
-    this.usuarioService.cadastrarUsuario(this.novoUsuario).subscribe({
-      next: () => {
-        this.carregarUsuarios();
-        this.fecharFormulario();
-        this.loading = false;
-      },
-      error: (err) => {
-        this.error = err.error?.message || 'Erro ao cadastrar usuário';
-        this.loading = false;
-      }
-    });
+    if (this.editando && this.usuarioEditando) {
+      const dto: AtualizarUsuarioDto = {
+        nome: this.novoUsuario.nome.trim(),
+        sobrenome: this.novoUsuario.sobrenome?.trim() || undefined,
+        docFederal: this.novoUsuario.docFederal?.trim() || undefined,
+        docEstadual: this.novoUsuario.docEstadual?.trim() || undefined,
+        login: this.novoUsuario.login.trim(),
+        senha: this.senhaEdicao?.trim() || undefined,
+        perfil: this.novoUsuario.perfil
+      };
+      this.usuarioService.atualizarUsuario(this.usuarioEditando.usuarioId, dto).subscribe({
+        next: () => {
+          this.carregarUsuarios();
+          this.fecharFormulario();
+          this.loading = false;
+        },
+        error: (err) => {
+          this.error = err.error?.message || 'Erro ao atualizar usuário.';
+          this.loading = false;
+        }
+      });
+    } else {
+      this.usuarioService.cadastrarUsuario(this.novoUsuario).subscribe({
+        next: () => {
+          this.carregarUsuarios();
+          this.fecharFormulario();
+          this.loading = false;
+        },
+        error: (err) => {
+          this.error = err.error?.message || 'Erro ao cadastrar usuário.';
+          this.loading = false;
+        }
+      });
+    }
   }
 }

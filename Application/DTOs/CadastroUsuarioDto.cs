@@ -25,4 +25,6 @@ public class CadastroUsuarioDto
     [MinLength(6, ErrorMessage = "Senha deve ter no mínimo 6 caracteres")]
     [MaxLength(255)]
     public string Senha { get; set; } = string.Empty;
+
+    public int Perfil { get; set; } = 2; // 1 = Administrador, 2 = Comercial
 }

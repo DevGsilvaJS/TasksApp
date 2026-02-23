@@ -6,4 +6,5 @@ public class LoginResponseDto
     public string Login { get; set; } = string.Empty;
     public string Nome { get; set; } = string.Empty;
     public bool Autenticado { get; set; }
+    public int Perfil { get; set; }
 }

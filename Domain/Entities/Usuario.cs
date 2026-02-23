@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Domain.Enums;
 
 namespace Domain.Entities;
 
@@ -20,6 +21,9 @@ public class Usuario
     [Column("USUSENHA")]
     [MaxLength(255)]
     public string? UsuSenha { get; set; }
+
+    [Column("USUPERFIL")]
+    public int UsuPerfil { get; set; } = (int)PerfilUsuario.Comercial;
 
     // Navegação
     [ForeignKey("PesId")]

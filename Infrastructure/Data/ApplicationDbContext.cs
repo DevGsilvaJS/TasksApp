@@ -22,6 +22,12 @@ public class ApplicationDbContext : DbContext
     public DbSet<AnotacaoCliente> AnotacoesCliente { get; set; }
     public DbSet<Das> Das { get; set; }
     public DbSet<EnvioNotaServico> EnviosNotaServico { get; set; }
+    public DbSet<PossivelCliente> PossiveisClientes { get; set; }
+    public DbSet<PossivelClienteAnotacao> PossivelClienteAnotacoes { get; set; }
+    public DbSet<CadastroStatusTarefa> CadastroStatusTarefa { get; set; }
+    public DbSet<CadastroTipoAtendimento> CadastroTipoAtendimento { get; set; }
+    public DbSet<CadastroTipoContato> CadastroTipoContato { get; set; }
+    public DbSet<CadastroStatusAtendimentoComercial> CadastroStatusAtendimentoComercial { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

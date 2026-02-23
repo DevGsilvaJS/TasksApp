@@ -42,13 +42,13 @@ public class UsuarioService : IUsuarioService
         {
             PesId = pessoa.PesId,
             UsuLogin = dto.Login,
-            UsuSenha = dto.Senha // Em produção, deve ser hash da senha
+            UsuSenha = dto.Senha, // Em produção, deve ser hash da senha
+            UsuPerfil = dto.Perfil
         };
 
         await _usuarioRepository.InserirAsync(usuario);
         await _usuarioRepository.SalvarAlteracoesAsync();
 
-        // Separar fantasia em nome e sobrenome (assumindo que o primeiro espaço separa)
         var partesNome = (pessoa.PesFantasia ?? string.Empty).Split(' ', 2);
         return new UsuarioResponseDto
         {
@@ -58,7 +58,51 @@ public class UsuarioService : IUsuarioService
             Sobrenome = partesNome.Length > 1 ? partesNome[1] : null,
             DocFederal = pessoa.PesDocFederal,
             DocEstadual = pessoa.PesDocEstadual,
-            Login = usuario.UsuLogin ?? string.Empty
+            Login = usuario.UsuLogin ?? string.Empty,
+            Perfil = usuario.UsuPerfil
+        };
+    }
+
+    public async Task<UsuarioResponseDto> AtualizarUsuarioAsync(int id, AtualizarUsuarioDto dto)
+    {
+        var usuario = await _usuarioRepository.GetByIdAsync(id);
+        if (usuario == null)
+            throw new InvalidOperationException("Usuário não encontrado.");
+
+        var pessoa = await _pessoaRepository.GetByIdAsync(usuario.PesId);
+        if (pessoa == null)
+            throw new InvalidOperationException("Pessoa do usuário não encontrada.");
+
+        if (usuario.UsuLogin != dto.Login)
+        {
+            var existente = await _usuarioRepository.BuscarAsync(u => u.UsuLogin == dto.Login);
+            if (existente != null)
+                throw new InvalidOperationException("Login já está em uso. Por favor, escolha outro login.");
+        }
+
+        pessoa.PesFantasia = $"{dto.Nome} {dto.Sobrenome}".Trim();
+        pessoa.PesDocFederal = dto.DocFederal;
+        pessoa.PesDocEstadual = dto.DocEstadual;
+        usuario.UsuLogin = dto.Login;
+        usuario.UsuPerfil = dto.Perfil;
+        if (!string.IsNullOrWhiteSpace(dto.Senha))
+            usuario.UsuSenha = dto.Senha;
+
+        await _pessoaRepository.AtualizarAsync(pessoa);
+        await _usuarioRepository.AtualizarAsync(usuario);
+        await _usuarioRepository.SalvarAlteracoesAsync();
+
+        var partesNome = (pessoa.PesFantasia ?? string.Empty).Split(' ', 2);
+        return new UsuarioResponseDto
+        {
+            UsuarioId = usuario.UsuId,
+            PessoaId = pessoa.PesId,
+            Nome = partesNome.Length > 0 ? partesNome[0] : string.Empty,
+            Sobrenome = partesNome.Length > 1 ? partesNome[1] : null,
+            DocFederal = pessoa.PesDocFederal,
+            DocEstadual = pessoa.PesDocEstadual,
+            Login = usuario.UsuLogin ?? string.Empty,
+            Perfil = usuario.UsuPerfil
         };
     }
 
@@ -82,7 +126,8 @@ public class UsuarioService : IUsuarioService
             Sobrenome = partesNome.Length > 1 ? partesNome[1] : null,
             DocFederal = pessoa.PesDocFederal,
             DocEstadual = pessoa.PesDocEstadual,
-            Login = usuario.UsuLogin ?? string.Empty
+            Login = usuario.UsuLogin ?? string.Empty,
+            Perfil = usuario.UsuPerfil
         };
     }
 
@@ -106,7 +151,8 @@ public class UsuarioService : IUsuarioService
             Sobrenome = partesNome.Length > 1 ? partesNome[1] : null,
             DocFederal = pessoa.PesDocFederal,
             DocEstadual = pessoa.PesDocEstadual,
-            Login = usuario.UsuLogin ?? string.Empty
+            Login = usuario.UsuLogin ?? string.Empty,
+            Perfil = usuario.UsuPerfil
         };
     }
 
@@ -130,7 +176,8 @@ public class UsuarioService : IUsuarioService
                     Sobrenome = partesNome.Length > 1 ? partesNome[1] : null,
                     DocFederal = pessoa.PesDocFederal,
                     DocEstadual = pessoa.PesDocEstadual,
-                    Login = usuario.UsuLogin ?? string.Empty
+                    Login = usuario.UsuLogin ?? string.Empty,
+                    Perfil = usuario.UsuPerfil
                 });
             }
         }
@@ -157,7 +204,8 @@ public class UsuarioService : IUsuarioService
             UsuarioId = usuario.UsuId,
             Login = usuario.UsuLogin ?? string.Empty,
             Nome = pessoa.PesFantasia ?? string.Empty,
-            Autenticado = true
+            Autenticado = true,
+            Perfil = usuario.UsuPerfil
         };
     }
 }

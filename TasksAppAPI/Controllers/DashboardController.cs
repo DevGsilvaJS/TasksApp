@@ -72,4 +72,23 @@ public class DashboardController : ControllerBase
             return StatusCode(500, new { message = "Erro interno do servidor" });
         }
     }
+
+    /// <summary>
+    /// Obtém contagens de contatos do Telemarketing (anotações/registros por data de cadastro): dia, semana, mês e ano atual.
+    /// </summary>
+    [HttpGet("contatos-telemarketing")]
+    [ProducesResponseType(typeof(TelemarketingContatosDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObterContatosTelemarketing()
+    {
+        try
+        {
+            var contatos = await _dashboardService.ObterContatosTelemarketingAsync();
+            return Ok(contatos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao obter contatos do telemarketing");
+            return StatusCode(500, new { message = "Erro interno do servidor" });
+        }
+    }
 }

@@ -114,6 +114,78 @@ namespace Infrastructure.Migrations
                     b.ToTable("TB_ANT_ANOTACOES_TAREFAS");
                 });
 
+            modelBuilder.Entity("Domain.Entities.CadastroStatusTarefa", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("STCID");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("STCATIVO");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("STCDESCRICAO");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TB_CAD_STATUS_TAREFA");
+                });
+
+            modelBuilder.Entity("Domain.Entities.CadastroTipoAtendimento", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("TAID");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("TAATIVO");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("TADESCRICAO");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TB_CAD_TIPO_ATENDIMENTO");
+                });
+
+            modelBuilder.Entity("Domain.Entities.CadastroTipoContato", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("TCID");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("TCATIVO");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("TCDESCRICAO");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TB_CAD_TIPO_CONTATO");
+                });
+
             modelBuilder.Entity("Domain.Entities.Cliente", b =>
                 {
                     b.Property<int>("CliId")
@@ -406,6 +478,123 @@ namespace Infrastructure.Migrations
                     b.ToTable("TB_PESSOA");
                 });
 
+            modelBuilder.Entity("Domain.Entities.PossivelCliente", b =>
+                {
+                    b.Property<int>("PocId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("POCID");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PocId"));
+
+                    b.Property<string>("PocCelDdd")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("POCCELDDD");
+
+                    b.Property<string>("PocCelular")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("POCCELULAR");
+
+                    b.Property<string>("PocCnpj")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("POCCNPJ");
+
+                    b.Property<string>("PocCodigo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("POCCODIGO");
+
+                    b.Property<DateTime?>("PocDataImportacao")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("POCDATAIMPORTACAO");
+
+                    b.Property<DateTime?>("PocDataStatusAtendimento")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("POC_DATA_STATUS_ATENDIMENTO");
+
+                    b.Property<string>("PocDdd")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("POCDDD");
+
+                    b.Property<string>("PocEmailComercial")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("POCEMAILCOMERCIAL");
+
+                    b.Property<string>("PocFantasia")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("POCFANTASIA");
+
+                    b.Property<string>("PocLoja")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("POCLOJA");
+
+                    b.Property<string>("PocMotivoPerda")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("POC_MOTIVO_PERDA");
+
+                    b.Property<string>("PocRazaoSocial")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("POCRAZAOSOCIAL");
+
+                    b.Property<string>("PocStatus")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("POCSTATUS");
+
+                    b.Property<int?>("PocStatusAtendimento")
+                        .HasColumnType("integer")
+                        .HasColumnName("POC_STATUS_ATENDIMENTO");
+
+                    b.HasKey("PocId");
+
+                    b.ToTable("TB_POSSIVEL_CLIENTE");
+                });
+
+            modelBuilder.Entity("Domain.Entities.PossivelClienteAnotacao", b =>
+                {
+                    b.Property<int>("PcaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("PCAID");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PcaId"));
+
+                    b.Property<string>("PcaDescricao")
+                        .HasMaxLength(3000)
+                        .HasColumnType("character varying(3000)")
+                        .HasColumnName("PCADESCRICAO");
+
+                    b.Property<DateTime>("PcaDtCadastro")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("PCADTCADASTRO");
+
+                    b.Property<int>("PocId")
+                        .HasColumnType("integer")
+                        .HasColumnName("POCID");
+
+                    b.Property<int>("UsuId")
+                        .HasColumnType("integer")
+                        .HasColumnName("USUID");
+
+                    b.HasKey("PcaId");
+
+                    b.HasIndex("PocId");
+
+                    b.HasIndex("UsuId");
+
+                    b.ToTable("TB_POSSIVEL_CLIENTE_ANOTACAO");
+                });
+
             modelBuilder.Entity("Domain.Entities.Tarefa", b =>
                 {
                     b.Property<int>("TarId")
@@ -497,6 +686,10 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("USULOGIN");
+
+                    b.Property<int>("UsuPerfil")
+                        .HasColumnType("integer")
+                        .HasColumnName("USUPERFIL");
 
                     b.Property<string>("UsuSenha")
                         .HasMaxLength(255)
@@ -611,6 +804,25 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Duplicata");
+                });
+
+            modelBuilder.Entity("Domain.Entities.PossivelClienteAnotacao", b =>
+                {
+                    b.HasOne("Domain.Entities.PossivelCliente", "PossivelCliente")
+                        .WithMany()
+                        .HasForeignKey("PocId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PossivelCliente");
+
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("Domain.Entities.Tarefa", b =>

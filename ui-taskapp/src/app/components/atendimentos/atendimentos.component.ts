@@ -1,17 +1,20 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { TableModule } from 'primeng/table';
+import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { TarefaService, TarefaResponseDto, CadastroTarefaDto, StatusTarefa, TipoAtendimento, PrioridadeTarefa, TipoContato } from '../../services/tarefa.service';
 import { ClienteService, ClienteResponseDto } from '../../services/cliente.service';
 import { UsuarioService, UsuarioResponseDto } from '../../services/usuario.service';
 import { AnotacaoService, CadastroAnotacaoDto } from '../../services/anotacao.service';
 import { AuthService } from '../../services/auth.service';
+import { CadastroAtendimentoService } from '../../services/cadastro-atendimento.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-atendimentos',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableModule],
+  imports: [CommonModule, FormsModule, TableModule, OverlayPanelModule],
   templateUrl: './atendimentos.component.html',
   styleUrl: './atendimentos.component.css'
 })
@@ -97,6 +100,125 @@ export class AtendimentosComponent implements OnInit {
   ];
   agruparPor = 'clienteNome';
 
+  /** Colunas que têm filtro multi-select (ícone funil). */
+  readonly colunasFiltravelis: { campo: string; label: string }[] = [
+    { campo: 'numero', label: 'Nº' },
+    { campo: 'protocolo', label: 'Protocolo' },
+    { campo: 'titulo', label: 'Título' },
+    { campo: 'clienteNome', label: 'Cliente' },
+    { campo: 'solicitante', label: 'Solicitante' },
+    { campo: 'celularSolicitante', label: 'Celular' },
+    { campo: 'tipoAtendimentoDescricao', label: 'Tipo' },
+    { campo: 'prioridadeDescricao', label: 'Prioridade' },
+    { campo: 'usuarioNome', label: 'Usuário' }
+  ];
+
+  /** Filtros por coluna: valores selecionados (vazio = sem filtro). */
+  filtrosColunasSelecao: Record<string, string[]> = {};
+  /** Coluna cujo painel de filtro está aberto. */
+  filtroColunaAtivo: string | null = null;
+  /** Seleção temporária no painel (antes de OK). */
+  selecaoTemp: Record<string, string[]> = {};
+
+  @ViewChild('opFiltroColuna') opFiltroColuna!: OverlayPanel;
+
+  /** Dados já filtrados pela busca global e por outras colunas, sem o filtro da coluna dada. */
+  getDadosParaFiltroColuna(campo: string): TarefaResponseDto[] {
+    let lista = [...this.tarefas];
+    if (this.termoBusca.trim()) {
+      const termo = this.termoBusca.toLowerCase();
+      lista = lista.filter(t =>
+        t.clienteNome.toLowerCase().includes(termo) ||
+        t.usuarioNome.toLowerCase().includes(termo) ||
+        (t.statusDescricao && t.statusDescricao.toLowerCase().includes(termo)) ||
+        t.tarefaId.toString().includes(termo) ||
+        (t.titulo && t.titulo.toLowerCase().includes(termo)) ||
+        (t.protocolo && t.protocolo.toLowerCase().includes(termo)) ||
+        (t.solicitante && t.solicitante.toLowerCase().includes(termo))
+      );
+    }
+    for (const [col, valores] of Object.entries(this.filtrosColunasSelecao)) {
+      if (col === campo || !valores?.length) continue;
+      const set = new Set(valores);
+      lista = lista.filter(t => set.has(String((t as any)[col] ?? '')));
+    }
+    return lista;
+  }
+
+  getValoresDistintosColuna(campo: string): string[] {
+    const dados = this.getDadosParaFiltroColuna(campo);
+    const set = new Set<string>();
+    for (const t of dados) {
+      const v = (t as any)[campo];
+      set.add(v == null ? '' : String(v));
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }
+
+  abrirFiltroColuna(campo: string, event: Event): void {
+    event.stopPropagation();
+    this.filtroColunaAtivo = campo;
+    const all = this.getValoresDistintosColuna(campo);
+    this.selecaoTemp[campo] = (this.filtrosColunasSelecao[campo]?.length ? [...this.filtrosColunasSelecao[campo]] : [...all]) as string[];
+    this.opFiltroColuna.toggle(event);
+  }
+
+  isValorSelecionadoFiltroColuna(campo: string, valor: string): boolean {
+    const sel = this.selecaoTemp[campo];
+    if (!sel) return true;
+    return sel.includes(valor);
+  }
+
+  isSelecionarTodosFiltroColuna(campo: string): boolean {
+    const all = this.getValoresDistintosColuna(campo);
+    const sel = this.selecaoTemp[campo] ?? [];
+    return all.length > 0 && sel.length === all.length;
+  }
+
+  toggleSelecionarTodosFiltroColuna(campo: string): void {
+    const all = this.getValoresDistintosColuna(campo);
+    if (this.isSelecionarTodosFiltroColuna(campo)) {
+      this.selecaoTemp[campo] = [];
+    } else {
+      this.selecaoTemp[campo] = [...all];
+    }
+  }
+
+  toggleValorFiltroColuna(campo: string, valor: string): void {
+    let sel = this.selecaoTemp[campo] ?? [];
+    if (sel.includes(valor)) {
+      sel = sel.filter(v => v !== valor);
+    } else {
+      sel = [...sel, valor];
+    }
+    this.selecaoTemp[campo] = sel;
+  }
+
+  aplicarFiltroColuna(): void {
+    if (!this.filtroColunaAtivo) return;
+    const campo = this.filtroColunaAtivo;
+    const all = this.getValoresDistintosColuna(campo);
+    const sel = this.selecaoTemp[campo] ?? [];
+    this.filtrosColunasSelecao[campo] = sel.length === all.length ? [] : [...sel];
+    this.opFiltroColuna.hide();
+    this.filtroColunaAtivo = null;
+    this.aplicarFiltros();
+  }
+
+  cancelarFiltroColuna(): void {
+    this.opFiltroColuna.hide();
+    this.filtroColunaAtivo = null;
+  }
+
+  get hasFiltrosColuna(): boolean {
+    return Object.values(this.filtrosColunasSelecao).some(arr => arr?.length > 0);
+  }
+
+  limparFiltrosColuna(): void {
+    this.filtrosColunasSelecao = {};
+    this.aplicarFiltros();
+  }
+
   getAgruparPorLabel(): string {
     const opt = this.agruparPorOpcoes.find(o => o.value === this.agruparPor);
     return opt ? opt.label : this.agruparPor || 'Nenhum';
@@ -130,19 +252,10 @@ export class AtendimentosComponent implements OnInit {
     return '';
   }
 
-  statusOptions = [
-    { value: StatusTarefa.EmAberto, label: 'Em Aberto' },
-    { value: StatusTarefa.Concluida, label: 'Concluída' },
-    { value: StatusTarefa.Cancelada, label: 'Cancelada' },
-    { value: StatusTarefa.Reativada, label: 'Reativada' }
-  ];
-
-  tipoAtendimentoOptions = [
-    { value: TipoAtendimento.Treinamento, label: 'Treinamento' },
-    { value: TipoAtendimento.Suporte, label: 'Suporte' },
-    { value: TipoAtendimento.Reuniao, label: 'Reunião' },
-    { value: TipoAtendimento.Cobranca, label: 'Cobrança' }
-  ];
+  /** Listas vindas da API (cadastro-atendimento); apenas ativos. */
+  statusOptions: { value: number; label: string }[] = [];
+  tipoAtendimentoOptions: { value: number; label: string }[] = [];
+  tipoContatoOptions: { value: number; label: string }[] = [];
 
   prioridadeOptions = [
     { value: PrioridadeTarefa.Baixa, label: 'Baixa' },
@@ -150,27 +263,39 @@ export class AtendimentosComponent implements OnInit {
     { value: PrioridadeTarefa.Alta, label: 'Alta' }
   ];
 
-  tipoContatoOptions = [
-    { value: TipoContato.Ligacao, label: 'Ligação' },
-    { value: TipoContato.WhatsApp, label: 'WhatsApp' },
-    { value: TipoContato.Email, label: 'E-mail' }
-  ];
-
   constructor(
     private tarefaService: TarefaService,
     private clienteService: ClienteService,
     private usuarioService: UsuarioService,
     private anotacaoService: AnotacaoService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cadastroAtendimentoService: CadastroAtendimentoService
   ) { }
 
   ngOnInit() {
-    // Carregar preferências do sessionStorage
     this.carregarPreferenciaMostrarConcluidas();
     this.carregarPreferenciaMostrarTodosUsuarios();
+    this.carregarCadastrosAtendimento();
     this.carregarTarefas();
     this.carregarClientes();
     this.carregarUsuarios();
+  }
+
+  private carregarCadastrosAtendimento() {
+    forkJoin({
+      status: this.cadastroAtendimentoService.listarStatus(true),
+      tipoAtendimento: this.cadastroAtendimentoService.listarTipoAtendimento(true),
+      tipoContato: this.cadastroAtendimentoService.listarTipoContato(true)
+    }).subscribe({
+      next: (res) => {
+        this.statusOptions = res.status.map(x => ({ value: x.id, label: x.descricao }));
+        this.tipoAtendimentoOptions = res.tipoAtendimento.map(x => ({ value: x.id, label: x.descricao }));
+        this.tipoContatoOptions = res.tipoContato.map(x => ({ value: x.id, label: x.descricao }));
+      },
+      error: (err) => {
+        console.error('Erro ao carregar cadastros de atendimento (status/tipo/contato):', err);
+      }
+    });
   }
 
   private carregarPreferenciaMostrarConcluidas() {
@@ -286,7 +411,7 @@ export class AtendimentosComponent implements OnInit {
   aplicarFiltros() {
     let tarefasFiltradas = [...this.tarefas];
 
-    // Filtrar apenas por termo de busca (usuário e concluídas já vêm filtrados da API)
+    // Filtrar por termo de busca global
     if (this.termoBusca.trim()) {
       const termo = this.termoBusca.toLowerCase();
       tarefasFiltradas = tarefasFiltradas.filter(t =>
@@ -298,6 +423,13 @@ export class AtendimentosComponent implements OnInit {
         (t.protocolo && t.protocolo.toLowerCase().includes(termo)) ||
         (t.solicitante && t.solicitante.toLowerCase().includes(termo))
       );
+    }
+
+    // Filtros por coluna (multi-select)
+    for (const [campo, valores] of Object.entries(this.filtrosColunasSelecao)) {
+      if (!valores?.length) continue;
+      const set = new Set(valores);
+      tarefasFiltradas = tarefasFiltradas.filter(t => set.has(String((t as any)[campo] ?? '')));
     }
 
     this.tarefasFiltradas = tarefasFiltradas;
@@ -474,6 +606,10 @@ export class AtendimentosComponent implements OnInit {
     this.error = null;
   }
 
+  fecharModalErro() {
+    this.error = null;
+  }
+
   onStatusChange(event: any) {
     const novoStatus = Number(event.target.value) as StatusTarefa;
     this.novoTarefa.status = novoStatus;
@@ -488,21 +624,19 @@ export class AtendimentosComponent implements OnInit {
     }
   }
 
-  salvarTarefa() {
-    console.log('Salvando tarefa:', this.novoTarefa);
+  salvarTarefa(form?: NgForm) {
+    if (form?.form) form.form.markAllAsTouched();
 
-    // Validar se cliente foi selecionado (não pode ser 0)
-    const clienteId = Number(this.novoTarefa.clienteId);
-
-    if (!clienteId || clienteId === 0) {
-      this.error = 'Selecione um cliente';
-      return;
-    }
-
-    // Obter o ID do usuário logado
     const usuarioIdLogado = this.authService.getUsuarioId();
     if (!usuarioIdLogado) {
       this.error = 'Usuário não autenticado. Faça login novamente.';
+      return;
+    }
+
+    const titulo = (this.novoTarefa.titulo ?? '').toString().trim();
+    const solicitante = (this.novoTarefa.solicitante ?? '').toString().trim();
+    const clienteId = Number(this.novoTarefa.clienteId);
+    if (!titulo || !solicitante || !clienteId || clienteId === 0) {
       return;
     }
 
@@ -515,10 +649,10 @@ export class AtendimentosComponent implements OnInit {
       this.novoTarefa.dataConclusao = hoje.toISOString().split('T')[0];
     }
 
-    // Na edição, usar o usuarioId original; na criação, usar o usuário logado
-    const usuarioIdFinal = this.editando && this.tarefaEditando
+    // Na edição, usar o usuarioId original; na criação, usar o usuário logado (já validado acima)
+    const usuarioIdFinal: number = this.editando && this.tarefaEditando
       ? this.tarefaEditando.usuarioId
-      : usuarioIdLogado;
+      : usuarioIdLogado!;
 
     // Preparar dados para envio
     const dadosEnvio: CadastroTarefaDto = {
@@ -631,6 +765,8 @@ export class AtendimentosComponent implements OnInit {
         return 'status-cancelada';
       case StatusTarefa.Reativada:
         return 'status-reativada';
+      case StatusTarefa.AguardandoCliente:
+        return 'status-aguardando';
       default:
         return '';
     }
@@ -655,6 +791,7 @@ export class AtendimentosComponent implements OnInit {
       if (d.includes('concluida')) return 'row-status-concluida';
       if (d.includes('cancelada')) return 'row-status-cancelada';
       if (d.includes('reativada')) return 'row-status-reativada';
+      if (d.includes('aguardando')) return 'row-status-aguardando';
       return 'row-status-aberto';
     };
     const classe = this.obterClasseStatus(tarefa.status);

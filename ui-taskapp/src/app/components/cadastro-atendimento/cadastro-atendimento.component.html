@@ -1,0 +1,187 @@
+<div class="page-container">
+  <div class="page-header">
+    <h2>Cadastros de Atendimento</h2>
+    <p class="page-subtitle">Status, Tipo de Atendimento e Tipo de Contato</p>
+  </div>
+
+  @if (error) {
+    <div class="modal-overlay" (click)="fecharModalErro()">
+      <div class="modal-content modal-erro" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Erro</h3>
+          <button type="button" class="btn-close" (click)="fecharModalErro()">×</button>
+        </div>
+        <div class="modal-erro-body">
+          <p>{{ error }}</p>
+        </div>
+        <div class="modal-erro-actions">
+          <button type="button" class="btn-primary" (click)="fecharModalErro()">OK</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (loading && statusList.length === 0 && tipoAtendimentoList.length === 0 && tipoContatoList.length === 0) {
+    <div class="loading">Carregando...</div>
+  } @else {
+    <div class="cadastros-grid">
+      <section class="cadastro-section">
+        <div class="cadastro-section-header">
+          <h3>Status</h3>
+          <button type="button" class="btn-primary btn-sm" (click)="abrirNovo('status')">
+            <i class="pi pi-plus"></i> Novo
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="cadastro-table">
+            <thead>
+              <tr>
+                <th>Id</th>
+                <th>Descrição</th>
+                <th>Ativo</th>
+                <th class="col-acoes">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of statusList; track item.id) {
+                <tr [class.inativo]="!item.ativo">
+                  <td>{{ item.id }}</td>
+                  <td>{{ item.descricao }}</td>
+                  <td>{{ item.ativo ? 'Sim' : 'Não' }}</td>
+                  <td>
+                    <button type="button" class="btn-action btn-edit" (click)="abrirEditar('status', item)" title="Editar">
+                      <i class="pi pi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn-action" [class.btn-ativar]="!item.ativo" [class.btn-inativar]="item.ativo"
+                      (click)="alterarAtivo('status', item)" [title]="item.ativo ? 'Inativar' : 'Ativar'">
+                      @if (item.ativo) {
+                        <i class="pi pi-ban"></i>
+                      } @else {
+                        <i class="pi pi-check"></i>
+                      }
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="cadastro-section">
+        <div class="cadastro-section-header">
+          <h3>Tipo de Atendimento</h3>
+          <button type="button" class="btn-primary btn-sm" (click)="abrirNovo('tipoAtendimento')">
+            <i class="pi pi-plus"></i> Novo
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="cadastro-table">
+            <thead>
+              <tr>
+                <th>Id</th>
+                <th>Descrição</th>
+                <th>Ativo</th>
+                <th class="col-acoes">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of tipoAtendimentoList; track item.id) {
+                <tr [class.inativo]="!item.ativo">
+                  <td>{{ item.id }}</td>
+                  <td>{{ item.descricao }}</td>
+                  <td>{{ item.ativo ? 'Sim' : 'Não' }}</td>
+                  <td>
+                    <button type="button" class="btn-action btn-edit" (click)="abrirEditar('tipoAtendimento', item)" title="Editar">
+                      <i class="pi pi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn-action" [class.btn-ativar]="!item.ativo" [class.btn-inativar]="item.ativo"
+                      (click)="alterarAtivo('tipoAtendimento', item)" [title]="item.ativo ? 'Inativar' : 'Ativar'">
+                      @if (item.ativo) {
+                        <i class="pi pi-ban"></i>
+                      } @else {
+                        <i class="pi pi-check"></i>
+                      }
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="cadastro-section">
+        <div class="cadastro-section-header">
+          <h3>Tipo de Contato</h3>
+          <button type="button" class="btn-primary btn-sm" (click)="abrirNovo('tipoContato')">
+            <i class="pi pi-plus"></i> Novo
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="cadastro-table">
+            <thead>
+              <tr>
+                <th>Id</th>
+                <th>Descrição</th>
+                <th>Ativo</th>
+                <th class="col-acoes">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of tipoContatoList; track item.id) {
+                <tr [class.inativo]="!item.ativo">
+                  <td>{{ item.id }}</td>
+                  <td>{{ item.descricao }}</td>
+                  <td>{{ item.ativo ? 'Sim' : 'Não' }}</td>
+                  <td>
+                    <button type="button" class="btn-action btn-edit" (click)="abrirEditar('tipoContato', item)" title="Editar">
+                      <i class="pi pi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn-action" [class.btn-ativar]="!item.ativo" [class.btn-inativar]="item.ativo"
+                      (click)="alterarAtivo('tipoContato', item)" [title]="item.ativo ? 'Inativar' : 'Ativar'">
+                      @if (item.ativo) {
+                        <i class="pi pi-ban"></i>
+                      } @else {
+                        <i class="pi pi-check"></i>
+                      }
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  }
+
+  @if (showModal) {
+    <div class="modal-overlay" (click)="fecharModal()">
+      <div class="modal-content modal-cadastro" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ tituloModal() }}</h3>
+          <button type="button" class="btn-close" (click)="fecharModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Descrição *</label>
+            <input type="text" [(ngModel)]="form.descricao" name="descricao" class="form-input" placeholder="Ex.: Em Aberto" required>
+          </div>
+          <div class="form-group form-group-checkbox">
+            <label>
+              <input type="checkbox" [(ngModel)]="form.ativo" name="ativo">
+              Ativo
+            </label>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="fecharModal()">Cancelar</button>
+          <button type="button" class="btn-primary" (click)="salvar()" [disabled]="saving || !form.descricao?.trim()">
+            {{ saving ? 'Salvando...' : 'Salvar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

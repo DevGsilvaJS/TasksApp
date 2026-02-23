@@ -9,4 +9,5 @@ public class UsuarioResponseDto
     public string? DocFederal { get; set; }
     public string? DocEstadual { get; set; }
     public string Login { get; set; } = string.Empty;
+    public int Perfil { get; set; }
 }

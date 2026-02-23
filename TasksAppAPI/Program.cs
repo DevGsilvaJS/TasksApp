@@ -126,9 +126,71 @@ try
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         Console.WriteLine("🔄 Aplicando migrations automaticamente...");
         db.Database.Migrate();
+        // Garantir tabela de possíveis clientes (migration pode não estar no histórico)
+        db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS ""TB_POSSIVEL_CLIENTE"" (
+            ""POCID"" serial PRIMARY KEY,
+            ""POCCODIGO"" character varying(50) NOT NULL,
+            ""POCLOJA"" character varying(200) NULL,
+            ""POCSTATUS"" character varying(100) NULL,
+            ""POCFANTASIA"" character varying(300) NULL,
+            ""POCDDD"" character varying(20) NULL,
+            ""POCCNPJ"" character varying(20) NULL,
+            ""POCRAZAOSOCIAL"" character varying(500) NULL,
+            ""POCEMAILCOMERCIAL"" character varying(200) NULL,
+            ""POCCELDDD"" character varying(20) NULL,
+            ""POCCELULAR"" character varying(50) NULL,
+            ""POCDATAIMPORTACAO"" timestamp with time zone NULL
+        )");
+        db.Database.ExecuteSqlRaw(@"CREATE INDEX IF NOT EXISTS ""IX_TB_POSSIVEL_CLIENTE_POCCODIGO"" ON ""TB_POSSIVEL_CLIENTE"" (""POCCODIGO"")");
+        // Ampliar colunas se a tabela já existia com tamanhos menores
+        db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_POSSIVEL_CLIENTE"" ALTER COLUMN ""POCDDD"" TYPE character varying(20)");
+        db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_POSSIVEL_CLIENTE"" ALTER COLUMN ""POCCELDDD"" TYPE character varying(20)");
+        db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_POSSIVEL_CLIENTE"" ALTER COLUMN ""POCCELULAR"" TYPE character varying(50)");
+        db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_POSSIVEL_CLIENTE"" ADD COLUMN IF NOT EXISTS ""POC_STATUS_ATENDIMENTO"" integer NULL");
+        db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_POSSIVEL_CLIENTE"" ADD COLUMN IF NOT EXISTS ""POC_MOTIVO_PERDA"" character varying(500) NULL");
+        db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_POSSIVEL_CLIENTE"" ADD COLUMN IF NOT EXISTS ""POC_DATA_STATUS_ATENDIMENTO"" timestamp with time zone NULL");
+        db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS ""TB_POSSIVEL_CLIENTE_ANOTACAO"" (
+            ""PCAID"" serial PRIMARY KEY,
+            ""POCID"" integer NOT NULL REFERENCES ""TB_POSSIVEL_CLIENTE""(""POCID""),
+            ""USUID"" integer NOT NULL REFERENCES ""TB_USU_USUARIO""(""USUID""),
+            ""PCADESCRICAO"" character varying(3000) NULL,
+            ""PCADTCADASTRO"" timestamp with time zone NOT NULL
+        )");
+        db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS ""TB_CAD_STATUS_ATEND_COMERCIAL"" (
+            ""SACID"" serial PRIMARY KEY,
+            ""SACNUMERO"" integer NOT NULL,
+            ""SACDESCRICAO"" character varying(200) NOT NULL,
+            ""SACATIVO"" boolean NOT NULL DEFAULT true
+        )");
+        if (!db.CadastroStatusAtendimentoComercial.Any())
+        {
+            var defaults = new[] {
+                (1, "Não Iniciado"),
+                (2, "Tentativa de Contato"),
+                (3, "Contato Realizado"),
+                (4, "Em Diagnóstico"),
+                (5, "Proposta Enviada"),
+                (6, "Em Negociação"),
+                (7, "Follow-up"),
+                (8, "Perdido"),
+                (9, "Fechado / Ganho")
+            };
+            foreach (var (num, desc) in defaults)
+            {
+                db.CadastroStatusAtendimentoComercial.Add(new Domain.Entities.CadastroStatusAtendimentoComercial
+                {
+                    Numero = num,
+                    Descricao = desc,
+                    Ativo = true
+                });
+            }
+            db.SaveChanges();
+            Console.WriteLine("✅ Status de atendimento comercial (9 itens) inseridos.");
+        }
         Console.WriteLine("✅ Migrations aplicadas com sucesso!");
     }
 }
+
 catch (Exception ex)
 {
     Console.WriteLine($"❌ ERRO CRÍTICO ao aplicar migrations: {ex.Message}");
@@ -138,6 +200,53 @@ catch (Exception ex)
     {
         throw; // Falha o deploy se migrations não funcionarem em produção
     }
+}
+
+// ======================
+// Ajuste único: se existir só 1 usuário e for Comercial (2), definir como Administrador (1)
+// ======================
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var usuarios = db.Usuarios.ToList();
+        if (usuarios.Count == 1 && usuarios[0].UsuPerfil == 1)
+        {
+            usuarios[0].UsuPerfil = 2; // Administrador (2 = ver todos os módulos)
+            db.SaveChanges();
+            Console.WriteLine("✅ Único usuário definido como Administrador (perfil ajustado após migração).");
+        }
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"⚠️ Erro ao ajustar perfil do único usuário: {ex.Message}");
+}
+
+// ======================
+// Script: clientes que não devem aparecer na lista de comercial → marcar como inativos
+// (lista de comercial filtra por POCSTATUS = '1 - OK')
+// ======================
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        const string sqlInativosComercial = """
+            UPDATE "TB_POSSIVEL_CLIENTE"
+            SET "POCSTATUS" = 'Inativo'
+            WHERE "POCCODIGO" IN ('2494','3552','2489','4597','807','3844','4224','4146','2397')
+            AND ("POCSTATUS" IS NULL OR "POCSTATUS" = '1 - OK')
+            """;
+        var rows = db.Database.ExecuteSqlRaw(sqlInativosComercial);
+        if (rows > 0)
+            Console.WriteLine($"✅ Script startup: {rows} possível(is) cliente(s) marcado(s) como inativo(s) na lista de comercial.");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"⚠️ Erro ao executar script de inativos comercial: {ex.Message}");
 }
 
 // ======================
@@ -157,6 +266,26 @@ catch (Exception ex)
 {
     Console.WriteLine($"⚠️ Erro na atualização CR: {ex.Message}");
     // Não interrompe a aplicação
+}
+
+// ======================
+// Importação da planilha de possíveis clientes (pasta Planilha)
+// ======================
+try
+{
+    var planilhaPath = Environment.GetEnvironmentVariable("PlanilhaPath")
+        ?? Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath ?? AppContext.BaseDirectory, "..", "Planilha"));
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Console.WriteLine("🔄 Importando planilha de possíveis clientes...");
+        await PlanilhaPossiveisClientesRunner.ExecutarAsync(db, planilhaPath);
+        Console.WriteLine("✅ Importação da planilha concluída.");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"⚠️ Erro na importação da planilha de possíveis clientes: {ex.Message}");
 }
 
 // ======================

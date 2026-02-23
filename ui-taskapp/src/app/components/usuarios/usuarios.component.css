@@ -217,6 +217,39 @@ tbody tr:hover {
   color: #64748b;
 }
 
+.col-acoes {
+  width: 100px;
+  text-align: center;
+}
+
+.btn-edit {
+  padding: 0.375rem 0.75rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-edit:hover {
+  background: #2563eb;
+}
+
+.form-group select {
+  width: 100%;
+  padding: 0.625rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
 /* Responsividade para monitores grandes */
 @media (min-width: 1920px) {
   .page-container {

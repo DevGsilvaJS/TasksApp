@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DashboardService, DashboardEstatisticasDto, PeriodoFiltro, AtendimentoPorUsuarioDto, ContaAPagarDto, AtendimentoPorClienteDto, AtendimentoPorClienteMesDto, ValorPorMesPorUsuarioDto } from '../../services/dashboard.service';
+import { DashboardService, DashboardEstatisticasDto, PeriodoFiltro, AtendimentoPorUsuarioDto, ContaAPagarDto, AtendimentoPorClienteDto, AtendimentoPorClienteMesDto, ValorPorMesPorUsuarioDto, TelemarketingContatosDto } from '../../services/dashboard.service';
 import { NotaServicoService, NotaServicoItemDto } from '../../services/nota-servico.service';
 
 @Component({
@@ -52,6 +52,8 @@ export class DashboardComponent implements OnInit {
   abaContasSelecionada: 'pagar' | 'pagas' = 'pagar';
   abaContasReceberSelecionada: 'receber' | 'recebidas' = 'receber';
 
+  contatosTelemarketing: TelemarketingContatosDto | null = null;
+
   constructor(
     private dashboardService: DashboardService,
     private notaServicoService: NotaServicoService
@@ -61,6 +63,14 @@ export class DashboardComponent implements OnInit {
     this.carregarEstatisticas();
     this.carregarValoresPorMes();
     this.carregarNotasServico();
+    this.carregarContatosTelemarketing();
+  }
+
+  carregarContatosTelemarketing() {
+    this.dashboardService.obterContatosTelemarketing().subscribe({
+      next: (data) => { this.contatosTelemarketing = data; },
+      error: () => { this.contatosTelemarketing = { contatosNoDia: 0, contatosSemanaAtual: 0, contatosMesAtual: 0, contatosAnoAtual: 0 }; }
+    });
   }
 
   carregarValoresPorMes() {

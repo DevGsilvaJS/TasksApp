@@ -10,8 +10,19 @@
   </div>
 
   @if (error) {
-    <div class="alert alert-error">
-      {{ error }}
+    <div class="modal-overlay modal-overlay-erro" (click)="fecharModalErro()">
+      <div class="modal-content modal-erro" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Erro</h3>
+          <button type="button" class="btn-close" (click)="fecharModalErro()">×</button>
+        </div>
+        <div class="modal-erro-body">
+          <p>{{ error }}</p>
+        </div>
+        <div class="modal-erro-actions">
+          <button type="button" class="btn-primary" (click)="fecharModalErro()">OK</button>
+        </div>
+      </div>
     </div>
   }
 
@@ -22,21 +33,29 @@
           <h3>{{ editando ? 'Editar Tarefa' : 'Cadastrar Nova Tarefa' }}</h3>
           <button class="btn-close" (click)="fecharFormulario()">×</button>
         </div>
-        <form (ngSubmit)="salvarTarefa()" class="form" enctype="multipart/form-data">
+        <form #tarefaForm="ngForm" (ngSubmit)="salvarTarefa(tarefaForm)" class="form" enctype="multipart/form-data">
           <div class="form-row">
             <div class="form-group">
-              <label>Título</label>
-              <input type="text" [ngModel]="novoTarefa.titulo" (ngModelChange)="novoTarefa.titulo = $event.toUpperCase()" name="titulo" class="form-input"
-                     style="text-transform: uppercase;" placeholder="Digite o título da tarefa...">
+              <label for="titulo">Título *</label>
+              <input id="titulo" type="text" #titulo="ngModel" [ngModel]="novoTarefa.titulo" (ngModelChange)="novoTarefa.titulo = $event.toUpperCase()" name="titulo" class="form-input"
+                     [class.field-invalid]="titulo.invalid && (titulo.touched || tarefaForm.submitted)"
+                     style="text-transform: uppercase;" placeholder="Digite o título da tarefa..." required>
+              @if (titulo.invalid && (titulo.touched || tarefaForm.submitted)) {
+                <span class="field-error">Obrigatório</span>
+              }
             </div>
             <div class="form-group">
-              <label>Cliente *</label>
-              <select [(ngModel)]="novoTarefa.clienteId" name="clienteId" required class="form-select" [value]="novoTarefa.clienteId">
-                <option [value]="0">Selecione um cliente</option>
+              <label for="clienteId">Cliente *</label>
+              <select id="clienteId" #clienteId="ngModel" [(ngModel)]="novoTarefa.clienteId" name="clienteId" class="form-select"
+                      [class.field-invalid]="(tarefaForm.submitted || clienteId.touched) && (!novoTarefa.clienteId || novoTarefa.clienteId === 0)">
+                <option [ngValue]="0">Selecione um cliente</option>
                 @for (cliente of clientes; track cliente.clienteId) {
-                  <option [value]="cliente.clienteId">{{ cliente.codigo }} - {{ cliente.fantasia }}</option>
+                  <option [ngValue]="cliente.clienteId">{{ cliente.codigo }} - {{ cliente.fantasia }}</option>
                 }
               </select>
+              @if ((tarefaForm.submitted || clienteId.touched) && (!novoTarefa.clienteId || novoTarefa.clienteId === 0)) {
+                <span class="field-error">Selecione um cliente</span>
+              }
             </div>
             <div class="form-group">
               <label>Protocolo</label>
@@ -46,9 +65,13 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>Solicitante</label>
-              <input type="text" [ngModel]="novoTarefa.solicitante" (ngModelChange)="novoTarefa.solicitante = $event.toUpperCase()" name="solicitante" class="form-input"
-                     style="text-transform: uppercase;" placeholder="Nome do solicitante...">
+              <label for="solicitante">Solicitante *</label>
+              <input id="solicitante" type="text" #solicitante="ngModel" [ngModel]="novoTarefa.solicitante" (ngModelChange)="novoTarefa.solicitante = $event.toUpperCase()" name="solicitante" class="form-input"
+                     [class.field-invalid]="solicitante.invalid && (solicitante.touched || tarefaForm.submitted)"
+                     style="text-transform: uppercase;" placeholder="Nome do solicitante..." required>
+              @if (solicitante.invalid && (solicitante.touched || tarefaForm.submitted)) {
+                <span class="field-error">Obrigatório</span>
+              }
             </div>
             <div class="form-group">
               <label>Celular do Solicitante</label>
@@ -197,6 +220,9 @@
           <option [value]="opt.value">{{ opt.label }}</option>
         }
       </select>
+      @if (hasFiltrosColuna) {
+        <button type="button" class="filter-clear-all-btn" (click)="limparFiltrosColuna()" title="Limpar filtros das colunas">Limpar filtros</button>
+      }
     </div>
     <div class="table-container p-table-wrapper">
       <p-table
@@ -221,15 +247,42 @@
         </ng-template>
         <ng-template pTemplate="header">
           <tr>
-            <th pSortableColumn="numero">Nº <p-sortIcon field="numero"></p-sortIcon></th>
-            <th pSortableColumn="protocolo">Protocolo <p-sortIcon field="protocolo"></p-sortIcon></th>
-            <th pSortableColumn="titulo">Título <p-sortIcon field="titulo"></p-sortIcon></th>
-            <th pSortableColumn="clienteNome">Cliente <p-sortIcon field="clienteNome"></p-sortIcon></th>
-            <th pSortableColumn="solicitante">Solicitante <p-sortIcon field="solicitante"></p-sortIcon></th>
-            <th pSortableColumn="celularSolicitante">Celular</th>
-            <th pSortableColumn="tipoAtendimentoDescricao">Tipo <p-sortIcon field="tipoAtendimentoDescricao"></p-sortIcon></th>
-            <th pSortableColumn="prioridadeDescricao">Prioridade</th>
-            <th pSortableColumn="usuarioNome">Usuário <p-sortIcon field="usuarioNome"></p-sortIcon></th>
+            <th pSortableColumn="numero">
+              Nº <p-sortIcon field="numero"></p-sortIcon>
+              <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('numero', $event)" title="Filtrar coluna" aria-label="Filtrar"><i class="pi pi-filter"></i></button>
+            </th>
+            <th pSortableColumn="protocolo">
+              Protocolo <p-sortIcon field="protocolo"></p-sortIcon>
+              <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('protocolo', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
+            </th>
+            <th pSortableColumn="titulo">
+              Título <p-sortIcon field="titulo"></p-sortIcon>
+              <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('titulo', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
+            </th>
+            <th pSortableColumn="clienteNome">
+              Cliente <p-sortIcon field="clienteNome"></p-sortIcon>
+              <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('clienteNome', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
+            </th>
+            <th pSortableColumn="solicitante">
+              Solicitante <p-sortIcon field="solicitante"></p-sortIcon>
+              <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('solicitante', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
+            </th>
+            <th pSortableColumn="celularSolicitante">
+              Celular
+              <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('celularSolicitante', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
+            </th>
+            <th pSortableColumn="tipoAtendimentoDescricao">
+              Tipo <p-sortIcon field="tipoAtendimentoDescricao"></p-sortIcon>
+              <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('tipoAtendimentoDescricao', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
+            </th>
+            <th pSortableColumn="prioridadeDescricao">
+              Prioridade
+              <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('prioridadeDescricao', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
+            </th>
+            <th pSortableColumn="usuarioNome">
+              Usuário <p-sortIcon field="usuarioNome"></p-sortIcon>
+              <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('usuarioNome', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
+            </th>
             <th style="width: 200px">Ações</th>
           </tr>
         </ng-template>
@@ -281,6 +334,31 @@
           </tr>
         </ng-template>
       </p-table>
+
+      <p-overlayPanel #opFiltroColuna [style]="{ width: '280px' }" (onHide)="filtroColunaAtivo = null">
+        <ng-template pTemplate="content">
+          @if (filtroColunaAtivo) {
+            <div class="filter-panel">
+              <label class="filter-panel-select-all">
+                <input type="checkbox" [checked]="isSelecionarTodosFiltroColuna(filtroColunaAtivo)" (change)="toggleSelecionarTodosFiltroColuna(filtroColunaAtivo)" />
+                <span>Selecionar todos</span>
+              </label>
+              <div class="filter-panel-list">
+                @for (valor of getValoresDistintosColuna(filtroColunaAtivo); track valor) {
+                  <label class="filter-panel-item">
+                    <input type="checkbox" [checked]="isValorSelecionadoFiltroColuna(filtroColunaAtivo, valor)" (change)="toggleValorFiltroColuna(filtroColunaAtivo, valor)" />
+                    <span>{{ valor || '—' }}</span>
+                  </label>
+                }
+              </div>
+              <div class="filter-panel-actions">
+                <button type="button" class="filter-panel-btn-ok" (click)="aplicarFiltroColuna()">OK</button>
+                <button type="button" class="filter-panel-btn-cancel" (click)="cancelarFiltroColuna()">Cancelar</button>
+              </div>
+            </div>
+          }
+        </ng-template>
+      </p-overlayPanel>
     </div>
   }
 
