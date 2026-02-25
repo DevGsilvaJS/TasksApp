@@ -36,7 +36,7 @@
           </div>
           <div class="card-content">
             <h3>Atendimentos por Usuário</h3>
-            <p class="card-value">{{ estatisticas.totalAtendimentosPorUsuario }}</p>
+            <p class="card-value">{{ totalAtendimentosPorUsuarioDisplay }}</p>
             <p class="card-subtitle">Total de atendimentos</p>
           </div>
         </div>
@@ -51,8 +51,8 @@
           </div>
           <div class="card-content">
             <h3>Atendimentos por Cliente</h3>
-            <p class="card-value">{{ estatisticas.atendimentosPorClienteMes.length }}</p>
-            <p class="card-subtitle">Clientes com atendimentos</p>
+            <p class="card-value">{{ atendimentosPorClienteMesCountDisplay }}</p>
+            <p class="card-subtitle">Total de atendimentos</p>
           </div>
         </div>
       </div>
@@ -69,7 +69,7 @@
           </div>
           <div class="card-content">
             <h3>Contatos no dia</h3>
-            <p class="card-value">{{ contatosTelemarketing?.contatosNoDia ?? 0 }}</p>
+            <p class="card-value">{{ contatosNoDiaDisplay }}</p>
             <p class="card-subtitle">Registros de hoje</p>
           </div>
         </div>
@@ -84,7 +84,7 @@
           </div>
           <div class="card-content">
             <h3>Contatos da semana atual</h3>
-            <p class="card-value">{{ contatosTelemarketing?.contatosSemanaAtual ?? 0 }}</p>
+            <p class="card-value">{{ contatosSemanaAtualDisplay }}</p>
             <p class="card-subtitle">Dom.–hoje</p>
           </div>
         </div>
@@ -99,7 +99,7 @@
           </div>
           <div class="card-content">
             <h3>Contatos do mês</h3>
-            <p class="card-value">{{ contatosTelemarketing?.contatosMesAtual ?? 0 }}</p>
+            <p class="card-value">{{ contatosMesAtualDisplay }}</p>
             <p class="card-subtitle">Mês atual</p>
           </div>
         </div>
@@ -112,7 +112,7 @@
           </div>
           <div class="card-content">
             <h3>Contatos do ano</h3>
-            <p class="card-value">{{ contatosTelemarketing?.contatosAnoAtual ?? 0 }}</p>
+            <p class="card-value">{{ contatosAnoAtualDisplay }}</p>
             <p class="card-subtitle">Ano atual</p>
           </div>
         </div>
@@ -131,7 +131,7 @@
           </div>
           <div class="card-content">
             <h3>Contas a Receber / Recebidas</h3>
-            <p class="card-value">{{ estatisticas.totalContasAReceber }} / {{ estatisticas.totalContasRecebidas }}</p>
+            <p class="card-value">{{ totalContasAReceberDisplay }} / {{ totalContasRecebidasDisplay }}</p>
             <p class="card-subtitle">Pendentes / Recebidas (Mês Atual)</p>
           </div>
         </div>
@@ -144,7 +144,7 @@
           </div>
           <div class="card-content">
             <h3>DRE</h3>
-            <p class="card-value">{{ formatarMoeda(estatisticas.lucro) }}</p>
+            <p class="card-value">{{ formatarMoeda(lucroDisplay) }}</p>
             <p class="card-subtitle">Lucro (Mês Atual)</p>
           </div>
         </div>
@@ -157,7 +157,7 @@
           </div>
           <div class="card-content">
             <h3>Contas a Pagar / Pagas</h3>
-            <p class="card-value">{{ estatisticas.totalContasAPagar }} / {{ estatisticas.totalContasPagas }}</p>
+            <p class="card-value">{{ totalContasAPagarDisplay }} / {{ totalContasPagasDisplay }}</p>
             <p class="card-subtitle">Pendentes / Pagas (Mês Atual)</p>
           </div>
         </div>
@@ -173,7 +173,7 @@
           </div>
           <div class="card-content">
             <h3>Notas de serviço</h3>
-            <p class="card-value">{{ quantidadeNotasPendentes() }} / {{ dadosModalNotasServico.length }}</p>
+            <p class="card-value">{{ notasPendentesDisplay }} / {{ notasTotalDisplay }}</p>
             <p class="card-subtitle">Pendentes / Total (mês atual)</p>
           </div>
         </div>
@@ -186,7 +186,7 @@
           </div>
           <div class="card-content">
             <h3>Valores por Mês</h3>
-            <p class="card-value">{{ calcularTotalValores() || 'R$ 0,00' }}</p>
+            <p class="card-value">{{ valoresPorMesDisplay() }}</p>
             <p class="card-subtitle">Total de contratos</p>
           </div>
         </div>

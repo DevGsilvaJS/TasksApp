@@ -4,6 +4,16 @@ import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { PossivelClienteService, PossivelClienteResponseDto, STATUS_ATENDIMENTO_OPCOES, AtualizarStatusAtendimentoDto, PossivelClienteAnotacaoResponseDto, CadastroPossivelClienteAnotacaoDto } from '../../services/possivel-cliente.service';
+
+/** Grupo por cliente (código): uma linha por cliente, com lojas expansíveis */
+export interface ClienteGrupo {
+  codigo: string;
+  fantasiaPrincipal: string;
+  telefonePrincipal: PossivelClienteResponseDto | null;
+  statusPrincipal: number | null;
+  statusLabel: string;
+  lojas: PossivelClienteResponseDto[];
+}
 import { AuthService } from '../../services/auth.service';
 import { CadastroAtendimentoService } from '../../services/cadastro-atendimento.service';
 
@@ -20,6 +30,16 @@ export class PossiveisClientesComponent implements OnInit {
   loading = false;
   error: string | null = null;
   termoBusca = '';
+
+  /** Exibir apenas registros que tenham telefone/WhatsApp */
+  apenasComTelefone = false;
+  /** true = uma linha por cliente (agrupado por código); false = todas as lojas */
+  agruparPorCliente = true;
+  /** 'tabela' ou 'cards' */
+  viewLayout: 'tabela' | 'cards' = 'tabela';
+  /** Códigos expandidos na tabela (quando agruparPorCliente) */
+  expandidos = new Set<string>();
+
   itemSelecionado: PossivelClienteResponseDto | null = null;
   showModal = false;
   itemParaStatus: PossivelClienteResponseDto | null = null;
@@ -211,6 +231,66 @@ export class PossiveisClientesComponent implements OnInit {
       dados = dados.filter(p => set.has(this.getValorColuna(p, campo)));
     }
     this.listaFiltrada = dados;
+  }
+
+  /** Lista filtrada + opcionalmente apenas com telefone, ordenada: status (não atendido primeiro) e depois cliente */
+  get listaOrdenada(): PossivelClienteResponseDto[] {
+    let dados = [...this.listaFiltrada];
+    if (this.apenasComTelefone) {
+      dados = dados.filter(p => this.temWhatsApp(p));
+    }
+    const statusOrd = (p: PossivelClienteResponseDto) => p.pocStatusAtendimento ?? 99;
+    const nomeOrd = (p: PossivelClienteResponseDto) => (p.pocFantasia ?? p.pocCodigo ?? '').toLowerCase();
+    dados.sort((a, b) => {
+      const sa = statusOrd(a);
+      const sb = statusOrd(b);
+      if (sa !== sb) return sa - sb;
+      return nomeOrd(a).localeCompare(nomeOrd(b));
+    });
+    return dados;
+  }
+
+  /** Agrupa por PocCodigo para exibir uma linha por cliente */
+  get listaAgrupada(): ClienteGrupo[] {
+    const ordenada = this.listaOrdenada;
+    const map = new Map<string, PossivelClienteResponseDto[]>();
+    for (const p of ordenada) {
+      const cod = p.pocCodigo ?? '';
+      if (!map.has(cod)) map.set(cod, []);
+      map.get(cod)!.push(p);
+    }
+    const grupos: ClienteGrupo[] = [];
+    for (const [codigo, lojas] of map) {
+      const comTelefone = lojas.find(p => this.temWhatsApp(p)) ?? lojas[0];
+      const statusMin = Math.min(...lojas.map(p => p.pocStatusAtendimento ?? 99));
+      const statusPrincipal = statusMin === 99 ? null : statusMin;
+      const primeiro = lojas[0];
+      grupos.push({
+        codigo,
+        fantasiaPrincipal: primeiro?.pocFantasia ?? primeiro?.pocCodigo ?? codigo,
+        telefonePrincipal: this.temWhatsApp(comTelefone) ? comTelefone : null,
+        statusPrincipal,
+        statusLabel: statusPrincipal != null ? this.labelStatusAtendimento(lojas.find(p => (p.pocStatusAtendimento ?? 99) === statusMin)!) : '—',
+        lojas
+      });
+    }
+    grupos.sort((a, b) => {
+      const sa = a.statusPrincipal ?? 99;
+      const sb = b.statusPrincipal ?? 99;
+      if (sa !== sb) return sa - sb;
+      return (a.fantasiaPrincipal ?? a.codigo).toLowerCase().localeCompare((b.fantasiaPrincipal ?? b.codigo).toLowerCase());
+    });
+    return grupos;
+  }
+
+  toggleExpandir(codigo: string) {
+    if (this.expandidos.has(codigo)) this.expandidos.delete(codigo);
+    else this.expandidos.add(codigo);
+    this.expandidos = new Set(this.expandidos);
+  }
+
+  estaExpandido(codigo: string): boolean {
+    return this.expandidos.has(codigo);
   }
 
   filtrar() {

@@ -16,7 +16,23 @@ export class DashboardComponent implements OnInit {
   periodoSelecionado: PeriodoFiltro = PeriodoFiltro.Dia;
   loading = false;
   error: string | null = null;
-  
+
+  /** Valores exibidos com animação de count-up (iniciam em 0 e sobem até o valor real) */
+  totalAtendimentosPorUsuarioDisplay = 0;
+  atendimentosPorClienteMesCountDisplay = 0;
+  totalContasAReceberDisplay = 0;
+  totalContasRecebidasDisplay = 0;
+  lucroDisplay = 0;
+  totalContasAPagarDisplay = 0;
+  totalContasPagasDisplay = 0;
+  contatosNoDiaDisplay = 0;
+  contatosSemanaAtualDisplay = 0;
+  contatosMesAtualDisplay = 0;
+  contatosAnoAtualDisplay = 0;
+  notasPendentesDisplay = 0;
+  notasTotalDisplay = 0;
+  valoresPorMesNumeroDisplay = 0;
+
   PeriodoFiltro = PeriodoFiltro;
   
   // Modais
@@ -68,17 +84,27 @@ export class DashboardComponent implements OnInit {
 
   carregarContatosTelemarketing() {
     this.dashboardService.obterContatosTelemarketing().subscribe({
-      next: (data) => { this.contatosTelemarketing = data; },
-      error: () => { this.contatosTelemarketing = { contatosNoDia: 0, contatosSemanaAtual: 0, contatosMesAtual: 0, contatosAnoAtual: 0 }; }
+      next: (data) => {
+        this.contatosTelemarketing = data;
+        const D = 600;
+        this.animarValor(0, data?.contatosNoDia ?? 0, D, v => this.contatosNoDiaDisplay = v);
+        this.animarValor(0, data?.contatosSemanaAtual ?? 0, D, v => this.contatosSemanaAtualDisplay = v);
+        this.animarValor(0, data?.contatosMesAtual ?? 0, D, v => this.contatosMesAtualDisplay = v);
+        this.animarValor(0, data?.contatosAnoAtual ?? 0, D, v => this.contatosAnoAtualDisplay = v);
+      },
+      error: () => {
+        this.contatosTelemarketing = { contatosNoDia: 0, contatosSemanaAtual: 0, contatosMesAtual: 0, contatosAnoAtual: 0 };
+      }
     });
   }
 
   carregarValoresPorMes() {
     this.dashboardService.obterValoresPorMesPorUsuario(this.anoSelecionado).subscribe({
       next: (data) => {
-        // Filtrar apenas o mês atual
-        const mesAtual = new Date().getMonth() + 1; // getMonth() retorna 0-11, então +1
+        const mesAtual = new Date().getMonth() + 1;
         this.dadosModalValoresPorMes = data.filter(item => item.mes === mesAtual);
+        const total = this.dadosModalValoresPorMes.reduce((sum, item) => sum + (item.valorTotal || 0), 0);
+        this.animarValor(0, total, 600, v => this.valoresPorMesNumeroDisplay = v, false);
       },
       error: (err) => {
         console.error('Erro ao carregar valores por mês:', err);
@@ -97,13 +123,13 @@ export class DashboardComponent implements OnInit {
   carregarEstatisticas() {
     this.loading = true;
     this.error = null;
+    this.zerarDisplays();
 
     const { dataInicio, dataFim } = this.obterDatasPeriodo();
 
     this.dashboardService.obterEstatisticas(dataInicio, dataFim).subscribe({
       next: (data) => {
         this.estatisticas = data;
-        // Garantir que as listas existam
         if (!this.estatisticas.atendimentosPorCliente) {
           this.estatisticas.atendimentosPorCliente = [];
         }
@@ -111,6 +137,7 @@ export class DashboardComponent implements OnInit {
           this.estatisticas.atendimentosPorClienteMes = [];
         }
         this.loading = false;
+        this.animarValoresEstatisticas();
       },
       error: (err) => {
         console.error('Erro ao carregar estatísticas:', err);
@@ -118,6 +145,51 @@ export class DashboardComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  private zerarDisplays() {
+    this.totalAtendimentosPorUsuarioDisplay = 0;
+    this.atendimentosPorClienteMesCountDisplay = 0;
+    this.totalContasAReceberDisplay = 0;
+    this.totalContasRecebidasDisplay = 0;
+    this.lucroDisplay = 0;
+    this.totalContasAPagarDisplay = 0;
+    this.totalContasPagasDisplay = 0;
+  }
+
+  /** Animação de count-up: easeOutCubic, duração em ms. Se round=true, usa inteiros; senão usa decimais (ex.: lucro). */
+  private animarValor(inicio: number, fim: number, duracaoMs: number, callback: (v: number) => void, round = true): void {
+    if (inicio === fim) {
+      callback(fim);
+      return;
+    }
+    const startTime = performance.now();
+    const diff = fim - inicio;
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+
+    const step = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duracaoMs, 1);
+      const eased = easeOutCubic(progress);
+      const current = round ? Math.round(inicio + diff * eased) : inicio + diff * eased;
+      callback(current);
+      if (progress < 1) requestAnimationFrame(step);
+      else callback(fim);
+    };
+    requestAnimationFrame(step);
+  }
+
+  private animarValoresEstatisticas() {
+    const e = this.estatisticas!;
+    const DURATION = 700;
+    this.animarValor(0, e.totalAtendimentosPorUsuario ?? 0, DURATION, v => this.totalAtendimentosPorUsuarioDisplay = v);
+    const totalAtendimentosCliente = (e.atendimentosPorClienteMes ?? []).reduce((sum, item) => sum + (item.quantidade ?? 0), 0);
+    this.animarValor(0, totalAtendimentosCliente, DURATION, v => this.atendimentosPorClienteMesCountDisplay = v);
+    this.animarValor(0, e.totalContasAReceber ?? 0, DURATION, v => this.totalContasAReceberDisplay = v);
+    this.animarValor(0, e.totalContasRecebidas ?? 0, DURATION, v => this.totalContasRecebidasDisplay = v);
+    this.animarValor(0, e.totalContasAPagar ?? 0, DURATION, v => this.totalContasAPagarDisplay = v);
+    this.animarValor(0, e.totalContasPagas ?? 0, DURATION, v => this.totalContasPagasDisplay = v);
+    this.animarValor(0, e.lucro ?? 0, DURATION, v => this.lucroDisplay = v, false);
   }
 
   obterDatasPeriodo(): { dataInicio: Date; dataFim: Date } {
@@ -263,6 +335,10 @@ export class DashboardComponent implements OnInit {
       next: (data) => {
         this.dadosModalNotasServico = data;
         this.loadingNotasServico = false;
+        const pendentes = data.filter(n => !n.enviado).length;
+        const D = 500;
+        this.animarValor(0, pendentes, D, v => this.notasPendentesDisplay = v);
+        this.animarValor(0, data.length, D, v => this.notasTotalDisplay = v);
       },
       error: () => {
         this.loadingNotasServico = false;
@@ -347,5 +423,10 @@ export class DashboardComponent implements OnInit {
     }
     const total = this.dadosModalValoresPorMes.reduce((sum, item) => sum + (item.valorTotal || 0), 0);
     return this.formatarMoeda(total);
+  }
+
+  /** Valor animado do card "Valores por Mês" */
+  valoresPorMesDisplay(): string {
+    return this.formatarMoeda(this.valoresPorMesNumeroDisplay);
   }
 }
