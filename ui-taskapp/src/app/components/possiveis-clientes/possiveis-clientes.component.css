@@ -187,6 +187,13 @@
   margin-bottom: 0.75rem;
 }
 
+.card-cliente-codigo {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.15rem;
+}
+
 .card-cliente-nome {
   margin: 0;
   font-size: 1.0625rem;
@@ -327,6 +334,13 @@
 
 .btn-expandir-lojas:hover {
   background: #e2e8f0;
+}
+
+.tabela-agrupada .col-codigo {
+  width: 1%;
+  white-space: nowrap;
+  color: #64748b;
+  font-size: 0.8125rem;
 }
 
 .tabela-agrupada .col-acoes {

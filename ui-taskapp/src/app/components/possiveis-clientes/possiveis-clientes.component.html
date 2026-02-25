@@ -69,7 +69,10 @@
         @for (grupo of listaAgrupada; track grupo.codigo) {
           <div class="card-cliente">
             <div class="card-cliente-header">
-              <h3 class="card-cliente-nome">{{ grupo.fantasiaPrincipal }}</h3>
+              <div>
+                <span class="card-cliente-codigo">Cód. {{ grupo.codigo }}</span>
+                <h3 class="card-cliente-nome">{{ grupo.fantasiaPrincipal }}</h3>
+              </div>
               <span class="card-cliente-lojas">{{ grupo.lojas.length }} {{ grupo.lojas.length === 1 ? 'loja' : 'lojas' }}</span>
             </div>
             <div class="card-cliente-body">
@@ -114,7 +117,10 @@
         @for (item of listaOrdenada; track item.pocId) {
           <div class="card-cliente">
             <div class="card-cliente-header">
-              <h3 class="card-cliente-nome">{{ valorOuTraco(item.pocFantasia) || item.pocCodigo }}</h3>
+              <div>
+                <span class="card-cliente-codigo">Cód. {{ item.pocCodigo }}</span>
+                <h3 class="card-cliente-nome">{{ valorOuTraco(item.pocFantasia) || item.pocCodigo }}</h3>
+              </div>
               <span class="card-cliente-lojas">{{ valorOuTraco(item.pocLoja) || '' }}</span>
             </div>
             <div class="card-cliente-body">
@@ -140,6 +146,7 @@
         <table class="tabela-comercial tabela-agrupada">
           <thead>
             <tr>
+              <th>Código</th>
               <th>Cliente</th>
               <th>Telefone</th>
               <th>Status</th>
@@ -150,6 +157,7 @@
           <tbody>
             @for (grupo of listaAgrupada; track grupo.codigo) {
               <tr class="row-grupo">
+                <td class="col-codigo">{{ grupo.codigo }}</td>
                 <td><strong>{{ grupo.fantasiaPrincipal }}</strong></td>
                 <td>
                   @if (grupo.telefonePrincipal) {
@@ -179,7 +187,9 @@
               @if (estaExpandido(grupo.codigo)) {
                 @for (loja of grupo.lojas; track loja.pocId) {
                   <tr class="row-loja-expandida">
-                    <td colspan="2" class="td-loja-detalhe">{{ valorOuTraco(loja.pocLoja) || '—' }} · {{ valorOuTraco(loja.pocCodigo) }}</td>
+                    <td class="col-codigo">{{ loja.pocCodigo }}</td>
+                    <td class="td-loja-detalhe">{{ valorOuTraco(loja.pocLoja) || '—' }}</td>
+                    <td>{{ formatarCelular(loja) }}</td>
                     <td>{{ labelStatusAtendimento(loja) }}</td>
                     <td></td>
                     <td>
@@ -209,6 +219,7 @@
           [tableStyle]="{ 'min-width': '52rem' }">
           <ng-template pTemplate="header">
             <tr>
+              <th>Código</th>
               <th>Cliente / Fantasia</th>
               <th>Telefone</th>
               <th>Status</th>
@@ -217,6 +228,7 @@
           </ng-template>
           <ng-template pTemplate="body" let-rowData>
             <tr>
+              <td class="col-codigo">{{ rowData.pocCodigo }}</td>
               <td><strong>{{ valorOuTraco(rowData.pocFantasia) || rowData.pocCodigo }}</strong></td>
               <td>{{ formatarCelular(rowData) }}</td>
               <td class="status-atend-cell">{{ labelStatusAtendimento(rowData) }}</td>
@@ -234,7 +246,7 @@
             </tr>
           </ng-template>
           <ng-template pTemplate="emptymessage">
-            <tr><td colspan="4">Nenhum registro.</td></tr>
+            <tr><td colspan="5">Nenhum registro.</td></tr>
           </ng-template>
         </p-table>
       }
