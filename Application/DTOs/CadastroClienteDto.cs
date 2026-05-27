@@ -16,7 +16,8 @@ public class CadastroClienteDto
     public string? DocEstadual { get; set; }
 
     [Required(ErrorMessage = "Código do cliente é obrigatório")]
-    public int Codigo { get; set; }
+    [MaxLength(20)]
+    public string Codigo { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Usuário é obrigatório")]
     public int UsuarioId { get; set; }
@@ -38,4 +39,17 @@ public class CadastroClienteDto
     public List<string>? Emails { get; set; }
 
     public StatusCliente Status { get; set; } = StatusCliente.Ativo;
+
+    /// <summary>
+    /// Lista de valores de contrato por vigência (data inicial/final).
+    /// Quando informado, substitui o uso de ValorContrato/DataFinalContrato.
+    /// </summary>
+    public List<ClienteContratoValorDto>? Contratos { get; set; }
+}
+
+public class ClienteContratoValorDto
+{
+    public decimal ValorMensal { get; set; }
+    public DateTime DataInicio { get; set; }
+    public DateTime? DataFim { get; set; }
 }

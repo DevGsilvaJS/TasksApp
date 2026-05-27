@@ -33,7 +33,7 @@ public class DetalheAtendimentoDto
     public int TarefaId { get; set; }
     public int? Numero { get; set; }
     public int ClienteId { get; set; }
-    public int ClienteCodigo { get; set; }
+    public string ClienteCodigo { get; set; } = string.Empty;
     public string ClienteNome { get; set; } = string.Empty;
 }
 
@@ -79,7 +79,7 @@ public class ValorPorMesPorUsuarioDto
 public class ContratoDetalheDto
 {
     public int ClienteId { get; set; }
-    public int ClienteCodigo { get; set; }
+    public string ClienteCodigo { get; set; } = string.Empty;
     public string ClienteNome { get; set; } = string.Empty;
     public decimal ValorContrato { get; set; }
 }

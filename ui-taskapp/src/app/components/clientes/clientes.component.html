@@ -26,7 +26,14 @@
           <div class="form-row">
             <div class="form-group">
               <label>Código *</label>
-              <input type="number" [(ngModel)]="novoCliente.codigo" name="codigo" required [readonly]="editando" class="form-input">
+              <input
+                type="text"
+                [(ngModel)]="novoCliente.codigo"
+                name="codigo"
+                required
+                inputmode="numeric"
+                pattern="^[0-9]+$"
+                class="form-input">
             </div>
             <div class="form-group">
               <label>Fantasia *</label>
@@ -64,8 +71,13 @@
           <div class="form-row">
             <div class="form-group">
               <label>Valor do Contrato</label>
-              <input type="number" [(ngModel)]="novoCliente.valorContrato" name="valorContrato" 
-                     step="0.01" min="0" placeholder="0,00" class="form-input">
+              <input
+                type="text"
+                mascaraMoedaBr
+                [(ngModel)]="novoCliente.valorContrato"
+                name="valorContrato"
+                inputmode="numeric"
+                class="form-input">
             </div>
             <div class="form-group">
               <label>Data Final de Contrato</label>
@@ -76,6 +88,56 @@
               <input type="number" [(ngModel)]="novoCliente.diaPagamento" name="diaPagamento" 
                      min="1" max="31" placeholder="Dia (1-31)" class="form-input">
             </div>
+          </div>
+
+          <div class="contratos-section">
+            <div class="contratos-header">
+              <h4>Contratos (histórico de vigências)</h4>
+              <button type="button" class="btn-contrato-add" (click)="adicionarContrato()">Adicionar contrato</button>
+            </div>
+            @if ((novoCliente.contratos?.length || 0) === 0) {
+              <div class="contratos-empty">
+                Nenhuma vigência cadastrada. Se você salvar assim, o sistema usa o “Valor do Contrato” (legado).
+              </div>
+            } @else {
+              <div class="contratos-table-wrap">
+                <table class="contratos-table">
+                  <thead>
+                    <tr>
+                      <th>Valor Mensal</th>
+                      <th>Data Início</th>
+                      <th>Data Fim</th>
+                      <th class="col-acoes">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (c of (novoCliente.contratos || []); track $index) {
+                      <tr>
+                        <td>
+                          <input
+                            type="text"
+                            mascaraMoedaBr
+                            [(ngModel)]="c.valorMensal"
+                            (ngModelChange)="onContratoAlterado()"
+                            name="valorMensal{{$index}}"
+                            inputmode="numeric"
+                            class="form-input form-input-sm">
+                        </td>
+                        <td>
+                          <input type="date" [(ngModel)]="c.dataInicio" (ngModelChange)="onContratoAlterado()" name="dataInicio{{$index}}" class="form-input form-input-sm">
+                        </td>
+                        <td>
+                          <input type="date" [(ngModel)]="c.dataFim" (ngModelChange)="onContratoAlterado()" name="dataFim{{$index}}" class="form-input form-input-sm">
+                        </td>
+                        <td class="acoes">
+                          <button type="button" class="btn-delete btn-contrato-del" (click)="removerContrato($index)" title="Remover vigência">×</button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
           </div>
           <div class="form-row">
             <div class="form-group form-group-full">
@@ -108,6 +170,14 @@
       [(ngModel)]="termoBusca"
       (input)="filtrarClientes()"
       class="search-input">
+    <label class="checkbox-label">
+      <input
+        type="checkbox"
+        [(ngModel)]="exibirInativos"
+        (change)="onToggleExibirInativos()"
+        class="checkbox-input">
+      <span>Exibir inativos</span>
+    </label>
   </div>
 
   @if (loading && clientes.length === 0) {
@@ -126,8 +196,8 @@
             <th>E-mail</th>
             <th>CPF/CNPJ</th>
             <th>RG/IE</th>
-            <th>Valor Contrato</th>
-            <th>Data Final Contrato</th>
+            <th>Valor Vigente</th>
+            <th>Vigência</th>
             <th>Dia Pagamento</th>
             <th>Dia NF Serviço</th>
             <th>Status</th>
@@ -143,8 +213,14 @@
               <td>{{ obterPrimeiroEmail(cliente) }}</td>
               <td>{{ formatarCNPJParaExibicao(cliente.docFederal) }}</td>
               <td>{{ cliente.docEstadual || '-' }}</td>
-              <td>{{ formatarMoeda(cliente.valorContrato) }}</td>
-              <td>{{ formatarData(cliente.dataFinalContrato) }}</td>
+              <td>{{ formatarMoeda(cliente.valorContratoVigente) }}</td>
+              <td>
+                @if (cliente.vigenciaInicio || cliente.vigenciaFim) {
+                  {{ formatarData(cliente.vigenciaInicio) }} - {{ cliente.vigenciaFim ? formatarData(cliente.vigenciaFim) : 'SEM FIM' }}
+                } @else {
+                  -
+                }
+              </td>
               <td>{{ cliente.diaPagamento ? cliente.diaPagamento + 'º' : '-' }}</td>
               <td>{{ cliente.diaNfServico ? cliente.diaNfServico + 'º' : '-' }}</td>
               <td>

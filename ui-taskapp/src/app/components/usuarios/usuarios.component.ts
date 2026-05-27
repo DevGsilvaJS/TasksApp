@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UsuarioService, UsuarioResponseDto, CadastroUsuarioDto, AtualizarUsuarioDto, PERFIS_OPCOES, PERFIL_COMERCIAL } from '../../services/usuario.service';
+import { NotificacaoService } from '../../services/notificacao.service';
 
 @Component({
   selector: 'app-usuarios',
@@ -32,7 +33,10 @@ export class UsuariosComponent implements OnInit {
 
   senhaEdicao = '';
 
-  constructor(private usuarioService: UsuarioService) { }
+  constructor(
+    private usuarioService: UsuarioService,
+    private notificacao: NotificacaoService
+  ) { }
 
   ngOnInit() {
     this.carregarUsuarios();
@@ -104,10 +108,12 @@ export class UsuariosComponent implements OnInit {
   salvar() {
     if (!this.novoUsuario.nome?.trim() || !this.novoUsuario.login?.trim()) {
       this.error = 'Preencha Nome e Login.';
+      this.notificacao.aviso(this.error);
       return;
     }
     if (!this.editando && !this.novoUsuario.senha) {
       this.error = 'Senha é obrigatória para novo usuário.';
+      this.notificacao.aviso(this.error);
       return;
     }
 
@@ -129,6 +135,7 @@ export class UsuariosComponent implements OnInit {
           this.carregarUsuarios();
           this.fecharFormulario();
           this.loading = false;
+          this.notificacao.sucesso('Usuário atualizado com sucesso.');
         },
         error: (err) => {
           this.error = err.error?.message || 'Erro ao atualizar usuário.';
@@ -141,6 +148,7 @@ export class UsuariosComponent implements OnInit {
           this.carregarUsuarios();
           this.fecharFormulario();
           this.loading = false;
+          this.notificacao.sucesso('Usuário cadastrado com sucesso.');
         },
         error: (err) => {
           this.error = err.error?.message || 'Erro ao cadastrar usuário.';

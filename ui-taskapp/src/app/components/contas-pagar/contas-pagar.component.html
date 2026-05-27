@@ -27,7 +27,6 @@
             <div class="form-group">
               <label>Número</label>
               <input type="number" [(ngModel)]="novaDuplicata.numero" name="numero" readonly class="form-input">
-              <small style="color: #64748b; font-size: 0.875rem;">Gerado automaticamente</small>
             </div>
             <div class="form-group">
               <label>Data de Emissão *</label>
@@ -196,6 +195,17 @@
       </div>
     </div>
   }
+
+  <div class="filtros-container">
+    <label class="checkbox-filtro">
+      <input
+        type="checkbox"
+        [(ngModel)]="exibirTitulosBaixados"
+        (ngModelChange)="onToggleExibirTitulosBaixados()"
+        name="exibirTitulosBaixados">
+      Exibir títulos baixados
+    </label>
+  </div>
 
   <div class="search-container">
     <input 

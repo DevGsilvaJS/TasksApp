@@ -1,7 +1,8 @@
 .page-container {
   padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: calc(100vw - 250px);
+  margin: 0;
 }
 
 .page-header {
@@ -15,11 +16,6 @@
   color: #1e293b;
 }
 
-.page-subtitle {
-  margin: 0;
-  color: #64748b;
-  font-size: 0.9375rem;
-}
 
 .alert {
   padding: 1rem;
@@ -196,9 +192,15 @@
   background: white;
   border-radius: 0.75rem;
   width: 90%;
-  max-width: 420px;
+  max-width: 720px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   border-top: 4px solid var(--theme-primary, #667eea);
+}
+
+@media (min-width: 1200px) {
+  .modal-content.modal-cadastro {
+    max-width: 860px;
+  }
 }
 
 .modal-content.modal-erro {

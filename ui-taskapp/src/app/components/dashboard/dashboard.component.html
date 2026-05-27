@@ -122,6 +122,30 @@
     <fieldset class="dashboard-fieldset">
       <legend class="dashboard-fieldset-legend">Financeiro</legend>
       <div class="cards-container">
+        <div class="stat-card stat-card-alerta">
+          <div class="card-icon card-icon-alerta">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 9v4"></path>
+              <path d="M12 17h.01"></path>
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            </svg>
+          </div>
+          <div class="card-content">
+            <h3>Contratos vencendo (30 dias)</h3>
+            <p class="card-value">{{ alertasContratosVencendo.length }}</p>
+            <p class="card-subtitle">
+              @if (carregandoAlertasContratosVencendo) {
+                Carregando...
+              } @else if (erroAlertasContratosVencendo) {
+                {{ erroAlertasContratosVencendo }}
+              } @else if (alertasContratosVencendo.length > 0) {
+                Exibido no lembrete ao logar (ex.: {{ alertasContratosVencendo[0].clienteCodigo }})
+              } @else {
+                Nenhum contrato prestes a vencer
+              }
+            </p>
+          </div>
+        </div>
         <div class="stat-card" (click)="abrirModalContasReceberRecebidas()">
           <div class="card-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

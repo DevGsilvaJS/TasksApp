@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AnotacaoGeralService, AnotacaoGeralResponseDto, CadastroAnotacaoGeralDto } from '../../services/anotacao-geral.service';
+import { NotificacaoService } from '../../services/notificacao.service';
 
 @Component({
   selector: 'app-anotacoes',
@@ -34,7 +35,10 @@ export class AnotacoesComponent implements OnInit {
   showSuccessModal = false;
   successMessage = '';
 
-  constructor(private anotacaoGeralService: AnotacaoGeralService) { }
+  constructor(
+    private anotacaoGeralService: AnotacaoGeralService,
+    private notificacao: NotificacaoService
+  ) { }
 
   ngOnInit() {
     this.carregarAnotacoes();
@@ -98,6 +102,7 @@ export class AnotacoesComponent implements OnInit {
 
     if (!this.novaAnotacao.descricao.trim()) {
       this.error = 'A descrição é obrigatória.';
+      this.notificacao.aviso(this.error);
       return;
     }
 
@@ -113,11 +118,7 @@ export class AnotacoesComponent implements OnInit {
         this.carregarAnotacoes();
         this.fecharFormulario();
         this.loading = false;
-        this.successMessage = this.editando ? 'Anotação atualizada com sucesso!' : 'Anotação cadastrada com sucesso!';
-        this.showSuccessModal = true;
-        setTimeout(() => {
-          this.fecharSuccessModal();
-        }, 3000);
+        this.notificacao.sucesso(this.editando ? 'Anotação atualizada com sucesso.' : 'Anotação cadastrada com sucesso.');
       },
       error: (err) => {
         this.error = err.error?.message || 'Erro ao salvar anotação.';
@@ -136,6 +137,7 @@ export class AnotacoesComponent implements OnInit {
         next: () => {
           this.carregarAnotacoes();
           this.loading = false;
+          this.notificacao.sucesso('Anotação excluída com sucesso.');
         },
         error: (err) => {
           this.error = err.error?.message || 'Erro ao excluir anotação.';

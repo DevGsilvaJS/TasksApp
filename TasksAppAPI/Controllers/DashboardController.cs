@@ -91,4 +91,26 @@ public class DashboardController : ControllerBase
             return StatusCode(500, new { message = "Erro interno do servidor" });
         }
     }
+
+    /// <summary>
+    /// Obtém alertas de contratos vigentes que vencem em até N dias (somente clientes ativos).
+    /// </summary>
+    [HttpGet("alertas-contratos-vencendo")]
+    [ProducesResponseType(typeof(List<AlertaContratoVencendoDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObterAlertasContratosVencendo([FromQuery] int? diasAntecedencia)
+    {
+        try
+        {
+            var dias = diasAntecedencia.GetValueOrDefault(30);
+            if (dias <= 0) dias = 30;
+
+            var alertas = await _dashboardService.ObterAlertasContratosVencendoAsync(dias);
+            return Ok(alertas);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao obter alertas de contratos vencendo");
+            return StatusCode(500, new { message = "Erro interno do servidor" });
+        }
+    }
 }

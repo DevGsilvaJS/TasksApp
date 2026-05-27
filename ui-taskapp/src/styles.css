@@ -27,3 +27,34 @@ body {
 html, body {
   height: 100%;
 }
+
+/* Padrão do sistema: campos em MAIÚSCULO */
+input,
+textarea,
+select {
+  text-transform: uppercase;
+}
+
+input::placeholder,
+textarea::placeholder {
+  text-transform: uppercase;
+}
+
+/* Padrão global: títulos das páginas */
+.page-container .page-header h2 {
+  margin: 0;
+  font-size: 1.875rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Padrão global: modais maiores (todas as telas) */
+.modal-content {
+  width: 95% !important;
+  max-width: 1100px !important;
+  max-height: 92vh !important;
+}
+
+.modal-large {
+  max-width: 1350px !important;
+}

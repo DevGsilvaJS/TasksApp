@@ -11,20 +11,20 @@ namespace TasksAppAPI.Scripts;
 public static class AtualizacaoCrClientesRunner
 {
     /// <summary>Descrição e código do cliente (código entre parênteses na lista do usuário).</summary>
-    private static readonly (string Descricao, int Codigo)[] ClientesParaAtualizarCr =
+    private static readonly (string Descricao, string Codigo)[] ClientesParaAtualizarCr =
     {
-        ("DI OCCHIO", 2494),
-        ("PARIS VISION", 2494),   // 02494 = 2494
-        ("MAIS VISÃO", 4597),
-        ("SANTA VISTA", 3844),
-        ("GAZETTA", 3552),
-        ("VISÃO DE TODOS", 4146),
-        ("RENDENTORA", 807),
-        ("SAO JOSÉ", 4224),
+        ("DI OCCHIO", "2494"),
+        ("PARIS VISION", "2494"),   // 02494 = 2494
+        ("MAIS VISÃO", "4597"),
+        ("SANTA VISTA", "3844"),
+        ("GAZETTA", "3552"),
+        ("VISÃO DE TODOS", "4146"),
+        ("RENDENTORA", "807"),
+        ("SAO JOSÉ", "4224"),
     };
 
     /// <summary>Códigos distintos para processar (evita processar 2494 duas vezes).</summary>
-    private static readonly int[] CodigosDistintos = ClientesParaAtualizarCr
+    private static readonly string[] CodigosDistintos = ClientesParaAtualizarCr
         .Select(x => x.Codigo)
         .Distinct()
         .ToArray();
@@ -41,14 +41,13 @@ public static class AtualizacaoCrClientesRunner
                 continue;
             }
 
-            var codigoStr = codigo.ToString();
             // Duplicatas CR sem cliente e cuja descrição contém o código do cliente
             var duplicatas = await db.Duplicatas
                 .Where(d => d.DupTipo == "CR"
                     && d.CliId == null
                     && d.DupDescricaoDespesa != null
-                    && (d.DupDescricaoDespesa.Contains(codigoStr)
-                        || (codigo == 2494 && d.DupDescricaoDespesa.Contains("02494"))))
+                    && (d.DupDescricaoDespesa.Contains(codigo)
+                        || (codigo == "2494" && d.DupDescricaoDespesa.Contains("02494"))))
                 .ToListAsync();
 
             if (duplicatas.Count == 0)

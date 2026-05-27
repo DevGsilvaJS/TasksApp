@@ -155,6 +155,9 @@ export class TarefaService {
     if (dto.prioridade !== undefined && dto.prioridade !== null) {
       formData.append('prioridade', dto.prioridade.toString());
     }
+    if (dto.tipoContato !== undefined && dto.tipoContato !== null) {
+      formData.append('tipoContato', dto.tipoContato.toString());
+    }
 
     if (dto.imagens && dto.imagens.length > 0) {
       dto.imagens.forEach((imagem, index) => {

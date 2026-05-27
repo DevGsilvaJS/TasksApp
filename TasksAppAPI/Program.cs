@@ -128,7 +128,19 @@ try
     {
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         Console.WriteLine("🔄 Aplicando migrations automaticamente...");
-        db.Database.Migrate();
+        try
+        {
+            db.Database.Migrate();
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42P07")
+        {
+            // Tabela/objeto já existe (banco com histórico divergente de migrations).
+            Console.WriteLine($"⚠️ Migração ignorada (objeto já existe): {ex.MessageText}");
+        }
+        catch (Exception ex) when (ex.InnerException is PostgresException pex && pex.SqlState == "42P07")
+        {
+            Console.WriteLine($"⚠️ Migração ignorada (objeto já existe): {pex.MessageText}");
+        }
         // Garantir tabela de possíveis clientes (migration pode não estar no histórico)
         db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS ""TB_POSSIVEL_CLIENTE"" (
             ""POCID"" serial PRIMARY KEY,
@@ -272,38 +284,78 @@ catch (Exception ex)
 }
 
 // ======================
-// Importação da planilha de possíveis clientes (pasta Planilha)
-// Em produção: /app/Planilha. Em dev: raiz do projeto (TasksApp/Planilha) ou TasksAppAPI/Planilha.
+// Garantir tabela de contratos por cliente (sem depender de migrations)
 // ======================
 try
 {
-    var baseDir = app.Environment.ContentRootPath ?? AppContext.BaseDirectory ?? ".";
-    var planilhaPath = Environment.GetEnvironmentVariable("PlanilhaPath");
-    if (string.IsNullOrWhiteSpace(planilhaPath))
-    {
-        var planilhaNoApp = Path.Combine(baseDir, "Planilha");
-        var planilhaNoPai = Path.GetFullPath(Path.Combine(baseDir, "..", "Planilha"));
-        planilhaPath = Directory.Exists(planilhaNoApp)
-            ? Path.GetFullPath(planilhaNoApp)
-            : planilhaNoPai;
-    }
-    else
-    {
-        planilhaPath = Path.GetFullPath(planilhaPath);
-    }
-    Console.WriteLine($"[Planilha] Caminho usado: {planilhaPath}");
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        Console.WriteLine("🔄 Importando planilha de possíveis clientes...");
-        await PlanilhaPossiveisClientesRunner.ExecutarAsync(db, planilhaPath);
-        Console.WriteLine("✅ Importação da planilha concluída.");
+        await GarantirTabelaClienteContratoValorRunner.ExecutarAsync(db);
+        await GarantirColunaCodigoClienteTextoRunner.ExecutarAsync(db);
     }
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"⚠️ Erro na importação da planilha de possíveis clientes: {ex.Message}");
+    Console.WriteLine($"⚠️ Erro ao garantir tabela TB_CLI_CONTRATO_VALOR: {ex.Message}");
 }
+
+// ======================
+// Normalização global (opcional): converter strings existentes para MAIÚSCULO
+// Habilite com variável de ambiente: NORMALIZAR_MAIUSCULO_STARTUP=true
+// ======================
+try
+{
+    var normalizar = Environment.GetEnvironmentVariable("NORMALIZAR_MAIUSCULO_STARTUP");
+    if (string.Equals(normalizar, "true", StringComparison.OrdinalIgnoreCase))
+    {
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            Console.WriteLine("🔄 Normalizando textos existentes para MAIÚSCULO (startup)...");
+            await NormalizacaoMaiusculoRunner.ExecutarAsync(db);
+            Console.WriteLine("✅ Normalização de MAIÚSCULO concluída.");
+        }
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"⚠️ Erro na normalização de MAIÚSCULO: {ex.Message}");
+}
+
+// ======================
+// Importação da planilha de possíveis clientes (pasta Planilha)
+// Em produção: /app/Planilha. Em dev: raiz do projeto (TasksApp/Planilha) ou TasksAppAPI/Planilha.
+//// ======================
+//try
+//{
+//    var baseDir = app.Environment.ContentRootPath ?? AppContext.BaseDirectory ?? ".";
+//    var planilhaPath = Environment.GetEnvironmentVariable("PlanilhaPath");
+//    if (string.IsNullOrWhiteSpace(planilhaPath))
+//    {
+//        var planilhaNoApp = Path.Combine(baseDir, "Planilha");
+//        var planilhaNoPai = Path.GetFullPath(Path.Combine(baseDir, "..", "Planilha"));
+//        planilhaPath = Directory.Exists(planilhaNoApp)
+//            ? Path.GetFullPath(planilhaNoApp)
+//            : planilhaNoPai;
+//    }
+//    else
+//    {
+//        planilhaPath = Path.GetFullPath(planilhaPath);
+//    }
+//    Console.WriteLine($"[Planilha] Caminho usado: {planilhaPath}");
+//    using (var scope = app.Services.CreateScope())
+//    {
+//        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+//        Console.WriteLine("🔄 Importando planilha de possíveis clientes...");
+//        await PlanilhaPossiveisClientesRunner.ExecutarAsync(db, planilhaPath);
+//        Console.WriteLine("✅ Importação da planilha concluída.");
+//    }
+//}
+//catch (Exception ex)
+//{
+//    Console.WriteLine($"⚠️ Erro na importação da planilha de possíveis clientes: {ex.Message}");
+//}
 
 // ======================
 // Middleware / Pipeline

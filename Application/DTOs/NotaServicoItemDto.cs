@@ -6,7 +6,7 @@ namespace Application.DTOs;
 public class NotaServicoItemDto
 {
     public int ClienteId { get; set; }
-    public int ClienteCodigo { get; set; }
+    public string ClienteCodigo { get; set; } = string.Empty;
     public string Fantasia { get; set; } = string.Empty;
     /// <summary>Dia do mês (1-31) da NF de serviço.</summary>
     public int DiaNfServico { get; set; }

@@ -205,6 +205,17 @@
     </div>
   }
 
+  <div class="filtros-container">
+    <label class="checkbox-filtro">
+      <input
+        type="checkbox"
+        [(ngModel)]="exibirTitulosBaixados"
+        (ngModelChange)="onToggleExibirTitulosBaixados()"
+        name="exibirTitulosBaixados">
+      Exibir títulos baixados
+    </label>
+  </div>
+
   <div class="search-container">
     <input 
       type="text" 
@@ -236,41 +247,36 @@
           </tr>
         </thead>
         <tbody>
-          @for (grupo of duplicatasAgrupadasPorCliente; track $index) {
-            <tr class="grupo-cliente-row">
-              <td colspan="8" class="grupo-cliente-cell">{{ grupo.clienteNome }} ({{ grupo.duplicatas.length }} {{ grupo.duplicatas.length === 1 ? 'duplicata' : 'duplicatas' }})</td>
+          @for (duplicata of duplicatasFiltradas; track duplicata.duplicataId) {
+            <tr>
+              <td>{{ duplicata.numero }}</td>
+              <td>{{ formatarData(duplicata.dataEmissao) }}</td>
+              <td>{{ duplicata.descricaoDespesa || '-' }}</td>
+              <td>{{ duplicata.numeroParcelas }}</td>
+              <td>{{ formatarMoeda(duplicata.valorTotal) }}</td>
+              <td class="status-paga">{{ formatarMoeda(duplicata.valorPago) }}</td>
+              <td class="status-pendente">{{ formatarMoeda(duplicata.valorPendente) }}</td>
+              <td class="actions-cell">
+                <button class="btn-view" (click)="abrirParcelas(duplicata)" title="Ver Parcelas">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  Parcelas
+                </button>
+                <button class="btn-edit" (click)="abrirFormularioEdicao(duplicata)" title="Editar" [disabled]="duplicata.valorPago > 0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+                <button class="btn-delete" (click)="excluirDuplicata(duplicata)" title="Excluir" [disabled]="duplicata.valorPago > 0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </td>
             </tr>
-            @for (duplicata of grupo.duplicatas; track duplicata.duplicataId) {
-              <tr>
-                <td>{{ duplicata.numero }}</td>
-                <td>{{ formatarData(duplicata.dataEmissao) }}</td>
-                <td>{{ duplicata.descricaoDespesa || '-' }}</td>
-                <td>{{ duplicata.numeroParcelas }}</td>
-                <td>{{ formatarMoeda(duplicata.valorTotal) }}</td>
-                <td class="status-paga">{{ formatarMoeda(duplicata.valorPago) }}</td>
-                <td class="status-pendente">{{ formatarMoeda(duplicata.valorPendente) }}</td>
-                <td class="actions-cell">
-                  <button class="btn-view" (click)="abrirParcelas(duplicata)" title="Ver Parcelas">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                      <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                    Parcelas
-                  </button>
-                  <button class="btn-edit" (click)="abrirFormularioEdicao(duplicata)" title="Editar" [disabled]="duplicata.valorPago > 0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                  </button>
-                  <button class="btn-delete" (click)="excluirDuplicata(duplicata)" title="Excluir" [disabled]="duplicata.valorPago > 0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                  </button>
-                </td>
-              </tr>
-            }
           }
         </tbody>
       </table>

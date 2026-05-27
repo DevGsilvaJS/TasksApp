@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService, LoginDto } from '../../services/auth.service';
+import { NotificacaoService } from '../../services/notificacao.service';
 
 @Component({
   selector: 'app-login',
@@ -21,7 +22,8 @@ export class LoginComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private notificacao: NotificacaoService
   ) { }
 
   ngOnInit() {
@@ -36,6 +38,7 @@ export class LoginComponent implements OnInit {
 
     if (!this.loginDto.login.trim() || !this.loginDto.senha.trim()) {
       this.error = 'Por favor, preencha todos os campos.';
+      this.notificacao.aviso(this.error);
       return;
     }
 
@@ -48,11 +51,13 @@ export class LoginComponent implements OnInit {
           this.router.navigate(['/dashboard']);
         } else {
           this.error = 'Falha na autenticação.';
+          this.notificacao.erro(this.error ?? 'Falha na autenticação.');
           this.loading = false;
         }
       },
       error: (err) => {
         this.error = err.error?.message || 'Login ou senha inválidos.';
+        this.notificacao.erro(this.error ?? 'Login ou senha inválidos.');
         this.loading = false;
         console.error(err);
       }

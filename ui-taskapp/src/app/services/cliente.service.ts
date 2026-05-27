@@ -12,7 +12,7 @@ export interface CadastroClienteDto {
   fantasia: string;
   docFederal?: string;
   docEstadual?: string;
-  codigo: number;
+  codigo: string;
   usuarioId: number;
   valorContrato?: number;
   dataFinalContrato?: string;
@@ -21,6 +21,13 @@ export interface CadastroClienteDto {
   diaNfServico?: number;
   emails?: string[];
   status?: StatusCliente;
+  contratos?: ClienteContratoValorDto[];
+}
+
+export interface ClienteContratoValorDto {
+  valorMensal: number;
+  dataInicio: string;
+  dataFim?: string;
 }
 
 export interface ClienteResponseDto {
@@ -29,18 +36,29 @@ export interface ClienteResponseDto {
   fantasia: string;
   docFederal?: string;
   docEstadual?: string;
-  codigo: number;
+  codigo: string;
   usuarioId?: number;
   usuarioNome?: string;
   dataCadastro?: string;
   valorContrato?: number;
   dataFinalContrato?: string;
+  valorContratoVigente?: number;
+  vigenciaInicio?: string;
+  vigenciaFim?: string;
   diaPagamento?: number;
   /** Dia do mês (1-31) da NF de serviço. */
   diaNfServico?: number;
   emails?: string[];
   status?: StatusCliente;
   statusDescricao?: string;
+  contratos?: ClienteContratoValorResponseDto[];
+}
+
+export interface ClienteContratoValorResponseDto {
+  contratoId: number;
+  valorMensal: number;
+  dataInicio: string;
+  dataFim?: string;
 }
 
 @Injectable({

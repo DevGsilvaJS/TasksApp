@@ -255,6 +255,25 @@
   margin-bottom: 1.5rem;
 }
 
+.filtros-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.checkbox-filtro {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  color: #374151;
+  user-select: none;
+}
+
+.checkbox-filtro input[type="checkbox"] {
+  width: auto;
+}
+
 .search-input {
   width: 100%;
   padding: 0.75rem;
@@ -311,24 +330,6 @@ td {
 
 tbody tr:hover {
   background: #f8fafc;
-}
-
-/* Quebra visual por cliente (igual atendimentos) */
-tr.grupo-cliente-row {
-  background: #e2e8f0;
-}
-
-tr.grupo-cliente-row:hover {
-  background: #e2e8f0;
-}
-
-td.grupo-cliente-cell {
-  font-weight: 600;
-  color: #334155;
-  padding: 0.75rem 1rem;
-  border-top: 2px solid #94a3b8;
-  border-bottom: 1px solid #cbd5e1;
-  vertical-align: middle;
 }
 
 .actions-cell {

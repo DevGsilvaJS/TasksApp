@@ -12,7 +12,8 @@ public class Cliente
     public int CliId { get; set; }
 
     [Column("CLICODIGO")]
-    public int CliCodigo { get; set; }
+    [MaxLength(20)]
+    public string CliCodigo { get; set; } = string.Empty;
 
     [Column("PESID")]
     public int PesId { get; set; }
@@ -51,4 +52,5 @@ public class Cliente
     public virtual ICollection<Tarefa> Tarefas { get; set; } = new List<Tarefa>();
     public virtual ICollection<AnotacaoCliente> AnotacoesCliente { get; set; } = new List<AnotacaoCliente>();
     public virtual ICollection<EnvioNotaServico> EnviosNotaServico { get; set; } = new List<EnvioNotaServico>();
+    public virtual ICollection<ClienteContratoValor> ContratosValores { get; set; } = new List<ClienteContratoValor>();
 }

@@ -1,6 +1,7 @@
 using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
+using Domain.Enums;
 
 namespace Application.Services;
 
@@ -13,6 +14,7 @@ public class DashboardService : IDashboardService
     private readonly IRepository<Cliente> _clienteRepository;
     private readonly IRepository<Pessoa> _pessoaRepository;
     private readonly IRepository<PossivelClienteAnotacao> _anotacaoTelemarketingRepository;
+    private readonly IRepository<ClienteContratoValor> _clienteContratoValorRepository;
 
     public DashboardService(
         IRepository<Tarefa> tarefaRepository,
@@ -21,7 +23,8 @@ public class DashboardService : IDashboardService
         IRepository<Usuario> usuarioRepository,
         IRepository<Cliente> clienteRepository,
         IRepository<Pessoa> pessoaRepository,
-        IRepository<PossivelClienteAnotacao> anotacaoTelemarketingRepository)
+        IRepository<PossivelClienteAnotacao> anotacaoTelemarketingRepository,
+        IRepository<ClienteContratoValor> clienteContratoValorRepository)
     {
         _tarefaRepository = tarefaRepository;
         _parcelaRepository = parcelaRepository;
@@ -30,6 +33,7 @@ public class DashboardService : IDashboardService
         _clienteRepository = clienteRepository;
         _pessoaRepository = pessoaRepository;
         _anotacaoTelemarketingRepository = anotacaoTelemarketingRepository;
+        _clienteContratoValorRepository = clienteContratoValorRepository;
     }
 
     public async Task<DashboardEstatisticasDto> ObterEstatisticasAsync(DateTime dataInicio, DateTime dataFim)
@@ -77,7 +81,7 @@ public class DashboardService : IDashboardService
                 foreach (var tarefa in item.Tarefas)
                 {
                     var cliente = await _clienteRepository.GetByIdAsync(tarefa.CliId);
-                    if (cliente != null)
+                    if (cliente != null && cliente.CliStatus == StatusCliente.Ativo)
                     {
                         var pessoaCliente = await _pessoaRepository.GetByIdAsync(cliente.PesId);
                         detalhes.Add(new DetalheAtendimentoDto
@@ -174,7 +178,7 @@ public class DashboardService : IDashboardService
         foreach (var item in atendimentosPorCliente)
         {
             var cliente = await _clienteRepository.GetByIdAsync(item.ClienteId);
-            if (cliente != null)
+            if (cliente != null && cliente.CliStatus == StatusCliente.Ativo)
             {
                 var pessoa = await _pessoaRepository.GetByIdAsync(cliente.PesId);
                 atendimentosPorClienteDto.Add(new AtendimentoPorClienteDto
@@ -295,11 +299,18 @@ public class DashboardService : IDashboardService
     public async Task<List<ValorPorMesPorUsuarioDto>> ObterValoresPorMesPorUsuarioAsync(int? ano = null)
     {
         var anoFiltro = ano ?? DateTime.UtcNow.Year;
-        
-        // Buscar todos os clientes com valor de contrato
-        var todosClientes = await _clienteRepository.BuscarTodosAsync(c => 
-            c.CliValorContrato.HasValue && 
-            c.CliValorContrato.Value > 0);
+        var mesAtual = DateTime.UtcNow.Month;
+        var todosClientes = await _clienteRepository.BuscarTodosAsync(c => c.CliStatus == StatusCliente.Ativo);
+        List<ClienteContratoValor> todosContratos;
+        try
+        {
+            todosContratos = (await _clienteContratoValorRepository.ListarTodosAsync()).ToList();
+        }
+        catch
+        {
+            // Se o banco ainda não tem a tabela, não há como obter vigência atual.
+            todosContratos = new List<ClienteContratoValor>();
+        }
 
         var resultado = new Dictionary<(int UsuarioId, int Mes), ValorPorMesPorUsuarioDto>();
         var meses = new[] { "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
@@ -307,53 +318,32 @@ public class DashboardService : IDashboardService
 
         foreach (var cliente in todosClientes)
         {
+            var contratosCliente = todosContratos.Where(c => c.CliId == cliente.CliId).ToList();
+
             var usuario = await _usuarioRepository.GetByIdAsync(cliente.UsuId);
             if (usuario == null) continue;
 
             var pessoaUsuario = await _pessoaRepository.GetByIdAsync(usuario.PesId);
             var nomeUsuario = pessoaUsuario?.PesFantasia ?? "Desconhecido";
             var pessoaCliente = await _pessoaRepository.GetByIdAsync(cliente.PesId);
-            var valorContrato = cliente.CliValorContrato ?? 0;
 
-            // Determinar os meses em que o cliente gera receita
-            var mesesAtivos = new List<int>();
-            // O valor do contrato é mensal, não precisa dividir
-            decimal valorMensal = valorContrato;
-            
-            if (cliente.CliDataFinalContrato.HasValue && cliente.CliDataCadastro.HasValue)
+            if (contratosCliente.Count == 0)
             {
-                // Se tem data final, verificar quais meses do ano filtro estão dentro do período
-                var dataInicio = cliente.CliDataCadastro.Value;
-                var dataFim = cliente.CliDataFinalContrato.Value;
-                
-                // Para cada mês no ano filtro que está dentro do período do contrato
-                for (int mes = 1; mes <= 12; mes++)
-                {
-                    var dataMes = new DateTime(anoFiltro, mes, 1);
-                    var ultimoDiaMes = dataMes.AddMonths(1).AddDays(-1);
-                    
-                    // Verificar se o mês está dentro do período do contrato
-                    if (dataMes <= dataFim.Date && ultimoDiaMes >= dataInicio.Date)
-                    {
-                        mesesAtivos.Add(mes);
-                    }
-                }
+                // Sem contratos cadastrados: não exibe no dashboard (não há vigência atual).
+                continue;
             }
-            else if (cliente.CliDataCadastro.HasValue)
+            else
             {
-                // Se não tem data final, considerar apenas o mês de cadastro no ano filtro
-                var dataCadastro = cliente.CliDataCadastro.Value;
-                if (dataCadastro.Year == anoFiltro)
-                {
-                    mesesAtivos.Add(dataCadastro.Month);
-                }
-            }
+                // Regra nova: valores do mês com base no contrato vigente ATUAL (hoje)
+                var hoje = DateTime.UtcNow.Date;
+                var vigente = contratosCliente
+                    .Where(c => c.CvcDataInicio.Date <= hoje && (!c.CvcDataFim.HasValue || c.CvcDataFim.Value.Date >= hoje))
+                    .OrderByDescending(c => c.CvcDataInicio)
+                    .FirstOrDefault();
 
-            // Adicionar o valor mensal para cada mês ativo
-            foreach (var mes in mesesAtivos)
-            {
-                var chave = (cliente.UsuId, mes);
-                
+                if (vigente == null || vigente.CvcValorMensal <= 0) continue;
+
+                var chave = (cliente.UsuId, mesAtual);
                 if (!resultado.ContainsKey(chave))
                 {
                     resultado[chave] = new ValorPorMesPorUsuarioDto
@@ -361,22 +351,22 @@ public class DashboardService : IDashboardService
                         UsuarioId = cliente.UsuId,
                         UsuarioNome = nomeUsuario,
                         Ano = anoFiltro,
-                        Mes = mes,
-                        MesNome = meses[mes - 1],
+                        Mes = mesAtual,
+                        MesNome = meses[mesAtual - 1],
                         ValorTotal = 0,
                         QuantidadeContratos = 0,
                         Contratos = new List<ContratoDetalheDto>()
                     };
                 }
 
-                resultado[chave].ValorTotal += valorMensal;
+                resultado[chave].ValorTotal += vigente.CvcValorMensal;
                 resultado[chave].QuantidadeContratos++;
                 resultado[chave].Contratos.Add(new ContratoDetalheDto
                 {
                     ClienteId = cliente.CliId,
                     ClienteCodigo = cliente.CliCodigo,
                     ClienteNome = pessoaCliente?.PesFantasia ?? "Desconhecido",
-                    ValorContrato = valorMensal
+                    ValorContrato = vigente.CvcValorMensal
                 });
             }
         }
@@ -435,5 +425,62 @@ public class DashboardService : IDashboardService
             ContatosMesAtual = ContarNoPeriodo(inicioMesUtc, hojeFimUtc),
             ContatosAnoAtual = ContarNoPeriodo(inicioAnoUtc, hojeFimUtc)
         };
+    }
+
+    public async Task<List<AlertaContratoVencendoDto>> ObterAlertasContratosVencendoAsync(int diasAntecedencia = 30)
+    {
+        var hoje = DateTime.UtcNow.Date;
+        var dataLimite = hoje.AddDays(diasAntecedencia);
+
+        var clientesAtivos = (await _clienteRepository.BuscarTodosAsync(c => c.CliStatus == StatusCliente.Ativo)).ToList();
+
+        List<ClienteContratoValor> todosContratos;
+        try
+        {
+            todosContratos = (await _clienteContratoValorRepository.ListarTodosAsync()).ToList();
+        }
+        catch
+        {
+            // Sem tabela/contratos: não há alertas.
+            return new List<AlertaContratoVencendoDto>();
+        }
+
+        var alertas = new List<AlertaContratoVencendoDto>();
+
+        foreach (var cliente in clientesAtivos)
+        {
+            var contratosCliente = todosContratos.Where(c => c.CliId == cliente.CliId).ToList();
+            if (contratosCliente.Count == 0) continue;
+
+            var vigenteHoje = contratosCliente
+                .Where(c => c.CvcDataInicio.Date <= hoje && (!c.CvcDataFim.HasValue || c.CvcDataFim.Value.Date >= hoje))
+                .OrderByDescending(c => c.CvcDataInicio)
+                .FirstOrDefault();
+
+            if (vigenteHoje == null) continue;
+            if (!vigenteHoje.CvcDataFim.HasValue) continue; // contrato sem fim definido: não vence
+
+            var fim = vigenteHoje.CvcDataFim.Value.Date;
+            if (fim < hoje) continue;
+            if (fim > dataLimite) continue;
+
+            var pessoaCliente = await _pessoaRepository.GetByIdAsync(cliente.PesId);
+            var diasParaVencer = (int)Math.Ceiling((fim - hoje).TotalDays);
+
+            alertas.Add(new AlertaContratoVencendoDto
+            {
+                ClienteId = cliente.CliId,
+                ClienteCodigo = cliente.CliCodigo,
+                ClienteNome = pessoaCliente?.PesFantasia ?? "Desconhecido",
+                DataFimVigencia = fim,
+                DiasParaVencer = diasParaVencer,
+                ValorMensalVigente = vigenteHoje.CvcValorMensal
+            });
+        }
+
+        return alertas
+            .OrderBy(a => a.DiasParaVencer)
+            .ThenBy(a => a.ClienteNome)
+            .ToList();
     }
 }

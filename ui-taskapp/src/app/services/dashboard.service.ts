@@ -32,7 +32,7 @@ export interface DetalheAtendimentoDto {
   tarefaId: number;
   numero?: number;
   clienteId: number;
-  clienteCodigo: number;
+  clienteCodigo: string;
   clienteNome: string;
 }
 
@@ -73,7 +73,7 @@ export interface ValorPorMesPorUsuarioDto {
 
 export interface ContratoDetalheDto {
   clienteId: number;
-  clienteCodigo: number;
+  clienteCodigo: string;
   clienteNome: string;
   valorContrato: number;
 }
@@ -83,6 +83,15 @@ export interface TelemarketingContatosDto {
   contatosSemanaAtual: number;
   contatosMesAtual: number;
   contatosAnoAtual: number;
+}
+
+export interface AlertaContratoVencendoDto {
+  clienteId: number;
+  clienteCodigo: string;
+  clienteNome: string;
+  dataFimVigencia: string;
+  diasParaVencer: number;
+  valorMensalVigente: number;
 }
 
 export enum PeriodoFiltro {
@@ -125,5 +134,9 @@ export class DashboardService {
       url += `?ano=${ano}`;
     }
     return this.api.get<ValorPorMesPorUsuarioDto[]>(url);
+  }
+
+  obterAlertasContratosVencendo(diasAntecedencia = 30): Observable<AlertaContratoVencendoDto[]> {
+    return this.api.get<AlertaContratoVencendoDto[]>(`dashboard/alertas-contratos-vencendo?diasAntecedencia=${diasAntecedencia}`);
   }
 }

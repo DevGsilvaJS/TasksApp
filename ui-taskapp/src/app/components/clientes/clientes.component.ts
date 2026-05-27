@@ -1,13 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ClienteService, ClienteResponseDto, CadastroClienteDto, StatusCliente } from '../../services/cliente.service';
+import { ClienteService, ClienteResponseDto, CadastroClienteDto, StatusCliente, ClienteContratoValorDto } from '../../services/cliente.service';
 import { UsuarioService, UsuarioResponseDto } from '../../services/usuario.service';
+import { MascaraMoedaBrDirective } from '../../directives/mascara-moeda-br.directive';
+import { NotificacaoService } from '../../services/notificacao.service';
 
 @Component({
   selector: 'app-clientes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MascaraMoedaBrDirective],
   templateUrl: './clientes.component.html',
   styleUrl: './clientes.component.css'
 })
@@ -22,6 +24,8 @@ export class ClientesComponent implements OnInit {
   clienteEditando: ClienteResponseDto | null = null;
   termoBusca = '';
   emailCliente = '';
+  exibirInativos = false;
+  contratosAlterados = false;
 
   StatusCliente = StatusCliente;
 
@@ -29,9 +33,10 @@ export class ClientesComponent implements OnInit {
     fantasia: '',
     docFederal: '',
     docEstadual: '',
-    codigo: 0,
+    codigo: '',
     usuarioId: 0,
-    status: StatusCliente.Ativo
+    status: StatusCliente.Ativo,
+    contratos: []
   };
 
   statusOptions = [
@@ -42,7 +47,8 @@ export class ClientesComponent implements OnInit {
 
   constructor(
     private clienteService: ClienteService,
-    private usuarioService: UsuarioService
+    private usuarioService: UsuarioService,
+    private notificacao: NotificacaoService
   ) { }
 
   ngOnInit() {
@@ -67,7 +73,7 @@ export class ClientesComponent implements OnInit {
     this.clienteService.listarTodosClientes().subscribe({
       next: (data) => {
         this.clientes = data;
-        this.clientesFiltrados = data;
+        this.aplicarFiltros();
         this.loading = false;
       },
       error: (err) => {
@@ -79,18 +85,31 @@ export class ClientesComponent implements OnInit {
   }
 
   filtrarClientes() {
-    if (!this.termoBusca.trim()) {
-      this.clientesFiltrados = this.clientes;
-      return;
+    this.aplicarFiltros();
+  }
+
+  onToggleExibirInativos() {
+    this.aplicarFiltros();
+  }
+
+  private aplicarFiltros() {
+    const termo = this.termoBusca.trim().toLowerCase();
+    let lista = [...this.clientes];
+
+    if (!this.exibirInativos) {
+      lista = lista.filter(c => c.status === StatusCliente.Ativo);
     }
 
-    const termo = this.termoBusca.toLowerCase();
-    this.clientesFiltrados = this.clientes.filter(c =>
-      c.fantasia.toLowerCase().includes(termo) ||
-      c.docFederal?.toLowerCase().includes(termo) ||
-      c.codigo.toString().includes(termo) ||
-      c.emails?.some(e => e.toLowerCase().includes(termo))
-    );
+    if (termo) {
+      lista = lista.filter(c =>
+        c.fantasia.toLowerCase().includes(termo) ||
+        c.docFederal?.toLowerCase().includes(termo) ||
+        c.codigo.toString().includes(termo) ||
+        c.emails?.some(e => e.toLowerCase().includes(termo))
+      );
+    }
+
+    this.clientesFiltrados = lista;
   }
 
   abrirFormularioNovo() {
@@ -102,10 +121,12 @@ export class ClientesComponent implements OnInit {
       fantasia: '',
       docFederal: '',
       docEstadual: '',
-      codigo: 0,
+      codigo: '',
       usuarioId: 0,
-      status: StatusCliente.Ativo
+      status: StatusCliente.Ativo,
+      contratos: []
     };
+    this.contratosAlterados = true;
     this.error = null;
   }
 
@@ -116,8 +137,8 @@ export class ClientesComponent implements OnInit {
     
     // Formatar datas para o input date (YYYY-MM-DD)
     let dataFinalContratoFormatada: string | undefined = undefined;
-    if (cliente.dataFinalContrato) {
-      const data = new Date(cliente.dataFinalContrato);
+    if (cliente.vigenciaFim) {
+      const data = new Date(cliente.vigenciaFim);
       if (!isNaN(data.getTime())) {
         dataFinalContratoFormatada = data.toISOString().split('T')[0];
       }
@@ -129,14 +150,44 @@ export class ClientesComponent implements OnInit {
       docEstadual: cliente.docEstadual || '',
       codigo: cliente.codigo,
       usuarioId: cliente.usuarioId || 0,
-      valorContrato: cliente.valorContrato,
+      valorContrato: cliente.valorContratoVigente ?? undefined,
       dataFinalContrato: dataFinalContratoFormatada,
       diaPagamento: cliente.diaPagamento,
       diaNfServico: cliente.diaNfServico ?? undefined,
       emails: cliente.emails?.length ? [...cliente.emails] : undefined,
-      status: cliente.status || StatusCliente.Ativo
+      status: cliente.status || StatusCliente.Ativo,
+      contratos: cliente.contratos?.length
+        ? cliente.contratos.map(c => ({
+            valorMensal: c.valorMensal,
+            dataInicio: (c.dataInicio || '').split('T')[0],
+            dataFim: c.dataFim ? c.dataFim.split('T')[0] : undefined
+          }))
+        : []
     };
+    this.contratosAlterados = false;
     this.error = null;
+  }
+
+  adicionarContrato() {
+    if (!this.novoCliente.contratos) this.novoCliente.contratos = [];
+    const hoje = new Date().toISOString().split('T')[0];
+    const contrato: ClienteContratoValorDto = {
+      valorMensal: this.novoCliente.valorContrato || 0,
+      dataInicio: hoje,
+      dataFim: this.novoCliente.dataFinalContrato || undefined
+    };
+    this.novoCliente.contratos = [...this.novoCliente.contratos, contrato];
+    this.contratosAlterados = true;
+  }
+
+  removerContrato(index: number) {
+    const lista = this.novoCliente.contratos ?? [];
+    this.novoCliente.contratos = lista.filter((_, i) => i !== index);
+    this.contratosAlterados = true;
+  }
+
+  onContratoAlterado(): void {
+    this.contratosAlterados = true;
   }
 
   fecharFormulario() {
@@ -147,9 +198,29 @@ export class ClientesComponent implements OnInit {
   }
 
   salvarCliente() {
-    if (!this.novoCliente.fantasia || !this.novoCliente.codigo || !this.novoCliente.usuarioId || this.novoCliente.usuarioId === 0) {
+    const codigoLimpo = (this.novoCliente.codigo || '').toString().trim();
+    if (!this.novoCliente.fantasia || !codigoLimpo || !this.novoCliente.usuarioId || this.novoCliente.usuarioId === 0) {
       this.error = 'Preencha todos os campos obrigatórios (Fantasia, Código e Usuário)';
+      this.notificacao.aviso(this.error);
       return;
+    }
+    if (!/^[0-9]+$/.test(codigoLimpo)) {
+      this.error = 'O código do cliente deve conter apenas números (ex.: 04146).';
+      this.notificacao.aviso(this.error);
+      return;
+    }
+    this.novoCliente.codigo = codigoLimpo;
+
+    if (this.contratosAlterados) {
+      const erroVigencia = this.validarVigenciasContratos(this.novoCliente.contratos ?? []);
+      if (erroVigencia) {
+        this.error = erroVigencia;
+        this.notificacao.aviso(this.error);
+        return;
+      }
+    } else {
+      // Não mexeu em contratos: não envia nem valida vigências.
+      this.novoCliente.contratos = undefined;
     }
 
     this.novoCliente.emails = this.emailCliente?.trim() ? [this.emailCliente.trim()] : [];
@@ -169,6 +240,7 @@ export class ClientesComponent implements OnInit {
         this.carregarClientes();
         this.fecharFormulario();
         this.loading = false;
+        this.notificacao.sucesso(this.editando ? 'Cliente atualizado com sucesso.' : 'Cliente cadastrado com sucesso.');
       },
       error: (err) => {
         this.error = err.error?.message || 'Erro ao salvar cliente';
@@ -178,9 +250,17 @@ export class ClientesComponent implements OnInit {
   }
 
   excluirCliente(cliente: ClienteResponseDto) {
-    if (!confirm(`Deseja realmente excluir o cliente ${cliente.fantasia}?`)) {
-      return;
-    }
+    this.confirmarExclusaoCliente(cliente);
+  }
+
+  private async confirmarExclusaoCliente(cliente: ClienteResponseDto): Promise<void> {
+    const ok = await this.notificacao.confirmar(
+      'Confirmar exclusão',
+      `Deseja realmente excluir o cliente ${cliente.fantasia}?`,
+      'Excluir',
+      'Cancelar'
+    );
+    if (!ok) return;
 
     this.loading = true;
     this.error = null;
@@ -189,6 +269,7 @@ export class ClientesComponent implements OnInit {
       next: () => {
         this.carregarClientes();
         this.loading = false;
+        this.notificacao.sucesso('Cliente excluído com sucesso.');
       },
       error: (err) => {
         this.error = err.error?.message || 'Erro ao excluir cliente';
@@ -258,8 +339,8 @@ export class ClientesComponent implements OnInit {
 
   calcularTotalValorContrato(): number {
     return this.clientesFiltrados
-      .filter(c => c.valorContrato !== null && c.valorContrato !== undefined)
-      .reduce((total, c) => total + (c.valorContrato || 0), 0);
+      .filter(c => c.valorContratoVigente !== null && c.valorContratoVigente !== undefined)
+      .reduce((total, c) => total + (c.valorContratoVigente || 0), 0);
   }
 
   obterPrimeiroEmail(cliente: ClienteResponseDto): string {
@@ -267,5 +348,37 @@ export class ClientesComponent implements OnInit {
       return cliente.emails[0];
     }
     return '-';
+  }
+
+  private validarVigenciasContratos(contratos: ClienteContratoValorDto[]): string | null {
+    const lista = (contratos || [])
+      .filter(c => (c.valorMensal ?? 0) > 0)
+      .map((c, idx) => ({
+        idx: idx + 1,
+        inicio: new Date(c.dataInicio),
+        fim: c.dataFim ? new Date(c.dataFim) : null
+      }))
+      .sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
+
+    for (const c of lista) {
+      if (isNaN(c.inicio.getTime())) return `Contrato inválido: data início inválida (linha ${c.idx}).`;
+      if (c.fim && isNaN(c.fim.getTime())) return `Contrato inválido: data fim inválida (linha ${c.idx}).`;
+      if (c.fim && c.fim.getTime() < c.inicio.getTime()) return `Contrato inválido: data fim menor que data início (linha ${c.idx}).`;
+    }
+
+    for (let i = 0; i < lista.length - 1; i++) {
+      const a = lista[i];
+      const b = lista[i + 1];
+
+      // comparação inclusiva por dia (00:00)
+      const fimA = a.fim ? new Date(a.fim.toISOString().split('T')[0]) : null;
+      const inicioB = new Date(b.inicio.toISOString().split('T')[0]);
+
+      if (!fimA || inicioB.getTime() <= fimA.getTime()) {
+        return `Não é permitido ter 2 contratos com vigência no mesmo período. Conflito entre as linhas ${a.idx} e ${b.idx}.`;
+      }
+    }
+
+    return null;
   }
 }

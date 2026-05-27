@@ -160,7 +160,7 @@ public class TarefaController : ControllerBase
     {
         try
         {
-            var tarefa = await _tarefaService.AlterarStatusTarefaAsync(id, dto.Status);
+            var tarefa = await _tarefaService.AlterarStatusTarefaAsync(id, (Domain.Enums.StatusTarefa)dto.Status);
             return Ok(tarefa);
         }
         catch (InvalidOperationException ex)
@@ -177,5 +177,5 @@ public class TarefaController : ControllerBase
 
 public class AlterarStatusTarefaDto
 {
-    public Domain.Enums.StatusTarefa Status { get; set; }
+    public int Status { get; set; }
 }

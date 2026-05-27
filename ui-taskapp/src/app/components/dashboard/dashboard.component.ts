@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DashboardService, DashboardEstatisticasDto, PeriodoFiltro, AtendimentoPorUsuarioDto, ContaAPagarDto, AtendimentoPorClienteDto, AtendimentoPorClienteMesDto, ValorPorMesPorUsuarioDto, TelemarketingContatosDto } from '../../services/dashboard.service';
+import { DashboardService, DashboardEstatisticasDto, PeriodoFiltro, AtendimentoPorUsuarioDto, ContaAPagarDto, AtendimentoPorClienteDto, AtendimentoPorClienteMesDto, ValorPorMesPorUsuarioDto, TelemarketingContatosDto, AlertaContratoVencendoDto } from '../../services/dashboard.service';
 import { NotaServicoService, NotaServicoItemDto } from '../../services/nota-servico.service';
 
 @Component({
@@ -16,6 +16,10 @@ export class DashboardComponent implements OnInit {
   periodoSelecionado: PeriodoFiltro = PeriodoFiltro.Dia;
   loading = false;
   error: string | null = null;
+  alertasContratosVencendo: AlertaContratoVencendoDto[] = [];
+  carregandoAlertasContratosVencendo = false;
+  erroAlertasContratosVencendo: string | null = null;
+  private abrirModalContratosAoCarregar = true;
 
   /** Valores exibidos com animação de count-up (iniciam em 0 e sobem até o valor real) */
   totalAtendimentosPorUsuarioDisplay = 0;
@@ -80,6 +84,28 @@ export class DashboardComponent implements OnInit {
     this.carregarValoresPorMes();
     this.carregarNotasServico();
     this.carregarContatosTelemarketing();
+    this.carregarAlertasContratosVencendo();
+  }
+
+  carregarAlertasContratosVencendo() {
+    this.carregandoAlertasContratosVencendo = true;
+    this.erroAlertasContratosVencendo = null;
+    this.dashboardService.obterAlertasContratosVencendo(30).subscribe({
+      next: (data) => {
+        this.alertasContratosVencendo = data ?? [];
+        this.carregandoAlertasContratosVencendo = false;
+      },
+      error: () => {
+        this.alertasContratosVencendo = [];
+        this.erroAlertasContratosVencendo = 'Não foi possível carregar os contratos vencendo.';
+        this.carregandoAlertasContratosVencendo = false;
+      }
+    });
+  }
+
+  abrirModalContratosVencendo() {
+    // Modal removida do Dashboard: alertas sequenciais ficam no pop-up global (AppComponent).
+    return;
   }
 
   carregarContatosTelemarketing() {
@@ -428,5 +454,11 @@ export class DashboardComponent implements OnInit {
   /** Valor animado do card "Valores por Mês" */
   valoresPorMesDisplay(): string {
     return this.formatarMoeda(this.valoresPorMesNumeroDisplay);
+  }
+
+  formatarDataCurta(dataIso: string): string {
+    if (!dataIso) return '-';
+    const d = new Date(dataIso);
+    return d.toLocaleDateString('pt-BR');
   }
 }

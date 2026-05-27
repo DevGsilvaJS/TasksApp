@@ -1,0 +1,32 @@
+@if (notificacaoAtual) {
+  <div class="notificacao-overlay" (click)="fechar()">
+    <div class="notificacao-modal" (click)="$event.stopPropagation()">
+      <div class="notificacao-header" [class]="classeTipo">
+        <div class="notificacao-header-titulo">
+          <span class="notificacao-icone" aria-hidden="true">
+            @if (notificacaoAtual.tipo === 'sucesso') { ✓ }
+            @else if (notificacaoAtual.tipo === 'erro') { ! }
+            @else if (notificacaoAtual.tipo === 'aviso') { ⚠ }
+            @else { i }
+          </span>
+          <h3>{{ notificacaoAtual.titulo }}</h3>
+        </div>
+        <button type="button" class="notificacao-btn-fechar" (click)="fechar()" aria-label="Fechar">×</button>
+      </div>
+
+      <div class="notificacao-body">
+        <p class="notificacao-mensagem">{{ notificacaoAtual.mensagem }}</p>
+      </div>
+
+      <div class="notificacao-acoes">
+        @if (notificacaoAtual.confirmacao) {
+          <button type="button" class="btn-secundario" (click)="cancelar()">{{ notificacaoAtual.textoCancelar }}</button>
+          <button type="button" class="btn-primario" (click)="confirmar()">{{ notificacaoAtual.textoConfirmar }}</button>
+        } @else {
+          <button type="button" class="btn-primario" (click)="fechar()">{{ notificacaoAtual.textoOk }}</button>
+        }
+      </div>
+    </div>
+  </div>
+}
+

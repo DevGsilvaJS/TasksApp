@@ -10,6 +10,7 @@ import { AnotacaoService, CadastroAnotacaoDto } from '../../services/anotacao.se
 import { AuthService } from '../../services/auth.service';
 import { CadastroAtendimentoService } from '../../services/cadastro-atendimento.service';
 import { forkJoin } from 'rxjs';
+import { NotificacaoService } from '../../services/notificacao.service';
 
 @Component({
   selector: 'app-atendimentos',
@@ -269,7 +270,8 @@ export class AtendimentosComponent implements OnInit {
     private usuarioService: UsuarioService,
     private anotacaoService: AnotacaoService,
     private authService: AuthService,
-    private cadastroAtendimentoService: CadastroAtendimentoService
+    private cadastroAtendimentoService: CadastroAtendimentoService,
+    private notificacao: NotificacaoService
   ) { }
 
   ngOnInit() {
@@ -562,6 +564,7 @@ export class AtendimentosComponent implements OnInit {
   inserirAnotacao() {
     if (!this.novaAnotacao.trim()) {
       this.error = 'Digite uma descrição para a anotação';
+      this.notificacao.aviso(this.error);
       return;
     }
 
@@ -590,6 +593,7 @@ export class AtendimentosComponent implements OnInit {
         }
         this.novaAnotacao = '';
         this.loading = false;
+        this.notificacao.sucesso('Anotação adicionada com sucesso.');
       },
       error: (err) => {
         console.error('Erro ao salvar anotação:', err);
@@ -630,6 +634,7 @@ export class AtendimentosComponent implements OnInit {
     const usuarioIdLogado = this.authService.getUsuarioId();
     if (!usuarioIdLogado) {
       this.error = 'Usuário não autenticado. Faça login novamente.';
+      this.notificacao.erro(this.error);
       return;
     }
 
@@ -691,6 +696,7 @@ export class AtendimentosComponent implements OnInit {
         }
         this.fecharFormulario();
         this.loading = false;
+        this.notificacao.sucesso(this.editando ? 'Atendimento atualizado com sucesso.' : 'Atendimento cadastrado com sucesso.');
       },
       error: (err) => {
         console.error('Erro completo ao salvar tarefa:', err);
@@ -704,9 +710,17 @@ export class AtendimentosComponent implements OnInit {
   }
 
   excluirTarefa(tarefa: TarefaResponseDto) {
-    if (!confirm(`Deseja realmente excluir a tarefa #${tarefa.tarefaId}?`)) {
-      return;
-    }
+    this.confirmarExclusaoTarefa(tarefa);
+  }
+
+  private async confirmarExclusaoTarefa(tarefa: TarefaResponseDto): Promise<void> {
+    const ok = await this.notificacao.confirmar(
+      'Confirmar exclusão',
+      `Deseja realmente excluir o atendimento #${tarefa.tarefaId}?`,
+      'Excluir',
+      'Cancelar'
+    );
+    if (!ok) return;
 
     this.loading = true;
     this.error = null;
@@ -715,6 +729,7 @@ export class AtendimentosComponent implements OnInit {
       next: () => {
         this.carregarTarefas();
         this.loading = false;
+        this.notificacao.sucesso('Atendimento excluído com sucesso.');
       },
       error: (err) => {
         this.error = err.error?.message || 'Erro ao excluir tarefa';
@@ -731,6 +746,7 @@ export class AtendimentosComponent implements OnInit {
       next: () => {
         this.carregarTarefas();
         this.loading = false;
+        this.notificacao.sucesso('Status alterado com sucesso.');
       },
       error: (err) => {
         this.error = err.error?.message || 'Erro ao alterar status';

@@ -12,7 +12,11 @@ public class CadastroTarefaDto
     [Required(ErrorMessage = "Usuário é obrigatório")]
     public int UsuarioId { get; set; }
 
-    public StatusTarefa Status { get; set; } = StatusTarefa.EmAberto;
+    /// <summary>
+    /// Id do status cadastrado em "Parâmetros de atendimentos" (TB_CAD_STATUS_TAREFA).
+    /// Mantém compatibilidade com os valores antigos (1..5).
+    /// </summary>
+    public int Status { get; set; } = (int)StatusTarefa.EmAberto;
 
     public DateTime? DataConclusao { get; set; }
 
@@ -30,11 +34,17 @@ public class CadastroTarefaDto
     [MaxLength(20)]
     public string? CelularSolicitante { get; set; }
 
-    public TipoAtendimento? TipoAtendimento { get; set; }
+    /// <summary>
+    /// Id do tipo de atendimento cadastrado (TB_CAD_TIPO_ATENDIMENTO).
+    /// </summary>
+    public int? TipoAtendimento { get; set; }
 
     public PrioridadeTarefa Prioridade { get; set; } = PrioridadeTarefa.Media;
 
-    public TipoContato? TipoContato { get; set; }
+    /// <summary>
+    /// Id do tipo de contato cadastrado (TB_CAD_TIPO_CONTATO).
+    /// </summary>
+    public int? TipoContato { get; set; }
 
     public List<IFormFile>? Imagens { get; set; }
 }

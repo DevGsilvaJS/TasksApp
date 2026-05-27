@@ -1,5 +1,6 @@
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Data;
 
@@ -28,6 +29,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<CadastroTipoAtendimento> CadastroTipoAtendimento { get; set; }
     public DbSet<CadastroTipoContato> CadastroTipoContato { get; set; }
     public DbSet<CadastroStatusAtendimentoComercial> CadastroStatusAtendimentoComercial { get; set; }
+    public DbSet<ClienteContratoValor> ClienteContratosValores { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,5 +44,44 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Das>()
             .Property(d => d.DasStatus)
             .HasConversion<int>();
+    }
+
+    public override int SaveChanges()
+    {
+        NormalizarStringsParaMaiusculo();
+        return base.SaveChanges();
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        NormalizarStringsParaMaiusculo();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void NormalizarStringsParaMaiusculo()
+    {
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.State is not (EntityState.Added or EntityState.Modified))
+                continue;
+
+            foreach (var property in entry.Properties)
+            {
+                if (property.Metadata.ClrType != typeof(string))
+                    continue;
+
+                if (property.CurrentValue is not string valor)
+                    continue;
+
+                var normalizado = valor.Trim();
+                if (normalizado.Length == 0)
+                {
+                    property.CurrentValue = null;
+                    continue;
+                }
+
+                property.CurrentValue = normalizado.ToUpperInvariant();
+            }
+        }
     }
 }

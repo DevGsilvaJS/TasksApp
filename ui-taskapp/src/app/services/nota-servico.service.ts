@@ -4,7 +4,7 @@ import { ApiService } from './api.service';
 
 export interface NotaServicoItemDto {
   clienteId: number;
-  clienteCodigo: number;
+  clienteCodigo: string;
   fantasia: string;
   diaNfServico: number;
   ano: number;

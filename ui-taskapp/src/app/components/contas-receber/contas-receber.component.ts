@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DuplicataService, DuplicataResponseDto, CadastroDuplicataDto, ParcelaResponseDto, CadastroParcelaDto } from '../../services/duplicata.service';
 import { ClienteService, ClienteResponseDto } from '../../services/cliente.service';
+import { NotificacaoService } from '../../services/notificacao.service';
 
 @Component({
   selector: 'app-contas-receber',
@@ -15,20 +16,7 @@ export class ContasReceberComponent implements OnInit {
   duplicatas: DuplicataResponseDto[] = [];
   duplicatasFiltradas: DuplicataResponseDto[] = [];
   clientes: ClienteResponseDto[] = [];
-
-  /** Agrupamento por cliente para exibir quebra no grid (igual atendimentos) */
-  get duplicatasAgrupadasPorCliente(): { clienteId: number | null; clienteNome: string; duplicatas: DuplicataResponseDto[] }[] {
-    const map = new Map<number | null, { clienteId: number | null; clienteNome: string; duplicatas: DuplicataResponseDto[] }>();
-    for (const d of this.duplicatasFiltradas) {
-      const key = d.clienteId ?? null;
-      const nome = d.clienteNome?.trim() || 'Sem cliente';
-      if (!map.has(key)) {
-        map.set(key, { clienteId: key, clienteNome: nome, duplicatas: [] });
-      }
-      map.get(key)!.duplicatas.push(d);
-    }
-    return Array.from(map.values()).sort((a, b) => a.clienteNome.localeCompare(b.clienteNome));
-  }
+  exibirTitulosBaixados = false;
   showForm = false;
   showParcelas = false;
   loading = false;
@@ -65,7 +53,8 @@ export class ContasReceberComponent implements OnInit {
 
   constructor(
     private duplicataService: DuplicataService,
-    private clienteService: ClienteService
+    private clienteService: ClienteService,
+    private notificacao: NotificacaoService
   ) { }
 
   ngOnInit() {
@@ -83,7 +72,7 @@ export class ContasReceberComponent implements OnInit {
     this.duplicataService.listarDuplicatasPorTipo('CR').subscribe({
       next: (data) => {
         this.duplicatas = data;
-        this.duplicatasFiltradas = data;
+        this.aplicarFiltros();
         this.loading = false;
         onConcluido?.();
       },
@@ -226,12 +215,14 @@ export class ContasReceberComponent implements OnInit {
     if (this.gerarParcelasManual) {
       if (this.parcelasManuais.length !== this.novaDuplicata.numeroParcelas) {
         this.error = 'Número de parcelas não corresponde ao número informado.';
+        this.notificacao.aviso(this.error);
         return;
       }
       
       const todasTemData = this.parcelasManuais.every(p => p.vencimento);
       if (!todasTemData) {
         this.error = 'Todas as parcelas devem ter data de vencimento preenchida.';
+        this.notificacao.aviso(this.error);
         return;
       }
 
@@ -261,11 +252,7 @@ export class ContasReceberComponent implements OnInit {
         // Recarrega a lista e só então fecha o formulário e mostra sucesso
         this.carregarDuplicatas(() => {
           this.fecharFormulario();
-          this.successMessage = this.editando ? 'Duplicata atualizada com sucesso!' : 'Duplicata cadastrada com sucesso!';
-          this.showSuccessModal = true;
-          setTimeout(() => {
-            this.fecharSuccessModal();
-          }, 3000);
+          this.notificacao.sucesso(this.editando ? 'Conta a receber atualizada com sucesso.' : 'Conta a receber cadastrada com sucesso.');
         });
       },
       error: (err) => {
@@ -277,9 +264,18 @@ export class ContasReceberComponent implements OnInit {
   }
 
   excluirDuplicata(duplicata: DuplicataResponseDto) {
-    this.confirmTitle = 'Confirmar Exclusão';
-    this.confirmMessage = `Tem certeza que deseja excluir a duplicata #${duplicata.numero}?`;
-    this.confirmCallback = () => {
+    this.confirmarExclusaoDuplicata(duplicata);
+  }
+
+  private async confirmarExclusaoDuplicata(duplicata: DuplicataResponseDto): Promise<void> {
+    const ok = await this.notificacao.confirmar(
+      'Confirmar exclusão',
+      `Tem certeza que deseja excluir a duplicata #${duplicata.numero}?`,
+      'Excluir',
+      'Cancelar'
+    );
+    if (!ok) return;
+
       this.loading = true;
       this.error = null;
 
@@ -287,6 +283,7 @@ export class ContasReceberComponent implements OnInit {
         next: () => {
           this.carregarDuplicatas();
           this.loading = false;
+          this.notificacao.sucesso('Conta a receber excluída com sucesso.');
         },
         error: (err) => {
           this.error = err.error?.message || 'Erro ao excluir conta a receber.';
@@ -294,17 +291,23 @@ export class ContasReceberComponent implements OnInit {
           console.error(err);
         }
       });
-    };
-    this.showConfirmModal = true;
   }
 
   baixarParcela(parcela: ParcelaResponseDto) {
-    this.confirmTitle = 'Confirmar baixa';
-    this.confirmMessage = `Deseja confirmar o recebimento (baixa) da parcela ${parcela.numeroParcela}? A parcela será marcada como recebida e a data de pagamento será registrada.`;
-    this.confirmCallback = () => {
+    this.confirmarBaixaParcela(parcela);
+  }
+
+  private async confirmarBaixaParcela(parcela: ParcelaResponseDto): Promise<void> {
+    const ok = await this.notificacao.confirmar(
+      'Confirmar baixa',
+      `Deseja confirmar o recebimento (baixa) da parcela ${parcela.numeroParcela}?`,
+      'Confirmar',
+      'Cancelar'
+    );
+    if (!ok) return;
+
       this.loading = true;
       this.error = null;
-      this.fecharConfirmModal();
 
       this.duplicataService.baixarParcela(parcela.parcelaId).subscribe({
         next: () => {
@@ -317,6 +320,7 @@ export class ContasReceberComponent implements OnInit {
               }
             }
           });
+          this.notificacao.sucesso('Parcela recebida (baixada) com sucesso.');
         },
         error: (err) => {
           this.error = err.error?.message || 'Erro ao receber parcela.';
@@ -324,17 +328,23 @@ export class ContasReceberComponent implements OnInit {
           console.error(err);
         }
       });
-    };
-    this.showConfirmModal = true;
   }
 
   reativarParcela(parcela: ParcelaResponseDto) {
-    this.confirmTitle = 'Confirmar Reativação';
-    this.confirmMessage = `Deseja reativar a parcela ${parcela.numeroParcela}? A parcela voltará para o status "Pendente".`;
-    this.confirmCallback = () => {
+    this.confirmarReativacaoParcela(parcela);
+  }
+
+  private async confirmarReativacaoParcela(parcela: ParcelaResponseDto): Promise<void> {
+    const ok = await this.notificacao.confirmar(
+      'Confirmar reativação',
+      `Deseja reativar a parcela ${parcela.numeroParcela}?`,
+      'Confirmar',
+      'Cancelar'
+    );
+    if (!ok) return;
+
       this.loading = true;
       this.error = null;
-      this.fecharConfirmModal();
 
       this.duplicataService.reativarParcela(parcela.parcelaId).subscribe({
         next: () => {
@@ -347,6 +357,7 @@ export class ContasReceberComponent implements OnInit {
               }
             }
           });
+          this.notificacao.sucesso('Parcela reativada com sucesso.');
         },
         error: (err) => {
           this.error = err.error?.message || 'Erro ao reativar parcela.';
@@ -354,8 +365,6 @@ export class ContasReceberComponent implements OnInit {
           console.error(err);
         }
       });
-    };
-    this.showConfirmModal = true;
   }
 
   confirmarAcao() {
@@ -388,16 +397,34 @@ export class ContasReceberComponent implements OnInit {
   }
 
   filtrarDuplicatas() {
-    if (!this.termoBusca.trim()) {
-      this.duplicatasFiltradas = this.duplicatas;
-      return;
+    this.aplicarFiltros();
+  }
+
+  onToggleExibirTitulosBaixados() {
+    this.aplicarFiltros();
+  }
+
+  private aplicarFiltros(): void {
+    const termoBuscaNormalizado: string = this.termoBusca.trim().toLowerCase();
+
+    let lista: DuplicataResponseDto[] = this.duplicatas;
+
+    if (!this.exibirTitulosBaixados) {
+      lista = lista.filter((duplicata: DuplicataResponseDto) => this.possuiParcelaEmAberto(duplicata));
     }
 
-    const termo = this.termoBusca.toLowerCase();
-    this.duplicatasFiltradas = this.duplicatas.filter(d =>
-      d.numero.toString().includes(termo) ||
-      d.dataEmissao.toLowerCase().includes(termo)
-    );
+    if (termoBuscaNormalizado) {
+      lista = lista.filter((duplicata: DuplicataResponseDto) =>
+        duplicata.numero.toString().includes(termoBuscaNormalizado) ||
+        duplicata.dataEmissao.toLowerCase().includes(termoBuscaNormalizado)
+      );
+    }
+
+    this.duplicatasFiltradas = lista;
+  }
+
+  private possuiParcelaEmAberto(duplicata: DuplicataResponseDto): boolean {
+    return duplicata.parcelas?.some((parcela: ParcelaResponseDto) => parcela.status?.toLowerCase() === 'pendente') ?? false;
   }
 
   formatarMoeda(valor: number): string {

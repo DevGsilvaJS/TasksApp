@@ -1,20 +1,24 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { AuthService } from './services/auth.service';
 import { AlertasService } from './services/alertas.service';
 import { PendenciasAlertasDto } from './services/alertas.service';
 import { TarefaService, TarefaResponseDto, TipoAtendimento } from './services/tarefa.service';
+import { DashboardService, AlertaContratoVencendoDto } from './services/dashboard.service';
+import { NotificacaoCentralComponent } from './components/notificacao-central/notificacao-central.component';
 
 export type AlertaItem =
   | { tipo: 'pendencias'; data: PendenciasAlertasDto }
-  | { tipo: 'reunioes'; data: TarefaResponseDto[] };
+  | { tipo: 'reunioes'; data: TarefaResponseDto[] }
+  | { tipo: 'contrato-vencendo'; data: AlertaContratoVencendoDto };
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, FormsModule, NotificacaoCentralComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -25,12 +29,16 @@ export class AppComponent implements OnInit {
   filaAlertas: AlertaItem[] = [];
   currentAlertaIndex = 0;
   private popupAlertasMostrado = false;
+  cienteAlertaAtual = false;
+  private readonly CHAVE_CIENCIA_ALERTAS = 'alertas_ciencia';
+  private readonly CHAVE_CIENCIA_CONTRATOS_LEGADO = 'contratos_vencendo_ciencia';
 
   constructor(
     private authService: AuthService,
     private router: Router,
     private alertasService: AlertasService,
-    private tarefaService: TarefaService
+    private tarefaService: TarefaService,
+    private dashboardService: DashboardService
   ) { }
 
   get alertaAtual(): AlertaItem | null {
@@ -59,44 +67,151 @@ export class AppComponent implements OnInit {
   private carregarFilaAlertas() {
     const usuarioId = this.authService.getUsuarioId();
     const pendencias$ = this.alertasService.obterPendencias(30);
+    const contratos$ = this.dashboardService.obterAlertasContratosVencendo(30);
     const reunioes$ = usuarioId != null
       ? this.tarefaService.listarTarefas({ usuarioId, incluirConcluidas: false })
       : null;
 
     if (reunioes$) {
-      forkJoin({ pendencias: pendencias$, reunioes: reunioes$ }).subscribe({
-        next: ({ pendencias, reunioes }) => {
+      forkJoin({ pendencias: pendencias$, contratos: contratos$, reunioes: reunioes$ }).subscribe({
+        next: ({ pendencias, contratos, reunioes }) => {
           const fila: AlertaItem[] = [];
-          if ((pendencias.notasServicoPendentesMes?.length ?? 0) > 0 || (pendencias.dasPendentesOuAtrasadas?.length ?? 0) > 0) {
+          const cientes = this.lerCienciasAlertas();
+
+          if (((pendencias.notasServicoPendentesMes?.length ?? 0) > 0 || (pendencias.dasPendentesOuAtrasadas?.length ?? 0) > 0) &&
+            !cientes.has(this.chaveCienciaPendencias())) {
             fila.push({ tipo: 'pendencias', data: pendencias });
           }
+
+          (contratos ?? [])
+            .filter(c => !cientes.has(this.chaveCienciaContrato(c)))
+            .forEach(c => fila.push({ tipo: 'contrato-vencendo', data: c }));
+
           const reunioesFiltradas = reunioes.filter(t => t.tipoAtendimento === TipoAtendimento.Reuniao);
-          if (reunioesFiltradas.length > 0) {
+          if (reunioesFiltradas.length > 0 && !cientes.has(this.chaveCienciaReunioes(reunioesFiltradas))) {
             fila.push({ tipo: 'reunioes', data: reunioesFiltradas });
           }
+
           this.filaAlertas = fila;
           this.currentAlertaIndex = 0;
+          this.cienteAlertaAtual = false;
         }
       });
     } else {
-      pendencias$.subscribe({
-        next: (data) => {
-          if ((data.notasServicoPendentesMes?.length ?? 0) > 0 || (data.dasPendentesOuAtrasadas?.length ?? 0) > 0) {
-            this.filaAlertas = [{ tipo: 'pendencias', data }];
-            this.currentAlertaIndex = 0;
+      forkJoin({ pendencias: pendencias$, contratos: contratos$ }).subscribe({
+        next: ({ pendencias, contratos }) => {
+          const fila: AlertaItem[] = [];
+          const cientes = this.lerCienciasAlertas();
+
+          if (((pendencias.notasServicoPendentesMes?.length ?? 0) > 0 || (pendencias.dasPendentesOuAtrasadas?.length ?? 0) > 0) &&
+            !cientes.has(this.chaveCienciaPendencias())) {
+            fila.push({ tipo: 'pendencias', data: pendencias });
           }
+
+          (contratos ?? [])
+            .filter(c => !cientes.has(this.chaveCienciaContrato(c)))
+            .forEach(c => fila.push({ tipo: 'contrato-vencendo', data: c }));
+
+          this.filaAlertas = fila;
+          this.currentAlertaIndex = 0;
+          this.cienteAlertaAtual = false;
         }
       });
     }
   }
 
+  onCliqueOverlayAlerta() {
+    // Padronização: só avança após marcar ciência.
+  }
+
+  onCliqueFecharAlerta() {
+    // Padronização: só avança após marcar ciência.
+  }
+
   avancarAlerta() {
+    this.cienteAlertaAtual = false;
     if (this.currentAlertaIndex + 1 < this.filaAlertas.length) {
       this.currentAlertaIndex++;
     } else {
       this.filaAlertas = [];
       this.currentAlertaIndex = 0;
     }
+  }
+
+  confirmarCienciaEAvancar() {
+    if (!this.alertaAtual) return;
+    if (!this.cienteAlertaAtual) return;
+
+    if (this.alertaAtual.tipo === 'contrato-vencendo') {
+      this.marcarCiencia(this.chaveCienciaContrato(this.alertaAtual.data));
+    }
+    if (this.alertaAtual.tipo === 'pendencias') {
+      this.marcarCiencia(this.chaveCienciaPendencias());
+    }
+    if (this.alertaAtual.tipo === 'reunioes') {
+      this.marcarCiencia(this.chaveCienciaReunioes(this.alertaAtual.data));
+    }
+
+    this.avancarAlerta();
+  }
+
+  private marcarCiencia(chave: string): void {
+    const lista = this.lerListaCienciasAlertas();
+    if (!lista.includes(chave)) {
+      lista.push(chave);
+      localStorage.setItem(this.CHAVE_CIENCIA_ALERTAS, JSON.stringify(lista));
+    }
+  }
+
+  private lerCienciasAlertas(): Set<string> {
+    const atual = this.lerListaCienciasAlertas();
+    const legado = this.lerListaCienciasContratosLegado();
+    return new Set([...atual, ...legado]);
+  }
+
+  private lerListaCienciasAlertas(): string[] {
+    try {
+      const raw = localStorage.getItem(this.CHAVE_CIENCIA_ALERTAS);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed) && parsed.every(x => typeof x === 'string')) return parsed;
+      return [];
+    } catch {
+      return [];
+    }
+  }
+
+  private lerListaCienciasContratosLegado(): string[] {
+    try {
+      const raw = localStorage.getItem(this.CHAVE_CIENCIA_CONTRATOS_LEGADO);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed) && parsed.every(x => typeof x === 'string')) return parsed;
+      return [];
+    } catch {
+      return [];
+    }
+  }
+
+  private chaveCienciaPendencias(): string {
+    const agora = new Date();
+    const ano = agora.getFullYear();
+    const mes = (agora.getMonth() + 1).toString().padStart(2, '0');
+    return `pendencias|${ano}-${mes}`;
+  }
+
+  private chaveCienciaReunioes(reunioes: TarefaResponseDto[]): string {
+    const ids = (reunioes ?? [])
+      .map(r => r.tarefaId)
+      .filter(id => typeof id === 'number')
+      .sort((a, b) => a - b)
+      .join('-');
+    return `reunioes|${ids}`;
+  }
+
+  private chaveCienciaContrato(alerta: AlertaContratoVencendoDto): string {
+    const data = (alerta.dataFimVigencia ?? '').toString();
+    return `${alerta.clienteId}|${data}`;
   }
 
   formatarData(data: string): string {

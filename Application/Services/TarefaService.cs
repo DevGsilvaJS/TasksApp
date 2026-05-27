@@ -13,6 +13,9 @@ public class TarefaService : ITarefaService
     private readonly IRepository<Pessoa> _pessoaRepository;
     private readonly IRepository<AnotacaoTarefa> _anotacaoRepository;
     private readonly IRepository<ImagemTarefa> _imagemRepository;
+    private readonly IRepository<CadastroStatusTarefa> _cadastroStatusTarefaRepository;
+    private readonly IRepository<CadastroTipoAtendimento> _cadastroTipoAtendimentoRepository;
+    private readonly IRepository<CadastroTipoContato> _cadastroTipoContatoRepository;
 
     public TarefaService(
         IRepository<Tarefa> tarefaRepository,
@@ -20,7 +23,10 @@ public class TarefaService : ITarefaService
         IRepository<Usuario> usuarioRepository,
         IRepository<Pessoa> pessoaRepository,
         IRepository<AnotacaoTarefa> anotacaoRepository,
-        IRepository<ImagemTarefa> imagemRepository)
+        IRepository<ImagemTarefa> imagemRepository,
+        IRepository<CadastroStatusTarefa> cadastroStatusTarefaRepository,
+        IRepository<CadastroTipoAtendimento> cadastroTipoAtendimentoRepository,
+        IRepository<CadastroTipoContato> cadastroTipoContatoRepository)
     {
         _tarefaRepository = tarefaRepository;
         _clienteRepository = clienteRepository;
@@ -28,6 +34,9 @@ public class TarefaService : ITarefaService
         _pessoaRepository = pessoaRepository;
         _anotacaoRepository = anotacaoRepository;
         _imagemRepository = imagemRepository;
+        _cadastroStatusTarefaRepository = cadastroStatusTarefaRepository;
+        _cadastroTipoAtendimentoRepository = cadastroTipoAtendimentoRepository;
+        _cadastroTipoContatoRepository = cadastroTipoContatoRepository;
     }
 
     public async Task<TarefaResponseDto> CadastrarTarefaAsync(CadastroTarefaDto dto)
@@ -62,15 +71,15 @@ public class TarefaService : ITarefaService
             UsuId = dto.UsuarioId,
             TarDtCadastro = DateTime.UtcNow,
             TarDtConclusao = dto.DataConclusao?.ToUniversalTime(),
-            TarStatus = dto.Status,
+            TarStatus = (StatusTarefa)dto.Status,
             TarTitulo = dto.Titulo?.ToUpper(),
             TarProtocolo = dto.Protocolo?.ToUpper(),
             TarSolicitante = dto.Solicitante?.ToUpper(),
             TarCelularSolicitante = dto.CelularSolicitante,
-            TarTipoAtendimento = dto.TipoAtendimento,
+            TarTipoAtendimento = dto.TipoAtendimento.HasValue ? (TipoAtendimento?)dto.TipoAtendimento.Value : null,
             TarPrioridade = dto.Prioridade,
             TarNumero = proximoNumero,
-            TarTipoContato = dto.TipoContato
+            TarTipoContato = dto.TipoContato.HasValue ? (TipoContato?)dto.TipoContato.Value : null
         };
 
         await _tarefaRepository.InserirAsync(tarefa);
@@ -142,14 +151,14 @@ public class TarefaService : ITarefaService
         tarefa.CliId = dto.ClienteId;
         tarefa.UsuId = dto.UsuarioId;
         tarefa.TarDtConclusao = dto.DataConclusao?.ToUniversalTime();
-        tarefa.TarStatus = dto.Status;
+        tarefa.TarStatus = (StatusTarefa)dto.Status;
         tarefa.TarTitulo = dto.Titulo?.ToUpper();
         tarefa.TarProtocolo = dto.Protocolo?.ToUpper();
         tarefa.TarSolicitante = dto.Solicitante?.ToUpper();
         tarefa.TarCelularSolicitante = dto.CelularSolicitante;
-        tarefa.TarTipoAtendimento = dto.TipoAtendimento;
+        tarefa.TarTipoAtendimento = dto.TipoAtendimento.HasValue ? (TipoAtendimento?)dto.TipoAtendimento.Value : null;
         tarefa.TarPrioridade = dto.Prioridade;
-        tarefa.TarTipoContato = dto.TipoContato;
+        tarefa.TarTipoContato = dto.TipoContato.HasValue ? (TipoContato?)dto.TipoContato.Value : null;
 
         await _tarefaRepository.AtualizarAsync(tarefa);
         await _tarefaRepository.SalvarAlteracoesAsync();
@@ -315,47 +324,61 @@ public class TarefaService : ITarefaService
             DataCadastro = tarefa.TarDtCadastro,
             DataConclusao = tarefa.TarDtConclusao,
             Status = tarefa.TarStatus,
-            StatusDescricao = ObterDescricaoStatus(tarefa.TarStatus),
+            StatusDescricao = await ObterDescricaoStatusAsync(tarefa.TarStatus),
             Titulo = tarefa.TarTitulo,
             Protocolo = tarefa.TarProtocolo,
             Solicitante = tarefa.TarSolicitante,
             CelularSolicitante = tarefa.TarCelularSolicitante,
             TipoAtendimento = tarefa.TarTipoAtendimento,
-            TipoAtendimentoDescricao = ObterDescricaoTipoAtendimento(tarefa.TarTipoAtendimento),
+            TipoAtendimentoDescricao = await ObterDescricaoTipoAtendimentoAsync(tarefa.TarTipoAtendimento),
             Prioridade = tarefa.TarPrioridade,
             PrioridadeDescricao = ObterDescricaoPrioridade(tarefa.TarPrioridade),
             Numero = tarefa.TarNumero,
             TipoContato = tarefa.TarTipoContato,
-            TipoContatoDescricao = ObterDescricaoTipoContato(tarefa.TarTipoContato),
+            TipoContatoDescricao = await ObterDescricaoTipoContatoAsync(tarefa.TarTipoContato),
             Anotacoes = anotacoesDto,
             Imagens = imagensDto
         };
     }
 
-    private string ObterDescricaoStatus(StatusTarefa status)
+    private async Task<string> ObterDescricaoStatusAsync(StatusTarefa status)
     {
-        return status switch
+        if (Enum.IsDefined(typeof(StatusTarefa), status))
         {
-            StatusTarefa.EmAberto => "Em Aberto",
-            StatusTarefa.Concluida => "Concluída",
-            StatusTarefa.Cancelada => "Cancelada",
-            StatusTarefa.Reativada => "Reativada",
-            StatusTarefa.AguardandoCliente => "Aguardando Cliente",
-            _ => status.ToString()
-        };
+            return status switch
+            {
+                StatusTarefa.EmAberto => "Em Aberto",
+                StatusTarefa.Concluida => "Concluída",
+                StatusTarefa.Cancelada => "Cancelada",
+                StatusTarefa.Reativada => "Reativada",
+                StatusTarefa.AguardandoCliente => "Aguardando Cliente",
+                _ => status.ToString()
+            };
+        }
+
+        var id = (int)status;
+        var cadastro = await _cadastroStatusTarefaRepository.GetByIdAsync(id);
+        return cadastro?.Descricao ?? status.ToString();
     }
 
-    private string ObterDescricaoTipoAtendimento(TipoAtendimento? tipo)
+    private async Task<string> ObterDescricaoTipoAtendimentoAsync(TipoAtendimento? tipo)
     {
         if (!tipo.HasValue) return string.Empty;
-        return tipo.Value switch
+        if (Enum.IsDefined(typeof(TipoAtendimento), tipo.Value))
         {
-            TipoAtendimento.Treinamento => "Treinamento",
-            TipoAtendimento.Suporte => "Suporte",
-            TipoAtendimento.Reuniao => "Reunião",
-            TipoAtendimento.Cobranca => "Cobrança",
-            _ => tipo.Value.ToString()
-        };
+            return tipo.Value switch
+            {
+                TipoAtendimento.Treinamento => "Treinamento",
+                TipoAtendimento.Suporte => "Suporte",
+                TipoAtendimento.Reuniao => "Reunião",
+                TipoAtendimento.Cobranca => "Cobrança",
+                _ => tipo.Value.ToString()
+            };
+        }
+
+        var id = (int)tipo.Value;
+        var cadastro = await _cadastroTipoAtendimentoRepository.GetByIdAsync(id);
+        return cadastro?.Descricao ?? tipo.Value.ToString();
     }
 
     private string ObterDescricaoPrioridade(PrioridadeTarefa prioridade)
@@ -369,16 +392,23 @@ public class TarefaService : ITarefaService
         };
     }
 
-    private string ObterDescricaoTipoContato(TipoContato? tipo)
+    private async Task<string> ObterDescricaoTipoContatoAsync(TipoContato? tipo)
     {
         if (!tipo.HasValue) return string.Empty;
-        return tipo.Value switch
+        if (Enum.IsDefined(typeof(TipoContato), tipo.Value))
         {
-            TipoContato.Ligacao => "Ligação",
-            TipoContato.WhatsApp => "WhatsApp",
-            TipoContato.Email => "E-mail",
-            _ => tipo.Value.ToString()
-        };
+            return tipo.Value switch
+            {
+                TipoContato.Ligacao => "Ligação",
+                TipoContato.WhatsApp => "WhatsApp",
+                TipoContato.Email => "E-mail",
+                _ => tipo.Value.ToString()
+            };
+        }
+
+        var id = (int)tipo.Value;
+        var cadastro = await _cadastroTipoContatoRepository.GetByIdAsync(id);
+        return cadastro?.Descricao ?? tipo.Value.ToString();
     }
 
 }
