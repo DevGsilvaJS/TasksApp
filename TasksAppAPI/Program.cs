@@ -401,11 +401,18 @@ try
             {
                 PesId = pessoaGabriel.PesId,
                 UsuLogin = "TI.GABRIEL",
-                UsuSenha = "1234GABRIEL"
+                UsuSenha = "1234GABRIEL",
+                UsuPerfil = (int)Domain.Enums.PerfilUsuario.Administrador
             };
             db.Usuarios.Add(novoUsuarioGabriel);
             db.SaveChanges();
             Console.WriteLine("✅ Usuário TI.GABRIEL criado com sucesso!");
+        }
+        else if (usuarioGabriel.UsuPerfil == (int)Domain.Enums.PerfilUsuario.Comercial)
+        {
+            usuarioGabriel.UsuPerfil = (int)Domain.Enums.PerfilUsuario.Administrador;
+            db.SaveChanges();
+            Console.WriteLine("✅ Usuário TI.GABRIEL atualizado para Administrador.");
         }
         else
         {

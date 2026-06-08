@@ -1,13 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { DuplicataService, DuplicataResponseDto, CadastroDuplicataDto, ParcelaResponseDto, CadastroParcelaDto } from '../../services/duplicata.service';
+import { isParcelaPendente, labelStatusParcela } from '../../utils/parcela-status.util';
 import { NotificacaoService } from '../../services/notificacao.service';
 
 @Component({
   selector: 'app-contas-pagar',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, OverlayPanelModule],
   templateUrl: './contas-pagar.component.html',
   styleUrl: './contas-pagar.component.css'
 })
@@ -25,6 +27,13 @@ export class ContasPagarComponent implements OnInit {
   termoBusca = '';
   gerarParcelasManual = false;
   parcelasManuais: CadastroParcelaDto[] = [];
+
+  /** Filtros por coluna: valores selecionados (vazio = sem filtro). */
+  filtrosColunasSelecao: Record<string, string[]> = {};
+  filtroColunaAtivo: string | null = null;
+  selecaoTemp: Record<string, string[]> = {};
+
+  @ViewChild('opFiltroColuna') opFiltroColuna!: OverlayPanel;
   
   // Modal de confirmação
   showConfirmModal = false;
@@ -47,6 +56,9 @@ export class ContasPagarComponent implements OnInit {
     tipo: 'CP',
     dataPrimeiroVencimento: new Date().toISOString().split('T')[0]
   };
+
+  readonly isParcelaPendente = isParcelaPendente;
+  readonly labelStatusParcela = labelStatusParcela;
 
   constructor(
     private duplicataService: DuplicataService,
@@ -404,15 +416,146 @@ export class ContasPagarComponent implements OnInit {
     if (termoBuscaNormalizado) {
       lista = lista.filter((duplicata: DuplicataResponseDto) =>
         duplicata.numero.toString().includes(termoBuscaNormalizado) ||
-        duplicata.dataEmissao.toLowerCase().includes(termoBuscaNormalizado)
+        duplicata.dataEmissao.toLowerCase().includes(termoBuscaNormalizado) ||
+        (duplicata.descricaoDespesa?.toLowerCase().includes(termoBuscaNormalizado) ?? false)
       );
+    }
+
+    for (const [campo, valores] of Object.entries(this.filtrosColunasSelecao)) {
+      if (!valores?.length) continue;
+      const set = new Set(valores);
+      lista = lista.filter(d => set.has(this.getValorColunaGrid(d, campo)));
     }
 
     this.duplicatasFiltradas = lista;
   }
 
+  get totalValorPago(): number {
+    return this.duplicatasFiltradas.reduce((s, d) => s + (d.valorPago ?? 0), 0);
+  }
+
+  get totalValorPendente(): number {
+    return this.duplicatasFiltradas.reduce((s, d) => s + (d.valorPendente ?? 0), 0);
+  }
+
+  getValorColunaGrid(duplicata: DuplicataResponseDto, campo: string): string {
+    switch (campo) {
+      case 'numero':
+        return String(duplicata.numero);
+      case 'dataEmissao':
+        return this.formatarData(duplicata.dataEmissao);
+      case 'descricaoDespesa':
+        return duplicata.descricaoDespesa?.trim() || '—';
+      case 'numeroParcelas':
+        return String(duplicata.numeroParcelas);
+      case 'valorTotal':
+        return this.formatarMoeda(duplicata.valorTotal);
+      case 'valorPago':
+        return this.formatarMoeda(duplicata.valorPago);
+      case 'valorPendente':
+        return this.formatarMoeda(duplicata.valorPendente);
+      default:
+        return '';
+    }
+  }
+
+  getDadosParaFiltroColuna(campo: string): DuplicataResponseDto[] {
+    const termoBuscaNormalizado = this.termoBusca.trim().toLowerCase();
+    let lista = [...this.duplicatas];
+
+    if (!this.exibirTitulosBaixados) {
+      lista = lista.filter(d => this.possuiParcelaEmAberto(d));
+    }
+
+    if (termoBuscaNormalizado) {
+      lista = lista.filter(d =>
+        d.numero.toString().includes(termoBuscaNormalizado) ||
+        d.dataEmissao.toLowerCase().includes(termoBuscaNormalizado) ||
+        (d.descricaoDespesa?.toLowerCase().includes(termoBuscaNormalizado) ?? false)
+      );
+    }
+
+    for (const [col, valores] of Object.entries(this.filtrosColunasSelecao)) {
+      if (col === campo || !valores?.length) continue;
+      const set = new Set(valores);
+      lista = lista.filter(d => set.has(this.getValorColunaGrid(d, col)));
+    }
+
+    return lista;
+  }
+
+  getValoresDistintosColuna(campo: string): string[] {
+    const set = new Set<string>();
+    for (const d of this.getDadosParaFiltroColuna(campo)) {
+      set.add(this.getValorColunaGrid(d, campo));
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }
+
+  abrirFiltroColuna(campo: string, event: Event): void {
+    event.stopPropagation();
+    this.filtroColunaAtivo = campo;
+    const all = this.getValoresDistintosColuna(campo);
+    this.selecaoTemp[campo] = (this.filtrosColunasSelecao[campo]?.length
+      ? [...this.filtrosColunasSelecao[campo]]
+      : [...all]);
+    this.opFiltroColuna.toggle(event);
+  }
+
+  isValorSelecionadoFiltroColuna(campo: string, valor: string): boolean {
+    const sel = this.selecaoTemp[campo];
+    if (!sel) return true;
+    return sel.includes(valor);
+  }
+
+  isSelecionarTodosFiltroColuna(campo: string): boolean {
+    const all = this.getValoresDistintosColuna(campo);
+    const sel = this.selecaoTemp[campo] ?? [];
+    return all.length > 0 && sel.length === all.length;
+  }
+
+  toggleSelecionarTodosFiltroColuna(campo: string): void {
+    const all = this.getValoresDistintosColuna(campo);
+    this.selecaoTemp[campo] = this.isSelecionarTodosFiltroColuna(campo) ? [] : [...all];
+  }
+
+  toggleValorFiltroColuna(campo: string, valor: string): void {
+    let sel = this.selecaoTemp[campo] ?? [];
+    sel = sel.includes(valor) ? sel.filter(v => v !== valor) : [...sel, valor];
+    this.selecaoTemp[campo] = sel;
+  }
+
+  aplicarFiltroColuna(): void {
+    if (!this.filtroColunaAtivo) return;
+    const campo = this.filtroColunaAtivo;
+    const all = this.getValoresDistintosColuna(campo);
+    const sel = this.selecaoTemp[campo] ?? [];
+    this.filtrosColunasSelecao[campo] = sel.length === all.length ? [] : [...sel];
+    this.opFiltroColuna.hide();
+    this.filtroColunaAtivo = null;
+    this.aplicarFiltros();
+  }
+
+  cancelarFiltroColuna(): void {
+    this.opFiltroColuna.hide();
+    this.filtroColunaAtivo = null;
+  }
+
+  get hasFiltrosColuna(): boolean {
+    return Object.values(this.filtrosColunasSelecao).some(arr => arr?.length > 0);
+  }
+
+  limparFiltrosColuna(): void {
+    this.filtrosColunasSelecao = {};
+    this.aplicarFiltros();
+  }
+
+  colunaComFiltroAtivo(campo: string): boolean {
+    return (this.filtrosColunasSelecao[campo]?.length ?? 0) > 0;
+  }
+
   private possuiParcelaEmAberto(duplicata: DuplicataResponseDto): boolean {
-    return duplicata.parcelas?.some((parcela: ParcelaResponseDto) => parcela.status?.toLowerCase() === 'pendente') ?? false;
+    return duplicata.parcelas?.some((parcela: ParcelaResponseDto) => isParcelaPendente(parcela.status)) ?? false;
   }
 
   formatarMoeda(valor: number): string {

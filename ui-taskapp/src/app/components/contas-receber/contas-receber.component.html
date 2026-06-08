@@ -171,12 +171,12 @@
                   <td>{{ formatarData(parcela.vencimento) }}</td>
                   <td>
                     <span class="status-badge" [ngClass]="getStatusClass(parcela.status)">
-                      {{ parcela.status }}
+                      {{ labelStatusParcela(parcela.status) }}
                     </span>
                   </td>
                   <td>{{ parcela.dataPagamento ? formatarData(parcela.dataPagamento) : '-' }}</td>
                   <td class="actions-cell">
-                    @if (parcela.status === 'Pendente') {
+                    @if (isParcelaPendente(parcela.status)) {
                       <button class="btn-baixar" (click)="baixarParcela(parcela)" title="Receber Parcela" [disabled]="loading">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M9 11l3 3L22 4"></path>

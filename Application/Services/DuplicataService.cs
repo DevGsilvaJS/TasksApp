@@ -1,4 +1,5 @@
 using Application.DTOs;
+using Application.Helpers;
 using Application.Interfaces;
 using Domain.Entities;
 
@@ -142,7 +143,7 @@ public class DuplicataService : IDuplicataService
 
         // Verificar se há parcelas pagas
         var parcelas = await _parcelaRepository.BuscarTodosAsync(p => p.DupId == duplicata.DupId);
-        var temParcelaPaga = parcelas.Any(p => p.ParStatus == "Paga");
+        var temParcelaPaga = parcelas.Any(p => ParcelaStatusHelper.IsPaga(p.ParStatus));
         
         if (temParcelaPaga)
         {
@@ -226,7 +227,7 @@ public class DuplicataService : IDuplicataService
 
         // Verificar se há parcelas pagas
         var parcelas = await _parcelaRepository.BuscarTodosAsync(p => p.DupId == duplicata.DupId);
-        var temParcelaPaga = parcelas.Any(p => p.ParStatus == "Paga");
+        var temParcelaPaga = parcelas.Any(p => ParcelaStatusHelper.IsPaga(p.ParStatus));
         
         if (temParcelaPaga)
         {
@@ -251,12 +252,12 @@ public class DuplicataService : IDuplicataService
         if (parcela == null)
             throw new InvalidOperationException("Parcela não encontrada.");
 
-        if (parcela.ParStatus == "Paga")
+        if (ParcelaStatusHelper.IsPaga(parcela.ParStatus))
         {
             throw new InvalidOperationException("Parcela já está paga.");
         }
 
-        parcela.ParStatus = "Paga";
+        parcela.ParStatus = "PAGA";
         parcela.ParDataPagamento = DateTime.UtcNow;
 
         await _parcelaRepository.AtualizarAsync(parcela);
@@ -271,12 +272,12 @@ public class DuplicataService : IDuplicataService
         if (parcela == null)
             throw new InvalidOperationException("Parcela não encontrada.");
 
-        if (parcela.ParStatus != "Paga")
+        if (!ParcelaStatusHelper.IsPaga(parcela.ParStatus))
         {
             throw new InvalidOperationException("Apenas parcelas pagas podem ser reativadas.");
         }
 
-        parcela.ParStatus = "Pendente";
+        parcela.ParStatus = "PENDENTE";
         parcela.ParDataPagamento = null;
 
         await _parcelaRepository.AtualizarAsync(parcela);
@@ -291,7 +292,7 @@ public class DuplicataService : IDuplicataService
         var parcelasDto = parcelas.Select(MontarParcelaResponseDto).OrderBy(p => p.NumeroParcela).ToList();
 
         var valorTotal = parcelasDto.Sum(p => p.Valor);
-        var valorPago = parcelasDto.Where(p => p.Status == "Paga").Sum(p => p.ValorTotal);
+        var valorPago = parcelasDto.Where(p => ParcelaStatusHelper.IsPaga(p.Status)).Sum(p => p.ValorTotal);
         var valorPendente = valorTotal - valorPago;
 
         string? clienteNome = null;

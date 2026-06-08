@@ -162,12 +162,12 @@
                   <td>{{ formatarData(parcela.vencimento) }}</td>
                   <td>
                     <span class="status-badge" [ngClass]="getStatusClass(parcela.status)">
-                      {{ parcela.status }}
+                      {{ labelStatusParcela(parcela.status) }}
                     </span>
                   </td>
                   <td>{{ parcela.dataPagamento ? formatarData(parcela.dataPagamento) : '-' }}</td>
                   <td class="actions-cell">
-                    @if (parcela.status === 'Pendente') {
+                    @if (isParcelaPendente(parcela.status)) {
                       <button class="btn-baixar" (click)="baixarParcela(parcela)" title="Baixar Parcela" [disabled]="loading">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M9 11l3 3L22 4"></path>
@@ -210,10 +210,15 @@
   <div class="search-container">
     <input 
       type="text" 
-      placeholder="Buscar por número ou data..." 
+      placeholder="Buscar por número, data ou descrição..." 
       [(ngModel)]="termoBusca"
       (input)="filtrarDuplicatas()"
       class="search-input">
+    @if (hasFiltrosColuna) {
+      <button type="button" class="btn-limpar-filtros-coluna" (click)="limparFiltrosColuna()">
+        Limpar filtros de coluna
+      </button>
+    }
   </div>
 
   @if (loading && duplicatas.length === 0) {
@@ -227,13 +232,34 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Número</th>
-            <th>Data Emissão</th>
-            <th>Descrição da Despesa</th>
-            <th>Parcelas</th>
-            <th>Valor Total</th>
-            <th>Valor Pago</th>
-            <th>Valor Pendente</th>
+            <th>
+              <span class="th-label">Número</span>
+              <button type="button" class="filter-funnel-btn" [class.filter-ativo]="colunaComFiltroAtivo('numero')" (click)="abrirFiltroColuna('numero', $event)" title="Filtrar coluna" aria-label="Filtrar número"><i class="pi pi-filter"></i></button>
+            </th>
+            <th>
+              <span class="th-label">Data Emissão</span>
+              <button type="button" class="filter-funnel-btn" [class.filter-ativo]="colunaComFiltroAtivo('dataEmissao')" (click)="abrirFiltroColuna('dataEmissao', $event)" title="Filtrar coluna" aria-label="Filtrar data"><i class="pi pi-filter"></i></button>
+            </th>
+            <th>
+              <span class="th-label">Descrição da Despesa</span>
+              <button type="button" class="filter-funnel-btn" [class.filter-ativo]="colunaComFiltroAtivo('descricaoDespesa')" (click)="abrirFiltroColuna('descricaoDespesa', $event)" title="Filtrar coluna" aria-label="Filtrar descrição"><i class="pi pi-filter"></i></button>
+            </th>
+            <th>
+              <span class="th-label">Parcelas</span>
+              <button type="button" class="filter-funnel-btn" [class.filter-ativo]="colunaComFiltroAtivo('numeroParcelas')" (click)="abrirFiltroColuna('numeroParcelas', $event)" title="Filtrar coluna" aria-label="Filtrar parcelas"><i class="pi pi-filter"></i></button>
+            </th>
+            <th>
+              <span class="th-label">Valor Total</span>
+              <button type="button" class="filter-funnel-btn" [class.filter-ativo]="colunaComFiltroAtivo('valorTotal')" (click)="abrirFiltroColuna('valorTotal', $event)" title="Filtrar coluna" aria-label="Filtrar valor total"><i class="pi pi-filter"></i></button>
+            </th>
+            <th>
+              <span class="th-label">Valor Pago</span>
+              <button type="button" class="filter-funnel-btn" [class.filter-ativo]="colunaComFiltroAtivo('valorPago')" (click)="abrirFiltroColuna('valorPago', $event)" title="Filtrar coluna" aria-label="Filtrar valor pago"><i class="pi pi-filter"></i></button>
+            </th>
+            <th>
+              <span class="th-label">Valor Pendente</span>
+              <button type="button" class="filter-funnel-btn" [class.filter-ativo]="colunaComFiltroAtivo('valorPendente')" (click)="abrirFiltroColuna('valorPendente', $event)" title="Filtrar coluna" aria-label="Filtrar valor pendente"><i class="pi pi-filter"></i></button>
+            </th>
             <th class="actions-column">Ações</th>
           </tr>
         </thead>
@@ -270,7 +296,40 @@
             </tr>
           }
         </tbody>
+        <tfoot>
+          <tr class="totals-row">
+            <td colspan="5"><strong>Total ({{ duplicatasFiltradas.length }})</strong></td>
+            <td class="status-paga"><strong>{{ formatarMoeda(totalValorPago) }}</strong></td>
+            <td class="status-pendente"><strong>{{ formatarMoeda(totalValorPendente) }}</strong></td>
+            <td></td>
+          </tr>
+        </tfoot>
       </table>
+
+      <p-overlayPanel #opFiltroColuna [style]="{ width: '280px' }" (onHide)="filtroColunaAtivo = null">
+        <ng-template pTemplate="content">
+          @if (filtroColunaAtivo) {
+            <div class="filter-panel">
+              <label class="filter-panel-select-all">
+                <input type="checkbox" [checked]="isSelecionarTodosFiltroColuna(filtroColunaAtivo)" (change)="toggleSelecionarTodosFiltroColuna(filtroColunaAtivo)" />
+                <span>Selecionar todos</span>
+              </label>
+              <div class="filter-panel-list">
+                @for (valor of getValoresDistintosColuna(filtroColunaAtivo); track valor) {
+                  <label class="filter-panel-item">
+                    <input type="checkbox" [checked]="isValorSelecionadoFiltroColuna(filtroColunaAtivo, valor)" (change)="toggleValorFiltroColuna(filtroColunaAtivo, valor)" />
+                    <span>{{ valor || '—' }}</span>
+                  </label>
+                }
+              </div>
+              <div class="filter-panel-actions">
+                <button type="button" class="filter-panel-btn-ok" (click)="aplicarFiltroColuna()">OK</button>
+                <button type="button" class="filter-panel-btn-cancel" (click)="cancelarFiltroColuna()">Cancelar</button>
+              </div>
+            </div>
+          }
+        </ng-template>
+      </p-overlayPanel>
     </div>
   }
 

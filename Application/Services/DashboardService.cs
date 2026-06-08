@@ -1,4 +1,5 @@
 using Application.DTOs;
+using Application.Helpers;
 using Application.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
@@ -109,7 +110,7 @@ public class DashboardService : IDashboardService
         var todasParcelas = await _parcelaRepository.BuscarTodosAsync(p => 
             p.ParVencimento >= inicioUtc && 
             p.ParVencimento <= fimUtc && 
-            p.ParStatus == "Pendente");
+            p.ParStatus != null && p.ParStatus.ToUpper() == "PENDENTE");
 
         var todasDuplicatas = await _duplicataRepository.ListarTodosAsync();
         var duplicatasDict = todasDuplicatas.ToDictionary(d => d.DupId);
@@ -128,7 +129,7 @@ public class DashboardService : IDashboardService
                     DataVencimento = parcela.ParVencimento,
                     DataPagamento = parcela.ParDataPagamento,
                     Valor = (decimal)parcela.ParValor,
-                    Paga = parcela.ParStatus == "Paga"
+                    Paga = ParcelaStatusHelper.IsPaga(parcela.ParStatus)
                 };
             })
             .ToList();
@@ -142,7 +143,7 @@ public class DashboardService : IDashboardService
         var parcelasAReceber = await _parcelaRepository.BuscarTodosAsync(p => 
             p.ParVencimento >= inicioMesAtual && 
             p.ParVencimento <= fimMesAtual && 
-            p.ParStatus == "Pendente");
+            p.ParStatus != null && p.ParStatus.ToUpper() == "PENDENTE");
         
         var contasAReceber = parcelasAReceber
             .Where(p => duplicatasDict.ContainsKey(p.DupId) && duplicatasDict[p.DupId].DupTipo == "CR")
@@ -158,7 +159,7 @@ public class DashboardService : IDashboardService
                     DataVencimento = parcela.ParVencimento,
                     DataPagamento = parcela.ParDataPagamento,
                     Valor = (decimal)parcela.ParValor,
-                    Paga = parcela.ParStatus == "Paga"
+                    Paga = ParcelaStatusHelper.IsPaga(parcela.ParStatus)
                 };
             })
             .ToList();
@@ -194,7 +195,8 @@ public class DashboardService : IDashboardService
         // CP = por vencimento (títulos que vencem no mês e já foram pagos). CR = por data de pagamento (como estava).
 
         // Contas a Pagar - Pagas: filtrar por vencimento no mês atual
-        var parcelasPagas = await _parcelaRepository.BuscarTodosAsync(p => p.ParStatus == "Paga");
+        var parcelasPagas = await _parcelaRepository.BuscarTodosAsync(p =>
+            p.ParStatus != null && p.ParStatus.ToUpper() == "PAGA");
         var contasPagasMes = parcelasPagas.Where(p =>
         {
             var vencimentoUtc = p.ParVencimento.Kind == DateTimeKind.Utc ? p.ParVencimento : p.ParVencimento.ToUniversalTime();
@@ -202,7 +204,8 @@ public class DashboardService : IDashboardService
         }).ToList();
 
         // Contas a Receber - Recebidas: filtrar por data de pagamento no mês atual (sem alteração)
-        var parcelasRecebidas = await _parcelaRepository.BuscarTodosAsync(p => p.ParStatus == "Paga" && p.ParDataPagamento.HasValue);
+        var parcelasRecebidas = await _parcelaRepository.BuscarTodosAsync(p =>
+            p.ParStatus != null && p.ParStatus.ToUpper() == "PAGA" && p.ParDataPagamento.HasValue);
         var contasRecebidasMes = parcelasRecebidas.Where(p =>
         {
             var dataPagamentoUtc = p.ParDataPagamento!.Value.Kind == DateTimeKind.Utc ? p.ParDataPagamento.Value : p.ParDataPagamento.Value.ToUniversalTime();

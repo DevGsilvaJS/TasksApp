@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DuplicataService, DuplicataResponseDto, CadastroDuplicataDto, ParcelaResponseDto, CadastroParcelaDto } from '../../services/duplicata.service';
 import { ClienteService, ClienteResponseDto } from '../../services/cliente.service';
+import { isParcelaPendente, labelStatusParcela } from '../../utils/parcela-status.util';
 import { NotificacaoService } from '../../services/notificacao.service';
 
 @Component({
@@ -50,6 +51,9 @@ export class ContasReceberComponent implements OnInit {
     clienteId: undefined,
     dataPrimeiroVencimento: new Date().toISOString().split('T')[0]
   };
+
+  readonly isParcelaPendente = isParcelaPendente;
+  readonly labelStatusParcela = labelStatusParcela;
 
   constructor(
     private duplicataService: DuplicataService,
@@ -424,7 +428,7 @@ export class ContasReceberComponent implements OnInit {
   }
 
   private possuiParcelaEmAberto(duplicata: DuplicataResponseDto): boolean {
-    return duplicata.parcelas?.some((parcela: ParcelaResponseDto) => parcela.status?.toLowerCase() === 'pendente') ?? false;
+    return duplicata.parcelas?.some((parcela: ParcelaResponseDto) => isParcelaPendente(parcela.status)) ?? false;
   }
 
   formatarMoeda(valor: number): string {
