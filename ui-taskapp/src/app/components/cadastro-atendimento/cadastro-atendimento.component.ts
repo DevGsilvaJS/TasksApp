@@ -6,16 +6,8 @@ import {
   CadastroItemDto,
   CadastroItemRequestDto
 } from '../../services/cadastro-atendimento.service';
-import { AndamentoTarefa } from '../../services/tarefa.service';
 
 type TipoCadastro = 'status' | 'tipoAtendimento' | 'tipoContato' | 'andamento';
-
-const ANDAMENTOS_PADRAO: CadastroItemDto[] = [
-  { id: AndamentoTarefa.AFazer, descricao: 'A FAZER', ativo: true },
-  { id: AndamentoTarefa.EmAndamento, descricao: 'EM ANDAMENTO', ativo: true },
-  { id: AndamentoTarefa.Testar, descricao: 'TESTAR', ativo: true },
-  { id: AndamentoTarefa.Resolvido, descricao: 'RESOLVIDO', ativo: true }
-];
 
 @Component({
   selector: 'app-cadastro-atendimento',
@@ -28,7 +20,7 @@ export class CadastroAtendimentoComponent implements OnInit {
   statusList: CadastroItemDto[] = [];
   tipoAtendimentoList: CadastroItemDto[] = [];
   tipoContatoList: CadastroItemDto[] = [];
-  andamentoList: CadastroItemDto[] = [...ANDAMENTOS_PADRAO];
+  andamentoList: CadastroItemDto[] = [];
 
   loading = false;
   error: string | null = null;
@@ -57,11 +49,15 @@ export class CadastroAtendimentoComponent implements OnInit {
       error: (err) => { this.trataErro(err, 'tipo atendimento'); }
     });
     this.service.listarTipoContato().subscribe({
+      next: (data) => { this.tipoContatoList = data; },
+      error: (err) => { this.trataErro(err, 'tipo contato'); }
+    });
+    this.service.listarAndamento().subscribe({
       next: (data) => {
-        this.tipoContatoList = data;
+        this.andamentoList = data;
         this.loading = false;
       },
-      error: (err) => { this.trataErro(err, 'tipo contato'); }
+      error: (err) => { this.trataErro(err, 'andamento'); }
     });
   }
 
@@ -104,11 +100,6 @@ export class CadastroAtendimentoComponent implements OnInit {
     }
     if (!this.modalTipo) return;
 
-    if (this.modalTipo === 'andamento') {
-      this.salvarAndamentoLocal();
-      return;
-    }
-
     this.saving = true;
     this.error = null;
     const dto: CadastroItemRequestDto = { descricao: this.form.descricao.trim(), ativo: this.form.ativo };
@@ -133,54 +124,32 @@ export class CadastroAtendimentoComponent implements OnInit {
   private criar(tipo: TipoCadastro, dto: CadastroItemRequestDto) {
     if (tipo === 'status') return this.service.criarStatus(dto);
     if (tipo === 'tipoAtendimento') return this.service.criarTipoAtendimento(dto);
+    if (tipo === 'andamento') return this.service.criarAndamento(dto);
     return this.service.criarTipoContato(dto);
   }
 
   private atualizar(tipo: TipoCadastro, id: number, dto: CadastroItemRequestDto) {
     if (tipo === 'status') return this.service.atualizarStatus(id, dto);
     if (tipo === 'tipoAtendimento') return this.service.atualizarTipoAtendimento(id, dto);
+    if (tipo === 'andamento') return this.service.atualizarAndamento(id, dto);
     return this.service.atualizarTipoContato(id, dto);
   }
 
   alterarAtivo(tipo: TipoCadastro, item: CadastroItemDto) {
-    if (tipo === 'andamento') {
-      item.ativo = !item.ativo;
-      this.andamentoList = [...this.andamentoList];
-      return;
-    }
-
     const novoAtivo = !item.ativo;
     const obs = tipo === 'status'
       ? this.service.alterarAtivoStatus(item.id, novoAtivo)
       : tipo === 'tipoAtendimento'
         ? this.service.alterarAtivoTipoAtendimento(item.id, novoAtivo)
-        : this.service.alterarAtivoTipoContato(item.id, novoAtivo);
+        : tipo === 'andamento'
+          ? this.service.alterarAtivoAndamento(item.id, novoAtivo)
+          : this.service.alterarAtivoTipoContato(item.id, novoAtivo);
     obs.subscribe({
       next: () => this.carregarTudo(),
       error: (err) => {
         this.error = err.error?.message || 'Erro ao alterar.';
       }
     });
-  }
-
-  private salvarAndamentoLocal() {
-    const dto: CadastroItemRequestDto = {
-      descricao: this.form.descricao.trim().toUpperCase(),
-      ativo: this.form.ativo
-    };
-
-    if (this.editandoId != null) {
-      this.andamentoList = this.andamentoList.map(item =>
-        item.id === this.editandoId ? { ...item, descricao: dto.descricao, ativo: dto.ativo } : item
-      );
-    } else {
-      const nextId = this.andamentoList.length
-        ? Math.max(...this.andamentoList.map(x => x.id)) + 1
-        : 1;
-      this.andamentoList = [...this.andamentoList, { id: nextId, ...dto }];
-    }
-
-    this.fecharModal();
   }
 
   tituloModal(): string {
@@ -193,5 +162,9 @@ export class CadastroAtendimentoComponent implements OnInit {
     };
     const nome = nomes[this.modalTipo];
     return this.editandoId != null ? `Editar ${nome}` : `Novo ${nome}`;
+  }
+
+  get formDescricaoValida(): boolean {
+    return (this.form.descricao || '').trim().length > 0;
   }
 }

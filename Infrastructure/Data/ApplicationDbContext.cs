@@ -28,6 +28,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<CadastroStatusTarefa> CadastroStatusTarefa { get; set; }
     public DbSet<CadastroTipoAtendimento> CadastroTipoAtendimento { get; set; }
     public DbSet<CadastroTipoContato> CadastroTipoContato { get; set; }
+    public DbSet<CadastroAndamento> CadastroAndamento { get; set; }
     public DbSet<CadastroStatusAtendimentoComercial> CadastroStatusAtendimentoComercial { get; set; }
     public DbSet<ClienteContratoValor> ClienteContratosValores { get; set; }
 

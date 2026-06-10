@@ -20,7 +20,7 @@
     </div>
   }
 
-  @if (loading && statusList.length === 0 && tipoAtendimentoList.length === 0 && tipoContatoList.length === 0) {
+  @if (loading && statusList.length === 0 && tipoAtendimentoList.length === 0 && tipoContatoList.length === 0 && andamentoList.length === 0) {
     <div class="loading">Carregando...</div>
   } @else {
     <div class="cadastros-grid">
@@ -219,7 +219,7 @@
         </div>
         <div class="form-actions">
           <button type="button" class="btn-secondary" (click)="fecharModal()">Cancelar</button>
-          <button type="button" class="btn-primary" (click)="salvar()" [disabled]="saving || !form.descricao?.trim()">
+          <button type="button" class="btn-primary" (click)="salvar()" [disabled]="saving || !formDescricaoValida">
             {{ saving ? 'Salvando...' : 'Salvar' }}
           </button>
         </div>

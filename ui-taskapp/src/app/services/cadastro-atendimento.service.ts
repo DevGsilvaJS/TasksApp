@@ -98,6 +98,27 @@ export class CadastroAtendimentoService {
     return this.api.patch<void>(`${BASE}/tipo-contato/${id}/ativo`, { ativo });
   }
 
+  listarAndamento(apenasAtivos?: boolean): Observable<CadastroItemDto[]> {
+    const q = apenasAtivos != null ? `?apenasAtivos=${apenasAtivos}` : '';
+    return this.api.get<CadastroItemDto[]>(`${BASE}/andamento${q}`);
+  }
+
+  obterAndamento(id: number): Observable<CadastroItemDto> {
+    return this.api.get<CadastroItemDto>(`${BASE}/andamento/${id}`);
+  }
+
+  criarAndamento(dto: CadastroItemRequestDto): Observable<CadastroItemDto> {
+    return this.api.post<CadastroItemDto>(`${BASE}/andamento`, dto);
+  }
+
+  atualizarAndamento(id: number, dto: CadastroItemRequestDto): Observable<CadastroItemDto> {
+    return this.api.put<CadastroItemDto>(`${BASE}/andamento/${id}`, dto);
+  }
+
+  alterarAtivoAndamento(id: number, ativo: boolean): Observable<void> {
+    return this.api.patch<void>(`${BASE}/andamento/${id}/ativo`, { ativo });
+  }
+
   listarStatusAtendimentoComercial(apenasAtivos?: boolean): Observable<StatusAtendimentoComercialDto[]> {
     const q = apenasAtivos != null ? `?apenasAtivos=${apenasAtivos}` : '';
     return this.api.get<StatusAtendimentoComercialDto[]>(`${BASE}/status-atendimento-comercial${q}`);
