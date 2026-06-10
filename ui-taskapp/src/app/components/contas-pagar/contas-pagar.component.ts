@@ -122,20 +122,42 @@ export class ContasPagarComponent implements OnInit {
   abrirFormularioEdicao(duplicata: DuplicataResponseDto) {
     this.editando = true;
     this.duplicataEditando = duplicata;
+    const temParcelaPaga = duplicata.valorPago > 0;
+    const primeiraParcela = duplicata.parcelas[0];
+
+    this.gerarParcelasManual = temParcelaPaga || duplicata.parcelas.length > 1;
+    if (this.gerarParcelasManual) {
+      this.parcelasManuais = duplicata.parcelas.map(p => ({
+        numeroParcela: p.numeroParcela,
+        valor: p.valor,
+        vencimento: p.vencimento.split('T')[0],
+        multa: p.multa,
+        juros: p.juros
+      }));
+    } else {
+      this.parcelasManuais = [];
+    }
+
     this.novaDuplicata = {
       numero: duplicata.numero,
       dataEmissao: duplicata.dataEmissao.split('T')[0],
       numeroParcelas: duplicata.numeroParcelas,
-      valorTotal: duplicata.valorTotal,
-      multa: duplicata.parcelas[0]?.multa || 0,
-      juros: duplicata.parcelas[0]?.juros || 0,
+      valorTotal: primeiraParcela?.valor ?? 0,
+      multa: primeiraParcela?.multa || 0,
+      juros: primeiraParcela?.juros || 0,
       descricaoDespesa: duplicata.descricaoDespesa,
       tipo: duplicata.tipo || 'CP',
-      dataPrimeiroVencimento: duplicata.parcelas[0]?.vencimento.split('T')[0] || new Date().toISOString().split('T')[0]
+      dataPrimeiroVencimento: primeiraParcela?.vencimento.split('T')[0] || new Date().toISOString().split('T')[0]
     };
     this.showForm = true;
     this.error = null;
     window.scrollTo(0, 0);
+  }
+
+  parcelaEstaPaga(numeroParcela: number): boolean {
+    if (!this.duplicataEditando) return false;
+    const parcela = this.duplicataEditando.parcelas.find(p => p.numeroParcela === numeroParcela);
+    return parcela ? !isParcelaPendente(parcela.status) : false;
   }
 
   fecharFormulario() {

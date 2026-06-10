@@ -60,7 +60,8 @@
           </div>
           <div class="form-group">
             <label>
-              <input type="checkbox" [(ngModel)]="gerarParcelasManual" (ngModelChange)="toggleGerarParcelasManual()" name="gerarParcelasManual">
+              <input type="checkbox" [(ngModel)]="gerarParcelasManual" (ngModelChange)="toggleGerarParcelasManual()" name="gerarParcelasManual"
+                [disabled]="editando && !!duplicataEditando && duplicataEditando.valorPago > 0">
               Gerar parcelas manualmente (preencher datas de vencimento individualmente)
             </label>
           </div>
@@ -75,28 +76,31 @@
               <h4>Parcelas</h4>
               <div class="parcelas-container">
                 @for (parcela of parcelasManuais; track parcela.numeroParcela) {
-                  <div class="parcela-item">
+                  <div class="parcela-item" [class.parcela-paga]="parcelaEstaPaga(parcela.numeroParcela)">
                     <div class="parcela-header">
                       <strong>Parcela {{ parcela.numeroParcela }}</strong>
+                      @if (parcelaEstaPaga(parcela.numeroParcela)) {
+                        <span class="parcela-paga-badge">Paga — não editável</span>
+                      }
                     </div>
                     <div class="form-row">
                       <div class="form-group">
                         <label>Valor *</label>
-                        <input type="number" [(ngModel)]="parcela.valor" name="valor{{parcela.numeroParcela}}" required min="0.01" step="0.01">
+                        <input type="number" [(ngModel)]="parcela.valor" name="valor{{parcela.numeroParcela}}" required min="0.01" step="0.01" [readonly]="parcelaEstaPaga(parcela.numeroParcela)">
                       </div>
                       <div class="form-group">
                         <label>Data de Vencimento *</label>
-                        <input type="date" [(ngModel)]="parcela.vencimento" name="vencimento{{parcela.numeroParcela}}" required>
+                        <input type="date" [(ngModel)]="parcela.vencimento" name="vencimento{{parcela.numeroParcela}}" required [readonly]="parcelaEstaPaga(parcela.numeroParcela)">
                       </div>
                     </div>
                     <div class="form-row">
                       <div class="form-group">
                         <label>Multa</label>
-                        <input type="number" [(ngModel)]="parcela.multa" name="multa{{parcela.numeroParcela}}" min="0" step="0.01">
+                        <input type="number" [(ngModel)]="parcela.multa" name="multa{{parcela.numeroParcela}}" min="0" step="0.01" [readonly]="parcelaEstaPaga(parcela.numeroParcela)">
                       </div>
                       <div class="form-group">
                         <label>Juros</label>
-                        <input type="number" [(ngModel)]="parcela.juros" name="juros{{parcela.numeroParcela}}" min="0" step="0.01">
+                        <input type="number" [(ngModel)]="parcela.juros" name="juros{{parcela.numeroParcela}}" min="0" step="0.01" [readonly]="parcelaEstaPaga(parcela.numeroParcela)">
                       </div>
                     </div>
                   </div>
@@ -281,7 +285,7 @@
                   </svg>
                   Parcelas
                 </button>
-                <button class="btn-edit" (click)="abrirFormularioEdicao(duplicata)" title="Editar" [disabled]="duplicata.valorPago > 0">
+                <button class="btn-edit" (click)="abrirFormularioEdicao(duplicata)" title="Editar">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>

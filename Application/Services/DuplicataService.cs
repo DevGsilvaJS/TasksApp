@@ -141,16 +141,10 @@ public class DuplicataService : IDuplicataService
         if (duplicata == null)
             throw new InvalidOperationException("Duplicata não encontrada.");
 
-        // Verificar se há parcelas pagas
-        var parcelas = await _parcelaRepository.BuscarTodosAsync(p => p.DupId == duplicata.DupId);
-        var temParcelaPaga = parcelas.Any(p => ParcelaStatusHelper.IsPaga(p.ParStatus));
-        
-        if (temParcelaPaga)
-        {
-            throw new InvalidOperationException("Não é possível atualizar uma duplicata que possui parcelas pagas.");
-        }
+        var parcelas = (await _parcelaRepository.BuscarTodosAsync(p => p.DupId == duplicata.DupId)).ToList();
+        var parcelasPagas = parcelas.Where(p => ParcelaStatusHelper.IsPaga(p.ParStatus)).ToList();
+        var temParcelaPaga = parcelasPagas.Count > 0;
 
-        // Atualizar Duplicata
         duplicata.DupNumero = dto.Numero;
         duplicata.DupDataEmissao = dto.DataEmissao.ToUniversalTime();
         duplicata.DupNumeroParcelas = dto.NumeroParcelas;
@@ -158,9 +152,32 @@ public class DuplicataService : IDuplicataService
         duplicata.DupTipo = dto.Tipo ?? "CP";
         duplicata.CliId = dto.ClienteId;
 
-        await _duplicataRepository.AtualizarAsync(duplicata);
+        if (temParcelaPaga)
+        {
+            var maiorNumeroPago = parcelasPagas.Max(p => p.ParNumeroParcela);
+            if (dto.NumeroParcelas < maiorNumeroPago)
+            {
+                throw new InvalidOperationException(
+                    $"Número de parcelas não pode ser menor que {maiorNumeroPago}, pois existem parcelas pagas até a parcela {maiorNumeroPago}.");
+            }
 
-        // Remover parcelas antigas
+            await _duplicataRepository.AtualizarAsync(duplicata);
+            await AtualizarParcelasPreservandoPagasAsync(duplicata, dto, parcelas);
+        }
+        else
+        {
+            await _duplicataRepository.AtualizarAsync(duplicata);
+            await RecriarParcelasAsync(duplicata, dto);
+        }
+
+        await _duplicataRepository.SalvarAlteracoesAsync();
+        await _parcelaRepository.SalvarAlteracoesAsync();
+
+        return await MontarDuplicataResponseDto(duplicata);
+    }
+
+    private async Task RecriarParcelasAsync(Duplicata duplicata, CadastroDuplicataDto dto)
+    {
         var parcelasAntigas = await _parcelaRepository.BuscarTodosAsync(p => p.DupId == duplicata.DupId);
         foreach (var parcela in parcelasAntigas)
         {
@@ -168,39 +185,24 @@ public class DuplicataService : IDuplicataService
         }
         await _parcelaRepository.SalvarAlteracoesAsync();
 
-        // Verificar se há parcelas personalizadas
         if (dto.Parcelas != null && dto.Parcelas.Any())
         {
-            // Usar parcelas personalizadas
             foreach (var parcelaDto in dto.Parcelas.OrderBy(p => p.NumeroParcela))
             {
-                var parcela = new Parcela
-                {
-                    DupId = duplicata.DupId,
-                    ParNumeroParcela = parcelaDto.NumeroParcela,
-                    ParValor = parcelaDto.Valor,
-                    ParMulta = parcelaDto.Multa ?? dto.Multa ?? 0,
-                    ParJuros = parcelaDto.Juros ?? dto.Juros ?? 0,
-                    ParVencimento = parcelaDto.Vencimento.ToUniversalTime(),
-                    ParStatus = "Pendente",
-                    ParDataPagamento = null
-                };
-                await _parcelaRepository.InserirAsync(parcela);
+                await _parcelaRepository.InserirAsync(CriarParcelaPendente(duplicata.DupId, parcelaDto, dto));
             }
         }
         else
         {
-            // Gerar parcelas automaticamente
             if (!dto.DataPrimeiroVencimento.HasValue)
             {
                 throw new InvalidOperationException("Data de primeiro vencimento é obrigatória quando não há parcelas personalizadas.");
             }
 
-            // O valor total informado é o valor de cada parcela, não o total dividido
             var valorPorParcela = dto.ValorTotal;
             for (int i = 1; i <= dto.NumeroParcelas; i++)
             {
-                var parcela = new Parcela
+                await _parcelaRepository.InserirAsync(new Parcela
                 {
                     DupId = duplicata.DupId,
                     ParNumeroParcela = i,
@@ -210,13 +212,103 @@ public class DuplicataService : IDuplicataService
                     ParVencimento = dto.DataPrimeiroVencimento.Value.AddMonths(i - 1).ToUniversalTime(),
                     ParStatus = "Pendente",
                     ParDataPagamento = null
-                };
-                await _parcelaRepository.InserirAsync(parcela);
+                });
             }
         }
-        await _parcelaRepository.SalvarAlteracoesAsync();
+    }
 
-        return await MontarDuplicataResponseDto(duplicata);
+    private async Task AtualizarParcelasPreservandoPagasAsync(
+        Duplicata duplicata,
+        CadastroDuplicataDto dto,
+        List<Parcela> parcelasExistentes)
+    {
+        if (dto.Parcelas != null && dto.Parcelas.Any())
+        {
+            var dtoPorNumero = dto.Parcelas.ToDictionary(p => p.NumeroParcela);
+            var numerosExistentes = parcelasExistentes.Select(p => p.ParNumeroParcela).ToHashSet();
+
+            foreach (var parcela in parcelasExistentes.Where(p => ParcelaStatusHelper.IsPendente(p.ParStatus)))
+            {
+                if (dtoPorNumero.TryGetValue(parcela.ParNumeroParcela, out var parcelaDto))
+                {
+                    parcela.ParValor = parcelaDto.Valor;
+                    parcela.ParMulta = parcelaDto.Multa ?? dto.Multa ?? 0;
+                    parcela.ParJuros = parcelaDto.Juros ?? dto.Juros ?? 0;
+                    parcela.ParVencimento = parcelaDto.Vencimento.ToUniversalTime();
+                    await _parcelaRepository.AtualizarAsync(parcela);
+                }
+                else if (parcela.ParNumeroParcela > dto.NumeroParcelas)
+                {
+                    await _parcelaRepository.ExcluirAsync(parcela);
+                }
+            }
+
+            foreach (var parcelaDto in dto.Parcelas.OrderBy(p => p.NumeroParcela))
+            {
+                if (numerosExistentes.Contains(parcelaDto.NumeroParcela))
+                    continue;
+
+                await _parcelaRepository.InserirAsync(CriarParcelaPendente(duplicata.DupId, parcelaDto, dto));
+            }
+
+            return;
+        }
+
+        if (!dto.DataPrimeiroVencimento.HasValue)
+        {
+            throw new InvalidOperationException("Data de primeiro vencimento é obrigatória quando não há parcelas personalizadas.");
+        }
+
+        var valorPorParcela = dto.ValorTotal;
+        var numerosAtuais = parcelasExistentes.Select(p => p.ParNumeroParcela).ToHashSet();
+
+        foreach (var parcela in parcelasExistentes.Where(p => ParcelaStatusHelper.IsPendente(p.ParStatus)).ToList())
+        {
+            if (parcela.ParNumeroParcela > dto.NumeroParcelas)
+            {
+                await _parcelaRepository.ExcluirAsync(parcela);
+                continue;
+            }
+
+            parcela.ParValor = valorPorParcela;
+            parcela.ParMulta = dto.Multa ?? 0;
+            parcela.ParJuros = dto.Juros ?? 0;
+            parcela.ParVencimento = dto.DataPrimeiroVencimento.Value.AddMonths(parcela.ParNumeroParcela - 1).ToUniversalTime();
+            await _parcelaRepository.AtualizarAsync(parcela);
+        }
+
+        for (int i = 1; i <= dto.NumeroParcelas; i++)
+        {
+            if (numerosAtuais.Contains(i))
+                continue;
+
+            await _parcelaRepository.InserirAsync(new Parcela
+            {
+                DupId = duplicata.DupId,
+                ParNumeroParcela = i,
+                ParValor = valorPorParcela,
+                ParMulta = dto.Multa ?? 0,
+                ParJuros = dto.Juros ?? 0,
+                ParVencimento = dto.DataPrimeiroVencimento.Value.AddMonths(i - 1).ToUniversalTime(),
+                ParStatus = "Pendente",
+                ParDataPagamento = null
+            });
+        }
+    }
+
+    private static Parcela CriarParcelaPendente(int dupId, CadastroParcelaDto parcelaDto, CadastroDuplicataDto dto)
+    {
+        return new Parcela
+        {
+            DupId = dupId,
+            ParNumeroParcela = parcelaDto.NumeroParcela,
+            ParValor = parcelaDto.Valor,
+            ParMulta = parcelaDto.Multa ?? dto.Multa ?? 0,
+            ParJuros = parcelaDto.Juros ?? dto.Juros ?? 0,
+            ParVencimento = parcelaDto.Vencimento.ToUniversalTime(),
+            ParStatus = "Pendente",
+            ParDataPagamento = null
+        };
     }
 
     public async Task ExcluirDuplicataAsync(int id)
