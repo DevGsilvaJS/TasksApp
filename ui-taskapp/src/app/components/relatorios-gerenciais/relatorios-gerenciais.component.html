@@ -1,0 +1,132 @@
+<div class="page-container">
+  <div class="page-header">
+    <h2>Relatórios Gerenciais</h2>
+  </div>
+
+  @if (error) {
+    <div class="alert alert-error">{{ error }}</div>
+  }
+
+  <section class="filtros-relatorio card-panel">
+    <div class="form-row">
+      <div class="form-group form-group-tipo">
+        <label for="tipoRelatorio">Tipo de relatório</label>
+        <select
+          id="tipoRelatorio"
+          [(ngModel)]="tipoRelatorio"
+          name="tipoRelatorio"
+          class="form-input">
+          @for (tipo of tiposRelatorio; track tipo.value) {
+            <option [ngValue]="tipo.value">{{ tipo.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="dataInicial">Data inicial</label>
+        <input
+          id="dataInicial"
+          type="date"
+          [(ngModel)]="dataInicial"
+          name="dataInicial"
+          class="form-input">
+      </div>
+      <div class="form-group">
+        <label for="dataFinal">Data final</label>
+        <input
+          id="dataFinal"
+          type="date"
+          [(ngModel)]="dataFinal"
+          name="dataFinal"
+          class="form-input">
+      </div>
+      <div class="form-group form-group-acao">
+        <label class="label-invisivel" aria-hidden="true">Pesquisar</label>
+        <button type="button" class="btn-primary btn-pesquisar" (click)="pesquisar()" [disabled]="loading">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          {{ loading ? 'Pesquisando...' : 'Pesquisar' }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  @if (loading) {
+    <div class="loading">Gerando relatório...</div>
+  } @else if (relatorio) {
+    <section class="resultado-relatorio card-panel">
+      <div class="resultado-header">
+        <h3>{{ relatorio.tituloRelatorio }}</h3>
+        <p class="resultado-periodo">
+          Período: {{ formatarData(relatorio.dataInicio) }} a {{ formatarData(relatorio.dataFim) }}
+          · {{ relatorio.totalRegistros }} registro(s)
+        </p>
+      </div>
+
+      @if (relatorio.itens.length === 0) {
+        <p class="empty-state">Nenhum registro encontrado para os filtros informados.</p>
+      } @else {
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Duplicata</th>
+                <th>Parcela</th>
+                <th>Descrição</th>
+                @if (exibirColunaCliente) {
+                  <th>Cliente</th>
+                }
+                <th>Emissão</th>
+                <th>Vencimento</th>
+                @if (exibirColunaDataPagamento) {
+                  <th>Data pagamento</th>
+                }
+                <th>Valor</th>
+                <th>Multa</th>
+                <th>Juros</th>
+                <th>Valor total</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of relatorio.itens; track item.parcelaId) {
+                <tr>
+                  <td>{{ item.numeroDuplicata }}</td>
+                  <td>{{ item.numeroParcela }}</td>
+                  <td>{{ item.descricaoDespesa || '—' }}</td>
+                  @if (exibirColunaCliente) {
+                    <td>{{ item.clienteNome || '—' }}</td>
+                  }
+                  <td>{{ formatarData(item.dataEmissao) }}</td>
+                  <td>{{ formatarData(item.dataVencimento) }}</td>
+                  @if (exibirColunaDataPagamento) {
+                    <td>{{ formatarData(item.dataPagamento) }}</td>
+                  }
+                  <td>{{ formatarMoeda(item.valor) }}</td>
+                  <td>{{ formatarMoeda(item.multa) }}</td>
+                  <td>{{ formatarMoeda(item.juros) }}</td>
+                  <td>{{ formatarMoeda(item.valorTotal) }}</td>
+                  <td>
+                    <span class="status-badge" [class.status-paga]="item.status === 'Paga'" [class.status-pendente]="item.status === 'Pendente'">
+                      {{ item.status }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="totals-row">
+                <td [attr.colspan]="exibirColunaCliente ? (exibirColunaDataPagamento ? 10 : 9) : (exibirColunaDataPagamento ? 9 : 8)">
+                  <strong>Total</strong>
+                </td>
+                <td><strong>{{ formatarMoeda(relatorio.totalValor) }}</strong></td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>
