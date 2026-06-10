@@ -1,5 +1,6 @@
 using Infrastructure.Extensions;
 using Infrastructure.Data;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using TasksAppAPI.Scripts;
@@ -9,7 +10,37 @@ var builder = WebApplication.CreateBuilder(args);
 // ======================
 // Services
 // ======================
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var mensagens = context.ModelState
+                .Where(x => x.Value?.Errors.Count > 0)
+                .SelectMany(entry => entry.Value!.Errors.Select(e =>
+                {
+                    var msg = e.ErrorMessage;
+                    var key = entry.Key;
+
+                    if (string.IsNullOrWhiteSpace(msg))
+                        return "Dados inválidos na requisição.";
+
+                    if (msg.Contains("non-empty request body", StringComparison.OrdinalIgnoreCase)
+                        || (key is "$" or "" && msg.Contains("required", StringComparison.OrdinalIgnoreCase))
+                        || (key == "dto" && msg.Contains("required", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return "Não foram enviados dados na requisição.";
+                    }
+
+                    return msg;
+                }))
+                .Distinct()
+                .ToList();
+
+            var message = mensagens.FirstOrDefault() ?? "Requisição inválida. Verifique os dados enviados.";
+            return new BadRequestObjectResult(new { message });
+        };
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -164,6 +195,7 @@ try
         db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_POSSIVEL_CLIENTE"" ADD COLUMN IF NOT EXISTS ""POC_STATUS_ATENDIMENTO"" integer NULL");
         db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_POSSIVEL_CLIENTE"" ADD COLUMN IF NOT EXISTS ""POC_MOTIVO_PERDA"" character varying(500) NULL");
         db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_POSSIVEL_CLIENTE"" ADD COLUMN IF NOT EXISTS ""POC_DATA_STATUS_ATENDIMENTO"" timestamp with time zone NULL");
+        db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_TAR_TAREFAS"" ADD COLUMN IF NOT EXISTS ""TARANDAMENTO"" integer NOT NULL DEFAULT 1");
         db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS ""TB_POSSIVEL_CLIENTE_ANOTACAO"" (
             ""PCAID"" serial PRIMARY KEY,
             ""POCID"" integer NOT NULL REFERENCES ""TB_POSSIVEL_CLIENTE""(""POCID""),
