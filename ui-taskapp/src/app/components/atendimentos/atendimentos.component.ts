@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
-import { TarefaService, TarefaResponseDto, CadastroTarefaDto, StatusTarefa, TipoAtendimento, PrioridadeTarefa, TipoContato } from '../../services/tarefa.service';
+import { TarefaService, TarefaResponseDto, CadastroTarefaDto, StatusTarefa, TipoAtendimento, PrioridadeTarefa, TipoContato, AndamentoTarefa, ANDAMENTO_TAREFA_OPTIONS } from '../../services/tarefa.service';
 import { ClienteService, ClienteResponseDto } from '../../services/cliente.service';
 import { UsuarioService, UsuarioResponseDto } from '../../services/usuario.service';
 import { AnotacaoService, CadastroAnotacaoDto } from '../../services/anotacao.service';
@@ -25,6 +25,8 @@ export class AtendimentosComponent implements OnInit {
   TipoAtendimento = TipoAtendimento;
   PrioridadeTarefa = PrioridadeTarefa;
   TipoContato = TipoContato;
+  AndamentoTarefa = AndamentoTarefa;
+  andamentoOptions = ANDAMENTO_TAREFA_OPTIONS;
 
   tarefas: TarefaResponseDto[] = [];
   tarefasFiltradas: TarefaResponseDto[] = [];
@@ -76,6 +78,7 @@ export class AtendimentosComponent implements OnInit {
     protocolo: undefined,
     solicitante: undefined,
     celularSolicitante: undefined,
+    andamento: AndamentoTarefa.AFazer,
     tipoAtendimento: TipoAtendimento.Suporte,
     prioridade: PrioridadeTarefa.Baixa,
     tipoContato: TipoContato.WhatsApp,
@@ -108,7 +111,7 @@ export class AtendimentosComponent implements OnInit {
     { campo: 'titulo', label: 'Título' },
     { campo: 'clienteNome', label: 'Cliente' },
     { campo: 'solicitante', label: 'Solicitante' },
-    { campo: 'celularSolicitante', label: 'Celular' },
+    { campo: 'andamentoDescricao', label: 'Andamento' },
     { campo: 'tipoAtendimentoDescricao', label: 'Tipo' },
     { campo: 'prioridadeDescricao', label: 'Prioridade' },
     { campo: 'usuarioNome', label: 'Usuário' }
@@ -454,7 +457,7 @@ export class AtendimentosComponent implements OnInit {
       titulo: '',
       protocolo: '',
       solicitante: '',
-      celularSolicitante: '',
+      andamento: AndamentoTarefa.AFazer,
       tipoAtendimento: TipoAtendimento.Suporte,
       prioridade: PrioridadeTarefa.Baixa,
       tipoContato: TipoContato.WhatsApp,
@@ -487,7 +490,7 @@ export class AtendimentosComponent implements OnInit {
       titulo: tarefa.titulo,
       protocolo: tarefa.protocolo,
       solicitante: tarefa.solicitante,
-      celularSolicitante: tarefa.celularSolicitante,
+      andamento: tarefa.andamento ?? AndamentoTarefa.AFazer,
       tipoAtendimento: tarefa.tipoAtendimento,
       prioridade: tarefa.prioridade || PrioridadeTarefa.Media,
       tipoContato: tarefa.tipoContato,
@@ -671,7 +674,7 @@ export class AtendimentosComponent implements OnInit {
       titulo: this.novoTarefa.titulo ? this.novoTarefa.titulo.toUpperCase() : undefined,
       protocolo: this.novoTarefa.protocolo ? this.novoTarefa.protocolo.toUpperCase() : undefined,
       solicitante: this.novoTarefa.solicitante ? this.novoTarefa.solicitante.toUpperCase() : undefined,
-      celularSolicitante: this.novoTarefa.celularSolicitante || undefined,
+      andamento: Number(this.novoTarefa.andamento ?? AndamentoTarefa.AFazer) as AndamentoTarefa,
       tipoAtendimento: this.novoTarefa.tipoAtendimento,
       prioridade: this.novoTarefa.prioridade || PrioridadeTarefa.Media,
       tipoContato: this.novoTarefa.tipoContato,
@@ -796,6 +799,23 @@ export class AtendimentosComponent implements OnInit {
       .replace(/[\u0300-\u036f]/g, ''); // Remove acentos
 
     return `prioridade-${descricaoNormalizada}`;
+  }
+
+  obterClasseAndamento(andamento?: AndamentoTarefa, descricao?: string): string {
+    if (andamento != null) {
+      switch (andamento) {
+        case AndamentoTarefa.EmAndamento: return 'andamento-em-andamento';
+        case AndamentoTarefa.AFazer: return 'andamento-a-fazer';
+        case AndamentoTarefa.Testar: return 'andamento-testar';
+        case AndamentoTarefa.Resolvido: return 'andamento-resolvido';
+      }
+    }
+    const d = (descricao || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (d.includes('em andamento')) return 'andamento-em-andamento';
+    if (d.includes('a fazer')) return 'andamento-a-fazer';
+    if (d.includes('testar')) return 'andamento-testar';
+    if (d.includes('resolvido')) return 'andamento-resolvido';
+    return '';
   }
 
   /** Classe da linha inteira por status (para AG Grid getRowClass). */

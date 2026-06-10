@@ -29,6 +29,20 @@ export enum TipoContato {
   Email = 3
 }
 
+export enum AndamentoTarefa {
+  AFazer = 1,
+  EmAndamento = 2,
+  Testar = 3,
+  Resolvido = 4
+}
+
+export const ANDAMENTO_TAREFA_OPTIONS: { value: AndamentoTarefa; label: string }[] = [
+  { value: AndamentoTarefa.EmAndamento, label: 'EM ANDAMENTO' },
+  { value: AndamentoTarefa.AFazer, label: 'A FAZER' },
+  { value: AndamentoTarefa.Testar, label: 'TESTAR' },
+  { value: AndamentoTarefa.Resolvido, label: 'RESOLVIDO' }
+];
+
 export interface CadastroTarefaDto {
   clienteId: number;
   usuarioId: number;
@@ -39,6 +53,7 @@ export interface CadastroTarefaDto {
   protocolo?: string;
   solicitante?: string;
   celularSolicitante?: string;
+  andamento?: AndamentoTarefa;
   tipoAtendimento?: TipoAtendimento;
   prioridade?: PrioridadeTarefa;
   tipoContato?: TipoContato;
@@ -76,6 +91,8 @@ export interface TarefaResponseDto {
   protocolo?: string;
   solicitante?: string;
   celularSolicitante?: string;
+  andamento?: AndamentoTarefa;
+  andamentoDescricao?: string;
   tipoAtendimento?: TipoAtendimento;
   tipoAtendimentoDescricao?: string;
   prioridade?: PrioridadeTarefa;
@@ -148,6 +165,9 @@ export class TarefaService {
     }
     if (dto.celularSolicitante) {
       formData.append('celularSolicitante', dto.celularSolicitante);
+    }
+    if (dto.andamento !== undefined && dto.andamento !== null) {
+      formData.append('andamento', dto.andamento.toString());
     }
     if (dto.tipoAtendimento !== undefined && dto.tipoAtendimento !== null) {
       formData.append('tipoAtendimento', dto.tipoAtendimento.toString());

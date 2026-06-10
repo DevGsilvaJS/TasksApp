@@ -40,6 +40,10 @@ public class ApplicationDbContext : DbContext
             .Property(t => t.TarStatus)
             .HasConversion<int>();
 
+        modelBuilder.Entity<Tarefa>()
+            .Property(t => t.TarAndamento)
+            .HasConversion<int>();
+
         // Configurar enum StatusDas como inteiro no banco
         modelBuilder.Entity<Das>()
             .Property(d => d.DasStatus)

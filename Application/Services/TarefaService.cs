@@ -76,6 +76,7 @@ public class TarefaService : ITarefaService
             TarProtocolo = dto.Protocolo?.ToUpper(),
             TarSolicitante = dto.Solicitante?.ToUpper(),
             TarCelularSolicitante = dto.CelularSolicitante,
+            TarAndamento = dto.Andamento,
             TarTipoAtendimento = dto.TipoAtendimento.HasValue ? (TipoAtendimento?)dto.TipoAtendimento.Value : null,
             TarPrioridade = dto.Prioridade,
             TarNumero = proximoNumero,
@@ -156,6 +157,7 @@ public class TarefaService : ITarefaService
         tarefa.TarProtocolo = dto.Protocolo?.ToUpper();
         tarefa.TarSolicitante = dto.Solicitante?.ToUpper();
         tarefa.TarCelularSolicitante = dto.CelularSolicitante;
+        tarefa.TarAndamento = dto.Andamento;
         tarefa.TarTipoAtendimento = dto.TipoAtendimento.HasValue ? (TipoAtendimento?)dto.TipoAtendimento.Value : null;
         tarefa.TarPrioridade = dto.Prioridade;
         tarefa.TarTipoContato = dto.TipoContato.HasValue ? (TipoContato?)dto.TipoContato.Value : null;
@@ -329,6 +331,8 @@ public class TarefaService : ITarefaService
             Protocolo = tarefa.TarProtocolo,
             Solicitante = tarefa.TarSolicitante,
             CelularSolicitante = tarefa.TarCelularSolicitante,
+            Andamento = tarefa.TarAndamento,
+            AndamentoDescricao = ObterDescricaoAndamento(tarefa.TarAndamento),
             TipoAtendimento = tarefa.TarTipoAtendimento,
             TipoAtendimentoDescricao = await ObterDescricaoTipoAtendimentoAsync(tarefa.TarTipoAtendimento),
             Prioridade = tarefa.TarPrioridade,
@@ -389,6 +393,18 @@ public class TarefaService : ITarefaService
             PrioridadeTarefa.Media => "Média",
             PrioridadeTarefa.Alta => "Alta",
             _ => prioridade.ToString()
+        };
+    }
+
+    private static string ObterDescricaoAndamento(AndamentoTarefa andamento)
+    {
+        return andamento switch
+        {
+            AndamentoTarefa.AFazer => "A FAZER",
+            AndamentoTarefa.EmAndamento => "EM ANDAMENTO",
+            AndamentoTarefa.Testar => "TESTAR",
+            AndamentoTarefa.Resolvido => "RESOLVIDO",
+            _ => andamento.ToString()
         };
     }
 
