@@ -6,8 +6,16 @@ import {
   CadastroItemDto,
   CadastroItemRequestDto
 } from '../../services/cadastro-atendimento.service';
+import { AndamentoTarefa } from '../../services/tarefa.service';
 
-type TipoCadastro = 'status' | 'tipoAtendimento' | 'tipoContato';
+type TipoCadastro = 'status' | 'tipoAtendimento' | 'tipoContato' | 'andamento';
+
+const ANDAMENTOS_PADRAO: CadastroItemDto[] = [
+  { id: AndamentoTarefa.AFazer, descricao: 'A FAZER', ativo: true },
+  { id: AndamentoTarefa.EmAndamento, descricao: 'EM ANDAMENTO', ativo: true },
+  { id: AndamentoTarefa.Testar, descricao: 'TESTAR', ativo: true },
+  { id: AndamentoTarefa.Resolvido, descricao: 'RESOLVIDO', ativo: true }
+];
 
 @Component({
   selector: 'app-cadastro-atendimento',
@@ -20,6 +28,7 @@ export class CadastroAtendimentoComponent implements OnInit {
   statusList: CadastroItemDto[] = [];
   tipoAtendimentoList: CadastroItemDto[] = [];
   tipoContatoList: CadastroItemDto[] = [];
+  andamentoList: CadastroItemDto[] = [...ANDAMENTOS_PADRAO];
 
   loading = false;
   error: string | null = null;
@@ -94,6 +103,12 @@ export class CadastroAtendimentoComponent implements OnInit {
       return;
     }
     if (!this.modalTipo) return;
+
+    if (this.modalTipo === 'andamento') {
+      this.salvarAndamentoLocal();
+      return;
+    }
+
     this.saving = true;
     this.error = null;
     const dto: CadastroItemRequestDto = { descricao: this.form.descricao.trim(), ativo: this.form.ativo };
@@ -128,6 +143,12 @@ export class CadastroAtendimentoComponent implements OnInit {
   }
 
   alterarAtivo(tipo: TipoCadastro, item: CadastroItemDto) {
+    if (tipo === 'andamento') {
+      item.ativo = !item.ativo;
+      this.andamentoList = [...this.andamentoList];
+      return;
+    }
+
     const novoAtivo = !item.ativo;
     const obs = tipo === 'status'
       ? this.service.alterarAtivoStatus(item.id, novoAtivo)
@@ -142,9 +163,35 @@ export class CadastroAtendimentoComponent implements OnInit {
     });
   }
 
+  private salvarAndamentoLocal() {
+    const dto: CadastroItemRequestDto = {
+      descricao: this.form.descricao.trim().toUpperCase(),
+      ativo: this.form.ativo
+    };
+
+    if (this.editandoId != null) {
+      this.andamentoList = this.andamentoList.map(item =>
+        item.id === this.editandoId ? { ...item, descricao: dto.descricao, ativo: dto.ativo } : item
+      );
+    } else {
+      const nextId = this.andamentoList.length
+        ? Math.max(...this.andamentoList.map(x => x.id)) + 1
+        : 1;
+      this.andamentoList = [...this.andamentoList, { id: nextId, ...dto }];
+    }
+
+    this.fecharModal();
+  }
+
   tituloModal(): string {
     if (!this.modalTipo) return '';
-    const nome = this.modalTipo === 'status' ? 'Status' : this.modalTipo === 'tipoAtendimento' ? 'Tipo de Atendimento' : 'Tipo de Contato';
+    const nomes: Record<TipoCadastro, string> = {
+      status: 'Status',
+      tipoAtendimento: 'Tipo de Atendimento',
+      tipoContato: 'Tipo de Contato',
+      andamento: 'Andamento'
+    };
+    const nome = nomes[this.modalTipo];
     return this.editandoId != null ? `Editar ${nome}` : `Novo ${nome}`;
   }
 }
