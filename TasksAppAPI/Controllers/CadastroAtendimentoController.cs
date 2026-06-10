@@ -100,6 +100,24 @@ public class CadastroAtendimentoController : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("tipo-atendimento/{id}")]
+    public async Task<ActionResult> ExcluirTipoAtendimento(int id)
+    {
+        try
+        {
+            await _service.ExcluirTipoAtendimentoAsync(id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpGet("tipo-contato")]
     public async Task<ActionResult<IEnumerable<CadastroTipoContatoResponseDto>>> ListarTipoContato([FromQuery] bool? apenasAtivos)
     {

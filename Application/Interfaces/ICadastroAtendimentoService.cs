@@ -15,6 +15,7 @@ public interface ICadastroAtendimentoService
     Task<CadastroTipoAtendimentoResponseDto> CriarTipoAtendimentoAsync(CadastroTipoAtendimentoRequestDto dto);
     Task<CadastroTipoAtendimentoResponseDto?> AtualizarTipoAtendimentoAsync(int id, CadastroTipoAtendimentoRequestDto dto);
     Task<bool> AlterarAtivoTipoAtendimentoAsync(int id, bool ativo);
+    Task ExcluirTipoAtendimentoAsync(int id);
 
     Task<IEnumerable<CadastroTipoContatoResponseDto>> ListarTipoContatoAsync(bool? apenasAtivos = null);
     Task<CadastroTipoContatoResponseDto?> ObterTipoContatoPorIdAsync(int id);

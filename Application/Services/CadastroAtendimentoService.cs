@@ -1,6 +1,7 @@
 using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
+using Domain.Enums;
 
 namespace Application.Services;
 
@@ -11,19 +12,22 @@ public class CadastroAtendimentoService : ICadastroAtendimentoService
     private readonly IRepository<CadastroTipoContato> _tipoContatoRepo;
     private readonly IRepository<CadastroStatusAtendimentoComercial> _statusComercialRepo;
     private readonly IRepository<PossivelCliente> _possivelClienteRepo;
+    private readonly IRepository<Tarefa> _tarefaRepo;
 
     public CadastroAtendimentoService(
         IRepository<CadastroStatusTarefa> statusRepo,
         IRepository<CadastroTipoAtendimento> tipoAtendimentoRepo,
         IRepository<CadastroTipoContato> tipoContatoRepo,
         IRepository<CadastroStatusAtendimentoComercial> statusComercialRepo,
-        IRepository<PossivelCliente> possivelClienteRepo)
+        IRepository<PossivelCliente> possivelClienteRepo,
+        IRepository<Tarefa> tarefaRepo)
     {
         _statusRepo = statusRepo;
         _tipoAtendimentoRepo = tipoAtendimentoRepo;
         _tipoContatoRepo = tipoContatoRepo;
         _statusComercialRepo = statusComercialRepo;
         _possivelClienteRepo = possivelClienteRepo;
+        _tarefaRepo = tarefaRepo;
     }
 
     private static CadastroStatusTarefaResponseDto ToStatusDto(CadastroStatusTarefa e) =>
@@ -123,6 +127,21 @@ public class CadastroAtendimentoService : ICadastroAtendimentoService
         await _tipoAtendimentoRepo.AtualizarAsync(e);
         await _tipoAtendimentoRepo.SalvarAlteracoesAsync();
         return true;
+    }
+
+    public async Task ExcluirTipoAtendimentoAsync(int id)
+    {
+        var e = await _tipoAtendimentoRepo.GetByIdAsync(id);
+        if (e == null)
+            throw new KeyNotFoundException("Tipo de atendimento não encontrado.");
+        if (id <= (int)TipoAtendimento.Cobranca)
+            throw new InvalidOperationException("Não é possível excluir tipos de atendimento padrão do sistema.");
+        var tipo = (TipoAtendimento)id;
+        var emUso = await _tarefaRepo.BuscarTodosAsync(t => t.TarTipoAtendimento == tipo);
+        if (emUso.Any())
+            throw new InvalidOperationException("Não é possível excluir: existem tarefas usando este tipo de atendimento.");
+        await _tipoAtendimentoRepo.ExcluirAsync(e);
+        await _tipoAtendimentoRepo.SalvarAlteracoesAsync();
     }
 
     public async Task<IEnumerable<CadastroTipoContatoResponseDto>> ListarTipoContatoAsync(bool? apenasAtivos = null)

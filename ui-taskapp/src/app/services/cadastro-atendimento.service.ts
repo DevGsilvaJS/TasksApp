@@ -73,6 +73,10 @@ export class CadastroAtendimentoService {
     return this.api.patch<void>(`${BASE}/tipo-atendimento/${id}/ativo`, { ativo });
   }
 
+  excluirTipoAtendimento(id: number): Observable<void> {
+    return this.api.delete<void>(`${BASE}/tipo-atendimento/${id}`);
+  }
+
   listarTipoContato(apenasAtivos?: boolean): Observable<CadastroItemDto[]> {
     const q = apenasAtivos != null ? `?apenasAtivos=${apenasAtivos}` : '';
     return this.api.get<CadastroItemDto[]>(`${BASE}/tipo-contato${q}`);
