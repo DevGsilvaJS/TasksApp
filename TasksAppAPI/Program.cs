@@ -196,6 +196,20 @@ try
         db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_POSSIVEL_CLIENTE"" ADD COLUMN IF NOT EXISTS ""POC_MOTIVO_PERDA"" character varying(500) NULL");
         db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_POSSIVEL_CLIENTE"" ADD COLUMN IF NOT EXISTS ""POC_DATA_STATUS_ATENDIMENTO"" timestamp with time zone NULL");
         db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_TAR_TAREFAS"" ADD COLUMN IF NOT EXISTS ""TARANDAMENTO"" integer NOT NULL DEFAULT 1");
+        db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS ""TB_CAD_ANDAMENTO"" (
+            ""ANID"" integer NOT NULL,
+            ""ANDESCRICAO"" character varying(100) NOT NULL,
+            ""ANATIVO"" boolean NOT NULL DEFAULT true,
+            CONSTRAINT ""PK_TB_CAD_ANDAMENTO"" PRIMARY KEY (""ANID"")
+        )");
+        db.Database.ExecuteSqlRaw(@"
+            INSERT INTO ""TB_CAD_ANDAMENTO"" (""ANID"", ""ANDESCRICAO"", ""ANATIVO"") VALUES
+            (1, 'A FAZER', true),
+            (2, 'EM ANDAMENTO', true),
+            (3, 'TESTAR', true),
+            (4, 'RESOLVIDO', true)
+            ON CONFLICT (""ANID"") DO NOTHING;
+        ");
         db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS ""TB_POSSIVEL_CLIENTE_ANOTACAO"" (
             ""PCAID"" serial PRIMARY KEY,
             ""POCID"" integer NOT NULL REFERENCES ""TB_POSSIVEL_CLIENTE""(""POCID""),
