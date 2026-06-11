@@ -16,7 +16,7 @@
             <h3>Lembrete do mês</h3>
             <p>Você tem pendências para não esquecer</p>
           </div>
-          <button type="button" class="pendencias-btn-close" aria-label="Fechar" disabled title="Marque ciência para prosseguir">×</button>
+          <button type="button" class="pendencias-btn-close" aria-label="Fechar" (click)="fecharAlertaPendencias()">×</button>
         </div>
         <div class="pendencias-body">
           @if (alertaAtual.data.notasServicoPendentesMes.length > 0) {
@@ -53,7 +53,7 @@
             <input type="checkbox" [(ngModel)]="cienteAlertaAtual" />
             <span>Estou ciente das pendências deste mês.</span>
           </label>
-          <button type="button" class="pendencias-btn-ok" (click)="confirmarCienciaEAvancar()" [disabled]="!cienteAlertaAtual">Entendi</button>
+          <button type="button" class="pendencias-btn-ok" (click)="confirmarPendenciasEAvancar()">Entendi</button>
         </div>
       }
       @if (alertaAtual.tipo === 'contrato-vencendo') {

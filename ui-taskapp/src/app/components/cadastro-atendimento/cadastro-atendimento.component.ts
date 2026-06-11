@@ -163,8 +163,4 @@ export class CadastroAtendimentoComponent implements OnInit {
     const nome = nomes[this.modalTipo];
     return this.editandoId != null ? `Editar ${nome}` : `Novo ${nome}`;
   }
-
-  get formDescricaoValida(): boolean {
-    return (this.form.descricao || '').trim().length > 0;
-  }
 }

@@ -219,7 +219,7 @@
         </div>
         <div class="form-actions">
           <button type="button" class="btn-secondary" (click)="fecharModal()">Cancelar</button>
-          <button type="button" class="btn-primary" (click)="salvar()" [disabled]="saving || !formDescricaoValida">
+          <button type="button" class="btn-primary" (click)="salvar()" [disabled]="saving || !form.descricao?.trim()">
             {{ saving ? 'Salvando...' : 'Salvar' }}
           </button>
         </div>

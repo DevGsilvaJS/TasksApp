@@ -16,6 +16,7 @@ public class TarefaService : ITarefaService
     private readonly IRepository<CadastroStatusTarefa> _cadastroStatusTarefaRepository;
     private readonly IRepository<CadastroTipoAtendimento> _cadastroTipoAtendimentoRepository;
     private readonly IRepository<CadastroTipoContato> _cadastroTipoContatoRepository;
+    private readonly IRepository<CadastroAndamento> _cadastroAndamentoRepository;
 
     public TarefaService(
         IRepository<Tarefa> tarefaRepository,
@@ -26,7 +27,8 @@ public class TarefaService : ITarefaService
         IRepository<ImagemTarefa> imagemRepository,
         IRepository<CadastroStatusTarefa> cadastroStatusTarefaRepository,
         IRepository<CadastroTipoAtendimento> cadastroTipoAtendimentoRepository,
-        IRepository<CadastroTipoContato> cadastroTipoContatoRepository)
+        IRepository<CadastroTipoContato> cadastroTipoContatoRepository,
+        IRepository<CadastroAndamento> cadastroAndamentoRepository)
     {
         _tarefaRepository = tarefaRepository;
         _clienteRepository = clienteRepository;
@@ -37,6 +39,7 @@ public class TarefaService : ITarefaService
         _cadastroStatusTarefaRepository = cadastroStatusTarefaRepository;
         _cadastroTipoAtendimentoRepository = cadastroTipoAtendimentoRepository;
         _cadastroTipoContatoRepository = cadastroTipoContatoRepository;
+        _cadastroAndamentoRepository = cadastroAndamentoRepository;
     }
 
     public async Task<TarefaResponseDto> CadastrarTarefaAsync(CadastroTarefaDto dto)
@@ -332,7 +335,7 @@ public class TarefaService : ITarefaService
             Solicitante = tarefa.TarSolicitante,
             CelularSolicitante = tarefa.TarCelularSolicitante,
             Andamento = tarefa.TarAndamento,
-            AndamentoDescricao = ObterDescricaoAndamento(tarefa.TarAndamento),
+            AndamentoDescricao = await ObterDescricaoAndamentoAsync(tarefa.TarAndamento),
             TipoAtendimento = tarefa.TarTipoAtendimento,
             TipoAtendimentoDescricao = await ObterDescricaoTipoAtendimentoAsync(tarefa.TarTipoAtendimento),
             Prioridade = tarefa.TarPrioridade,
@@ -396,16 +399,23 @@ public class TarefaService : ITarefaService
         };
     }
 
-    private static string ObterDescricaoAndamento(AndamentoTarefa andamento)
+    private async Task<string> ObterDescricaoAndamentoAsync(AndamentoTarefa andamento)
     {
-        return andamento switch
+        if (Enum.IsDefined(typeof(AndamentoTarefa), andamento))
         {
-            AndamentoTarefa.AFazer => "A FAZER",
-            AndamentoTarefa.EmAndamento => "EM ANDAMENTO",
-            AndamentoTarefa.Testar => "TESTAR",
-            AndamentoTarefa.Resolvido => "RESOLVIDO",
-            _ => andamento.ToString()
-        };
+            return andamento switch
+            {
+                AndamentoTarefa.AFazer => "A FAZER",
+                AndamentoTarefa.EmAndamento => "EM ANDAMENTO",
+                AndamentoTarefa.Testar => "TESTAR",
+                AndamentoTarefa.Resolvido => "RESOLVIDO",
+                _ => andamento.ToString()
+            };
+        }
+
+        var id = (int)andamento;
+        var cadastro = await _cadastroAndamentoRepository.GetByIdAsync(id);
+        return cadastro?.Descricao ?? andamento.ToString();
     }
 
     private async Task<string> ObterDescricaoTipoContatoAsync(TipoContato? tipo)

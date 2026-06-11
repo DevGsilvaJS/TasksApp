@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
-import { TarefaService, TarefaResponseDto, CadastroTarefaDto, StatusTarefa, TipoAtendimento, PrioridadeTarefa, TipoContato, AndamentoTarefa, ANDAMENTO_TAREFA_OPTIONS } from '../../services/tarefa.service';
+import { TarefaService, TarefaResponseDto, CadastroTarefaDto, StatusTarefa, TipoAtendimento, PrioridadeTarefa, TipoContato, AndamentoTarefa } from '../../services/tarefa.service';
 import { ClienteService, ClienteResponseDto } from '../../services/cliente.service';
 import { UsuarioService, UsuarioResponseDto } from '../../services/usuario.service';
 import { AnotacaoService, CadastroAnotacaoDto } from '../../services/anotacao.service';
@@ -26,7 +26,7 @@ export class AtendimentosComponent implements OnInit {
   PrioridadeTarefa = PrioridadeTarefa;
   TipoContato = TipoContato;
   AndamentoTarefa = AndamentoTarefa;
-  andamentoOptions = ANDAMENTO_TAREFA_OPTIONS;
+  andamentoOptions: { value: number; label: string }[] = [];
 
   tarefas: TarefaResponseDto[] = [];
   tarefasFiltradas: TarefaResponseDto[] = [];
@@ -290,12 +290,14 @@ export class AtendimentosComponent implements OnInit {
     forkJoin({
       status: this.cadastroAtendimentoService.listarStatus(true),
       tipoAtendimento: this.cadastroAtendimentoService.listarTipoAtendimento(true),
-      tipoContato: this.cadastroAtendimentoService.listarTipoContato(true)
+      tipoContato: this.cadastroAtendimentoService.listarTipoContato(true),
+      andamento: this.cadastroAtendimentoService.listarAndamento(true)
     }).subscribe({
       next: (res) => {
         this.statusOptions = res.status.map(x => ({ value: x.id, label: x.descricao }));
         this.tipoAtendimentoOptions = res.tipoAtendimento.map(x => ({ value: x.id, label: x.descricao }));
         this.tipoContatoOptions = res.tipoContato.map(x => ({ value: x.id, label: x.descricao }));
+        this.andamentoOptions = res.andamento.map(x => ({ value: x.id, label: x.descricao }));
       },
       error: (err) => {
         console.error('Erro ao carregar cadastros de atendimento (status/tipo/contato):', err);
