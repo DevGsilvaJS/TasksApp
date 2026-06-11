@@ -106,10 +106,15 @@ public class DashboardService : IDashboardService
             }
         }
 
-        // 2. Contas a pagar (parcelas não pagas no período do tipo CP)
-        var todasParcelas = await _parcelaRepository.BuscarTodosAsync(p => 
-            p.ParVencimento >= inicioUtc && 
-            p.ParVencimento <= fimUtc && 
+        // 2. Contas a pagar (parcelas pendentes do tipo CP que vencem no mês atual)
+        // O card mostra "Mês Atual", então sempre buscar do mês atual, não do período selecionado
+        var mesAtual = DateTime.UtcNow;
+        var inicioMesAtual = new DateTime(mesAtual.Year, mesAtual.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var fimMesAtual = new DateTime(mesAtual.Year, mesAtual.Month, DateTime.DaysInMonth(mesAtual.Year, mesAtual.Month), 23, 59, 59, 999, DateTimeKind.Utc);
+
+        var todasParcelas = await _parcelaRepository.BuscarTodosAsync(p =>
+            p.ParVencimento >= inicioMesAtual &&
+            p.ParVencimento <= fimMesAtual &&
             p.ParStatus != null && p.ParStatus.ToUpper() == "PENDENTE");
 
         var todasDuplicatas = await _duplicataRepository.ListarTodosAsync();
@@ -135,12 +140,7 @@ public class DashboardService : IDashboardService
             .ToList();
 
         // 2.1. Contas a receber (parcelas não recebidas do mês atual do tipo CR)
-        // O card mostra "Mês Atual", então sempre buscar do mês atual, não do período selecionado
-        var mesAtual = DateTime.UtcNow;
-        var inicioMesAtual = new DateTime(mesAtual.Year, mesAtual.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-        var fimMesAtual = new DateTime(mesAtual.Year, mesAtual.Month, DateTime.DaysInMonth(mesAtual.Year, mesAtual.Month), 23, 59, 59, 999, DateTimeKind.Utc);
-        
-        var parcelasAReceber = await _parcelaRepository.BuscarTodosAsync(p => 
+        var parcelasAReceber = await _parcelaRepository.BuscarTodosAsync(p =>
             p.ParVencimento >= inicioMesAtual && 
             p.ParVencimento <= fimMesAtual && 
             p.ParStatus != null && p.ParStatus.ToUpper() == "PENDENTE");
