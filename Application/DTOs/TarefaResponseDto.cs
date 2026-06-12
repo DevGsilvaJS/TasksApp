@@ -11,13 +11,13 @@ public class TarefaResponseDto
     public string UsuarioNome { get; set; } = string.Empty;
     public DateTime? DataCadastro { get; set; }
     public DateTime? DataConclusao { get; set; }
-    public StatusTarefa Status { get; set; }
+    public int Status { get; set; }
     public string StatusDescricao { get; set; } = string.Empty;
     public string? Titulo { get; set; }
     public string? Protocolo { get; set; }
     public string? Solicitante { get; set; }
     public string? CelularSolicitante { get; set; }
-    public AndamentoTarefa Andamento { get; set; }
+    public int Andamento { get; set; }
     public string AndamentoDescricao { get; set; } = string.Empty;
     public TipoAtendimento? TipoAtendimento { get; set; }
     public string TipoAtendimentoDescricao { get; set; } = string.Empty;

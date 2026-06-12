@@ -58,3 +58,18 @@ textarea::placeholder {
 .modal-large {
   max-width: 1350px !important;
 }
+
+/* Padrão global: grids compactos com altura limitada e scroll vertical */
+.page-container .table-container,
+.page-container .table-wrap,
+.page-container .contratos-table-wrap {
+  max-height: min(70vh, calc(100vh - 14rem));
+  overflow-y: auto;
+}
+
+.page-container .table-container.p-table-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: min(70vh, calc(100vh - 14rem));
+  overflow: hidden;
+}

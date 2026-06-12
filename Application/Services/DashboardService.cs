@@ -16,6 +16,8 @@ public class DashboardService : IDashboardService
     private readonly IRepository<Pessoa> _pessoaRepository;
     private readonly IRepository<PossivelClienteAnotacao> _anotacaoTelemarketingRepository;
     private readonly IRepository<ClienteContratoValor> _clienteContratoValorRepository;
+    private readonly IRepository<Empresa> _empresaRepository;
+    private readonly IRepository<PlanoContas> _planoContasRepository;
 
     public DashboardService(
         IRepository<Tarefa> tarefaRepository,
@@ -25,7 +27,9 @@ public class DashboardService : IDashboardService
         IRepository<Cliente> clienteRepository,
         IRepository<Pessoa> pessoaRepository,
         IRepository<PossivelClienteAnotacao> anotacaoTelemarketingRepository,
-        IRepository<ClienteContratoValor> clienteContratoValorRepository)
+        IRepository<ClienteContratoValor> clienteContratoValorRepository,
+        IRepository<Empresa> empresaRepository,
+        IRepository<PlanoContas> planoContasRepository)
     {
         _tarefaRepository = tarefaRepository;
         _parcelaRepository = parcelaRepository;
@@ -35,6 +39,8 @@ public class DashboardService : IDashboardService
         _pessoaRepository = pessoaRepository;
         _anotacaoTelemarketingRepository = anotacaoTelemarketingRepository;
         _clienteContratoValorRepository = clienteContratoValorRepository;
+        _empresaRepository = empresaRepository;
+        _planoContasRepository = planoContasRepository;
     }
 
     public async Task<DashboardEstatisticasDto> ObterEstatisticasAsync(DateTime dataInicio, DateTime dataFim)
@@ -119,24 +125,22 @@ public class DashboardService : IDashboardService
 
         var todasDuplicatas = await _duplicataRepository.ListarTodosAsync();
         var duplicatasDict = todasDuplicatas.ToDictionary(d => d.DupId);
+        var empresasDict = (await _empresaRepository.ListarTodosAsync()).ToDictionary(e => e.EmpId);
+        var planosDict = (await _planoContasRepository.ListarTodosAsync()).ToDictionary(p => p.PlcId);
+        var clientesCrDict = await ObterNomesClientesPorDuplicatasAsync(
+            duplicatasDict.Values.Where(d => d.DupTipo == "CR"));
 
         var contasAPagar = todasParcelas
             .Where(p => duplicatasDict.ContainsKey(p.DupId) && duplicatasDict[p.DupId].DupTipo == "CP")
-            .Select(parcela =>
-            {
-                var duplicata = duplicatasDict[parcela.DupId];
-                return new ContaAPagarDto
-                {
-                    ParcelaId = parcela.ParId,
-                    DuplicataId = duplicata.DupId,
-                    NumeroDuplicata = duplicata.DupNumero.ToString(),
-                    DescricaoDespesa = duplicata.DupDescricaoDespesa,
-                    DataVencimento = parcela.ParVencimento,
-                    DataPagamento = parcela.ParDataPagamento,
-                    Valor = (decimal)parcela.ParValor,
-                    Paga = ParcelaStatusHelper.IsPaga(parcela.ParStatus)
-                };
-            })
+            .Select(parcela => MapearContaParcela(
+                parcela,
+                duplicatasDict[parcela.DupId],
+                (decimal)parcela.ParValor,
+                ParcelaStatusHelper.IsPaga(parcela.ParStatus),
+                parcela.ParDataPagamento,
+                empresasDict,
+                planosDict,
+                incluirClassificacao: true))
             .ToList();
 
         // 2.1. Contas a receber (parcelas não recebidas do mês atual do tipo CR)
@@ -147,21 +151,16 @@ public class DashboardService : IDashboardService
         
         var contasAReceber = parcelasAReceber
             .Where(p => duplicatasDict.ContainsKey(p.DupId) && duplicatasDict[p.DupId].DupTipo == "CR")
-            .Select(parcela =>
-            {
-                var duplicata = duplicatasDict[parcela.DupId];
-                return new ContaAPagarDto
-                {
-                    ParcelaId = parcela.ParId,
-                    DuplicataId = duplicata.DupId,
-                    NumeroDuplicata = duplicata.DupNumero.ToString(),
-                    DescricaoDespesa = duplicata.DupDescricaoDespesa,
-                    DataVencimento = parcela.ParVencimento,
-                    DataPagamento = parcela.ParDataPagamento,
-                    Valor = (decimal)parcela.ParValor,
-                    Paga = ParcelaStatusHelper.IsPaga(parcela.ParStatus)
-                };
-            })
+            .Select(parcela => MapearContaParcela(
+                parcela,
+                duplicatasDict[parcela.DupId],
+                (decimal)parcela.ParValor,
+                ParcelaStatusHelper.IsPaga(parcela.ParStatus),
+                parcela.ParDataPagamento,
+                empresasDict,
+                planosDict,
+                incluirClassificacao: false,
+                clientesNomes: clientesCrDict))
             .ToList();
 
         // 3. Atendimentos por cliente (desde sempre, não por período/mês)
@@ -219,18 +218,15 @@ public class DashboardService : IDashboardService
         {
             if (duplicatasDict.ContainsKey(parcela.DupId) && duplicatasDict[parcela.DupId].DupTipo == "CP")
             {
-                var duplicata = duplicatasDict[parcela.DupId];
-                contasPagasDto.Add(new ContaAPagarDto
-                {
-                    ParcelaId = parcela.ParId,
-                    DuplicataId = duplicata.DupId,
-                    NumeroDuplicata = duplicata.DupNumero.ToString(),
-                    DescricaoDespesa = duplicata.DupDescricaoDespesa,
-                    DataVencimento = parcela.ParVencimento,
-                    Valor = (decimal)(parcela.ParValor + parcela.ParMulta + parcela.ParJuros),
-                    Paga = true,
-                    DataPagamento = parcela.ParDataPagamento ?? parcela.ParVencimento
-                });
+                contasPagasDto.Add(MapearContaParcela(
+                    parcela,
+                    duplicatasDict[parcela.DupId],
+                    (decimal)(parcela.ParValor + parcela.ParMulta + parcela.ParJuros),
+                    true,
+                    parcela.ParDataPagamento ?? parcela.ParVencimento,
+                    empresasDict,
+                    planosDict,
+                    incluirClassificacao: true));
             }
         }
 
@@ -238,18 +234,16 @@ public class DashboardService : IDashboardService
         {
             if (duplicatasDict.ContainsKey(parcela.DupId) && duplicatasDict[parcela.DupId].DupTipo == "CR")
             {
-                var duplicata = duplicatasDict[parcela.DupId];
-                contasRecebidasDto.Add(new ContaAPagarDto
-                {
-                    ParcelaId = parcela.ParId,
-                    DuplicataId = duplicata.DupId,
-                    NumeroDuplicata = duplicata.DupNumero.ToString(),
-                    DescricaoDespesa = duplicata.DupDescricaoDespesa,
-                    DataVencimento = parcela.ParVencimento,
-                    Valor = (decimal)(parcela.ParValor + parcela.ParMulta + parcela.ParJuros),
-                    Paga = true,
-                    DataPagamento = parcela.ParDataPagamento ?? parcela.ParVencimento
-                });
+                contasRecebidasDto.Add(MapearContaParcela(
+                    parcela,
+                    duplicatasDict[parcela.DupId],
+                    (decimal)(parcela.ParValor + parcela.ParMulta + parcela.ParJuros),
+                    true,
+                    parcela.ParDataPagamento ?? parcela.ParVencimento,
+                    empresasDict,
+                    planosDict,
+                    incluirClassificacao: false,
+                    clientesNomes: clientesCrDict));
             }
         }
 
@@ -257,6 +251,8 @@ public class DashboardService : IDashboardService
         contasPagasDto = contasPagasDto.OrderByDescending(c => c.DataPagamento).ToList();
         contasRecebidasDto = contasRecebidasDto.OrderByDescending(c => c.DataPagamento).ToList();
 
+        var valorTotalContasAPagar = contasAPagar.Sum(c => c.Valor);
+        var valorTotalContasAReceber = contasAReceber.Sum(c => c.Valor);
         var valorTotalContasPagas = contasPagasDto.Sum(c => c.Valor);
         var valorTotalContasRecebidas = contasRecebidasDto.Sum(c => c.Valor);
 
@@ -282,10 +278,12 @@ public class DashboardService : IDashboardService
         {
             TotalAtendimentosPorUsuario = atendimentosPorUsuarioDto.Sum(a => a.Quantidade),
             TotalContasAPagar = contasAPagar.Count(),
+            ValorTotalContasAPagar = valorTotalContasAPagar,
             TotalAtendimentosPorCliente = atendimentosPorClienteDto.Sum(a => a.Quantidade),
             TotalContasPagas = contasPagasDto.Count,
             ValorTotalContasPagas = valorTotalContasPagas,
             TotalContasAReceber = contasAReceber.Count(),
+            ValorTotalContasAReceber = valorTotalContasAReceber,
             TotalContasRecebidas = contasRecebidasDto.Count,
             ValorTotalContasRecebidas = valorTotalContasRecebidas,
             Lucro = lucro, // Calculado como: valorTotalContasRecebidas - valorTotalContasPagas
@@ -485,5 +483,73 @@ public class DashboardService : IDashboardService
             .OrderBy(a => a.DiasParaVencer)
             .ThenBy(a => a.ClienteNome)
             .ToList();
+    }
+
+    private async Task<Dictionary<int, string>> ObterNomesClientesPorDuplicatasAsync(IEnumerable<Duplicata> duplicatas)
+    {
+        var clienteIds = duplicatas
+            .Where(d => d.CliId.HasValue)
+            .Select(d => d.CliId!.Value)
+            .Distinct()
+            .ToList();
+
+        var nomes = new Dictionary<int, string>();
+        foreach (var clienteId in clienteIds)
+        {
+            var cliente = await _clienteRepository.GetByIdAsync(clienteId);
+            if (cliente == null) continue;
+
+            var pessoa = await _pessoaRepository.GetByIdAsync(cliente.PesId);
+            nomes[clienteId] = $"{cliente.CliCodigo} - {pessoa?.PesFantasia ?? "—"}";
+        }
+
+        return nomes;
+    }
+
+    private static ContaAPagarDto MapearContaParcela(
+        Parcela parcela,
+        Duplicata duplicata,
+        decimal valor,
+        bool paga,
+        DateTime? dataPagamento,
+        IReadOnlyDictionary<int, Empresa> empresas,
+        IReadOnlyDictionary<int, PlanoContas> planos,
+        bool incluirClassificacao,
+        IReadOnlyDictionary<int, string>? clientesNomes = null)
+    {
+        string? centroCusto = null;
+        string? planoContas = null;
+        string? clienteNome = null;
+
+        if (duplicata.CliId.HasValue && clientesNomes != null &&
+            clientesNomes.TryGetValue(duplicata.CliId.Value, out var nomeCliente))
+        {
+            clienteNome = nomeCliente;
+        }
+
+        if (incluirClassificacao)
+        {
+            if (duplicata.EmpId.HasValue && empresas.TryGetValue(duplicata.EmpId.Value, out var empresa))
+                centroCusto = empresa.EmpFantasia;
+
+            var planoId = parcela.PlcId ?? duplicata.PlcId;
+            if (planoId.HasValue && planos.TryGetValue(planoId.Value, out var plano))
+                planoContas = plano.PlcDescricao;
+        }
+
+        return new ContaAPagarDto
+        {
+            ParcelaId = parcela.ParId,
+            DuplicataId = duplicata.DupId,
+            NumeroDuplicata = duplicata.DupNumero.ToString(),
+            DescricaoDespesa = duplicata.DupDescricaoDespesa,
+            DataVencimento = parcela.ParVencimento,
+            DataPagamento = dataPagamento,
+            Valor = valor,
+            Paga = paga,
+            ClienteNome = clienteNome,
+            CentroCustoDescricao = centroCusto,
+            PlanoContasDescricao = planoContas
+        };
     }
 }

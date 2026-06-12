@@ -20,7 +20,7 @@ export interface FluxoCaixaPlanoContasDto {
 }
 
 export interface FluxoCaixaCentroCustoDto {
-  centroCustoId: number;
+  empresaId: number;
   empresaFantasia: string;
   empresaCnpj?: string;
   meses: FluxoCaixaMesDto[];

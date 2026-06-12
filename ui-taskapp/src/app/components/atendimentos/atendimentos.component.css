@@ -316,20 +316,29 @@
   overflow: hidden;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
-  overflow-x: auto;
   box-sizing: border-box;
+  max-height: min(70vh, calc(100vh - 14rem));
+  height: min(70vh, calc(100vh - 14rem));
+  display: flex;
+  flex-direction: column;
 }
 
 /* PrimeNG Table: wrapper, fonte reduzida e linha de cabeçalho de grupo */
 .p-table-wrapper {
-  min-height: 400px;
+  flex: 1;
+  min-height: 0;
   font-size: 0.8125rem;
+}
+
+:host ::ng-deep .p-table-wrapper .p-datatable {
+  height: 100%;
 }
 
 :host ::ng-deep .p-table-wrapper .p-datatable .p-datatable-thead > tr > th {
   font-size: 0.75rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.4rem 0.75rem;
   font-weight: 600;
+  line-height: 1.25;
 }
 
 /* Botão funil no cabeçalho da tabela */
@@ -437,7 +446,9 @@
 
 :host ::ng-deep .p-table-wrapper .p-datatable .p-datatable-tbody > tr > td {
   font-size: 0.8125rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.4rem 0.75rem;
+  line-height: 1.3;
+  vertical-align: middle;
 }
 
 :host ::ng-deep .p-table-wrapper .p-row-group-header td {
@@ -496,7 +507,6 @@
   table-layout: auto;
 }
 
-/* Responsividade para monitores grandes */
 @media (min-width: 1920px) {
   .page-container {
     padding: 2.5rem;
@@ -505,11 +515,6 @@
 
   .data-table {
     min-width: 100%;
-    font-size: 0.9375rem;
-  }
-
-  th, td {
-    padding: 1.25rem;
   }
 }
 
@@ -517,14 +522,6 @@
   .page-container {
     padding: 3rem;
     max-width: 100%;
-  }
-
-  .data-table {
-    font-size: 1rem;
-  }
-
-  th, td {
-    padding: 1.5rem;
   }
 }
 
@@ -548,10 +545,12 @@ th {
 }
 
 td {
-  padding: 0.5rem 0.75rem;
+  padding: 0.4rem 0.75rem;
   border-top: 1px solid #e2e8f0;
   color: #1e293b;
   font-size: 0.8125rem;
+  line-height: 1.3;
+  vertical-align: middle;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

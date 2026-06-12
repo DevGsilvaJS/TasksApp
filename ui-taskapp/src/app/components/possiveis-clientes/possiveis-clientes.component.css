@@ -420,12 +420,21 @@
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
-  overflow-x: auto;
+  box-sizing: border-box;
+  max-height: min(70vh, calc(100vh - 14rem));
+  height: min(70vh, calc(100vh - 14rem));
+  display: flex;
+  flex-direction: column;
 }
 
 .p-table-wrapper {
-  min-height: 400px;
+  flex: 1;
+  min-height: 0;
   font-size: 0.8125rem;
+}
+
+:host ::ng-deep .p-table-wrapper .p-datatable {
+  height: 100%;
 }
 
 :host ::ng-deep .p-table-wrapper .p-datatable .p-datatable-table {
@@ -463,10 +472,11 @@
 
 :host ::ng-deep .p-table-wrapper .p-datatable .p-datatable-thead > tr > th {
   font-size: 0.75rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.4rem 0.75rem;
   font-weight: 600;
   white-space: nowrap;
   vertical-align: middle;
+  line-height: 1.25;
 }
 
 :host ::ng-deep .p-table-wrapper .p-datatable .p-datatable-thead > tr > th .p-sortable-column-content,
@@ -498,9 +508,10 @@
 
 :host ::ng-deep .p-table-wrapper .p-datatable .p-datatable-tbody > tr > td {
   font-size: 0.8125rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.4rem 0.75rem;
   vertical-align: middle;
   white-space: nowrap;
+  line-height: 1.3;
 }
 
 :host ::ng-deep .p-table-wrapper .p-datatable .p-datatable-tbody > tr > td .actions-group {

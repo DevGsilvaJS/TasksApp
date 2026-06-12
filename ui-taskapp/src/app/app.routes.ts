@@ -74,8 +74,8 @@ export const routes: Routes = [
   },
   {
     path: 'centros-custo',
-    loadComponent: () => import('./components/centros-custo/centros-custo.component').then(m => m.CentrosCustoComponent),
-    canActivate: [authGuard, perfilGuard]
+    redirectTo: 'empresas',
+    pathMatch: 'full'
   },
   {
     path: 'plano-contas',

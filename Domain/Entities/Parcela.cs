@@ -38,14 +38,17 @@ public class Parcela
     [Column("CCUID")]
     public int? CcuId { get; set; }
 
+    [Column("EMPID")]
+    public int? EmpId { get; set; }
+
     [Column("PLCID")]
     public int? PlcId { get; set; }
 
     [ForeignKey("DupId")]
     public virtual Duplicata Duplicata { get; set; } = null!;
 
-    [ForeignKey(nameof(CcuId))]
-    public virtual CentroCusto? CentroCusto { get; set; }
+    [ForeignKey(nameof(EmpId))]
+    public virtual Empresa? Empresa { get; set; }
 
     [ForeignKey(nameof(PlcId))]
     public virtual PlanoContas? PlanoContas { get; set; }

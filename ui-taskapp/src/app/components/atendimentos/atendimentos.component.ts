@@ -619,8 +619,8 @@ export class AtendimentosComponent implements OnInit {
     this.error = null;
   }
 
-  onStatusChange(event: any) {
-    const novoStatus = Number(event.target.value) as StatusTarefa;
+  onStatusChange(event: Event) {
+    const novoStatus = Number((event.target as HTMLSelectElement).value);
     this.novoTarefa.status = novoStatus;
 
     // Se o status for alterado para "Concluída", preencher a data de conclusão com a data atual
@@ -668,7 +668,7 @@ export class AtendimentosComponent implements OnInit {
     const dadosEnvio: CadastroTarefaDto = {
       clienteId: clienteId,
       usuarioId: usuarioIdFinal,
-      status: Number(this.novoTarefa.status) as StatusTarefa,
+      status: Number(this.novoTarefa.status),
       dataConclusao: this.novoTarefa.status === StatusTarefa.Concluida
         ? (this.novoTarefa.dataConclusao || new Date().toISOString().split('T')[0])
         : undefined,
@@ -676,7 +676,7 @@ export class AtendimentosComponent implements OnInit {
       titulo: this.novoTarefa.titulo ? this.novoTarefa.titulo.toUpperCase() : undefined,
       protocolo: this.novoTarefa.protocolo ? this.novoTarefa.protocolo.toUpperCase() : undefined,
       solicitante: this.novoTarefa.solicitante ? this.novoTarefa.solicitante.toUpperCase() : undefined,
-      andamento: Number(this.novoTarefa.andamento ?? AndamentoTarefa.AFazer) as AndamentoTarefa,
+      andamento: Number(this.novoTarefa.andamento ?? AndamentoTarefa.AFazer),
       tipoAtendimento: this.novoTarefa.tipoAtendimento,
       prioridade: this.novoTarefa.prioridade || PrioridadeTarefa.Media,
       tipoContato: this.novoTarefa.tipoContato,
@@ -743,7 +743,7 @@ export class AtendimentosComponent implements OnInit {
     });
   }
 
-  alterarStatus(tarefa: TarefaResponseDto, novoStatus: StatusTarefa) {
+  alterarStatus(tarefa: TarefaResponseDto, novoStatus: number) {
     this.loading = true;
     this.error = null;
 
@@ -776,7 +776,7 @@ export class AtendimentosComponent implements OnInit {
     return `${dia}/${mes}/${ano} - ${horas}:${minutos}`;
   }
 
-  obterClasseStatus(status: StatusTarefa): string {
+  obterClasseStatus(status: number): string {
     switch (status) {
       case StatusTarefa.EmAberto:
         return 'status-aberto';
@@ -803,7 +803,7 @@ export class AtendimentosComponent implements OnInit {
     return `prioridade-${descricaoNormalizada}`;
   }
 
-  obterClasseAndamento(andamento?: AndamentoTarefa, descricao?: string): string {
+  obterClasseAndamento(andamento?: number, descricao?: string): string {
     if (andamento != null) {
       switch (andamento) {
         case AndamentoTarefa.EmAndamento: return 'andamento-em-andamento';

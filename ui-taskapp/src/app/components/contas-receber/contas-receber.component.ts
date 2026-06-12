@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DuplicataService, DuplicataResponseDto, CadastroDuplicataDto, ParcelaResponseDto, CadastroParcelaDto } from '../../services/duplicata.service';
 import { ClienteService, ClienteResponseDto } from '../../services/cliente.service';
-import { CentroCustoService, CentroCustoResponseDto } from '../../services/centro-custo.service';
+import { EmpresaService, EmpresaResponseDto } from '../../services/empresa.service';
 import { PlanoContasService, PlanoContasResponseDto } from '../../services/plano-contas.service';
 import { NotificacaoService } from '../../services/notificacao.service';
 
@@ -30,11 +30,10 @@ export class ContasReceberComponent implements OnInit {
   termoBusca = '';
   gerarParcelasManual = false;
   parcelasManuais: CadastroParcelaDto[] = [];
-  centrosCusto: CentroCustoResponseDto[] = [];
+  empresas: EmpresaResponseDto[] = [];
   planosContas: PlanoContasResponseDto[] = [];
-  showClassificacaoForm = false;
-  parcelaClassificacaoEditando: ParcelaResponseDto | null = null;
-  classificacaoForm: { centroCustoId?: number; planoContasId?: number } = {};
+  readonly planoPadraoDescricao = 'RECEITA DE CONSULTORIA';
+  planoContasPadraoId?: number;
 
   // Modal de confirmação
   showConfirmModal = false;
@@ -62,7 +61,7 @@ export class ContasReceberComponent implements OnInit {
   constructor(
     private duplicataService: DuplicataService,
     private clienteService: ClienteService,
-    private centroCustoService: CentroCustoService,
+    private empresaService: EmpresaService,
     private planoContasService: PlanoContasService,
     private notificacao: NotificacaoService
   ) { }
@@ -73,14 +72,23 @@ export class ContasReceberComponent implements OnInit {
       next: (data) => this.clientes = data,
       error: () => {}
     });
-    this.centroCustoService.listarTodosCentrosCusto().subscribe({
-      next: (data) => this.centrosCusto = data,
+    this.empresaService.listarTodasEmpresas().subscribe({
+      next: (data) => this.empresas = data,
       error: () => {}
     });
     this.planoContasService.listarTodosPlanosContas().subscribe({
-      next: (data) => this.planosContas = data,
+      next: (data) => {
+        this.planosContas = data;
+        this.aplicarPlanoContasPadrao();
+      },
       error: () => {}
     });
+  }
+
+  private aplicarPlanoContasPadrao(): void {
+    const plano = this.planosContas.find(p =>
+      p.descricao?.trim().toUpperCase() === this.planoPadraoDescricao);
+    this.planoContasPadraoId = plano?.planoContasId;
   }
 
   /** Recarrega a lista de duplicatas. Opcionalmente chama onConcluido após atualizar (ex.: atualizar parcelas na tela). */
@@ -122,8 +130,8 @@ export class ContasReceberComponent implements OnInit {
           descricaoDespesa: undefined,
           tipo: 'CR',
           clienteId: undefined,
-          centroCustoId: undefined,
-          planoContasId: undefined,
+          empresaId: undefined,
+          planoContasId: this.planoContasPadraoId,
           dataPrimeiroVencimento: new Date().toISOString().split('T')[0]
         };
         this.showForm = true;
@@ -151,8 +159,8 @@ export class ContasReceberComponent implements OnInit {
       descricaoDespesa: duplicata.descricaoDespesa,
       tipo: duplicata.tipo || 'CR',
       clienteId: duplicata.clienteId,
-      centroCustoId: duplicata.centroCustoId,
-      planoContasId: duplicata.planoContasId,
+      empresaId: duplicata.empresaId,
+      planoContasId: duplicata.planoContasId ?? this.planoContasPadraoId,
       dataPrimeiroVencimento: duplicata.parcelas[0]?.vencimento.split('T')[0] || new Date().toISOString().split('T')[0]
     };
     this.showForm = true;
@@ -160,12 +168,12 @@ export class ContasReceberComponent implements OnInit {
     window.scrollTo(0, 0);
   }
 
-  obterLabelCentroCusto(centro: CentroCustoResponseDto): string {
-    const cnpj = centro.empresaCnpj?.replace(/\D/g, '') ?? '';
+  obterLabelEmpresa(empresa: EmpresaResponseDto): string {
+    const cnpj = empresa.cnpj?.replace(/\D/g, '') ?? '';
     const cnpjFmt = cnpj.length === 14
       ? cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
-      : centro.empresaCnpj ?? '';
-    return `${centro.empresaFantasia ?? 'MEI'} (CC #${centro.centroCustoId})${cnpjFmt ? ' — ' + cnpjFmt : ''}`;
+      : empresa.cnpj ?? '';
+    return `${empresa.fantasia}${cnpjFmt ? ' — ' + cnpjFmt : ''}`;
   }
 
   fecharFormulario() {
@@ -244,13 +252,21 @@ export class ContasReceberComponent implements OnInit {
   salvarDuplicata() {
     if (this.loading) return;
 
-    if (!this.novaDuplicata.centroCustoId) {
-      this.error = 'Selecione o centro de custo (MEI).';
+    if (!this.novaDuplicata.clienteId) {
+      this.error = 'Selecione o cliente.';
+      this.notificacao.aviso(this.error);
+      return;
+    }
+    if (!this.novaDuplicata.empresaId) {
+      this.error = 'Selecione o centro de custo.';
       this.notificacao.aviso(this.error);
       return;
     }
     if (!this.novaDuplicata.planoContasId) {
-      this.error = 'Selecione o plano de contas.';
+      this.novaDuplicata.planoContasId = this.planoContasPadraoId;
+    }
+    if (!this.novaDuplicata.planoContasId) {
+      this.error = `Plano de contas ${this.planoPadraoDescricao} não encontrado. Cadastre-o em Plano de Contas.`;
       this.notificacao.aviso(this.error);
       return;
     }
@@ -338,41 +354,51 @@ export class ContasReceberComponent implements OnInit {
       });
   }
 
-  baixarParcela(parcela: ParcelaResponseDto) {
+  baixarParcela(parcela: ParcelaResponseDto): void {
     this.confirmarBaixaParcela(parcela);
   }
 
   private async confirmarBaixaParcela(parcela: ParcelaResponseDto): Promise<void> {
+    if (!this.duplicataSelecionada?.empresaId) {
+      this.notificacao.aviso('Informe o centro de custo na duplicata antes de receber a parcela.');
+      return;
+    }
+
     const ok = await this.notificacao.confirmar(
-      'Confirmar baixa',
-      `Deseja confirmar o recebimento (baixa) da parcela ${parcela.numeroParcela}?`,
+      'Confirmar recebimento',
+      `Deseja confirmar o recebimento da parcela ${parcela.numeroParcela}?`,
       'Confirmar',
       'Cancelar'
     );
     if (!ok) return;
 
-      this.loading = true;
-      this.error = null;
+    this.loading = true;
+    this.error = null;
 
-      this.duplicataService.baixarParcela(parcela.parcelaId).subscribe({
-        next: () => {
-          const duplicataIdSelecionada = this.duplicataSelecionada?.duplicataId;
-          this.carregarDuplicatas(() => {
-            if (duplicataIdSelecionada != null) {
-              const duplicataAtualizada = this.duplicatas.find(d => d.duplicataId === duplicataIdSelecionada);
-              if (duplicataAtualizada) {
-                this.duplicataSelecionada = duplicataAtualizada;
-              }
-            }
-          });
-          this.notificacao.sucesso('Parcela recebida (baixada) com sucesso.');
-        },
-        error: (err) => {
-          this.error = err.error?.message || 'Erro ao receber parcela.';
-          this.loading = false;
-          console.error(err);
+    this.duplicataService.baixarParcela(parcela.parcelaId).subscribe({
+      next: () => {
+        this.recarregarDuplicataSelecionada();
+        this.loading = false;
+        this.notificacao.sucesso('Parcela recebida com sucesso.');
+      },
+      error: (err) => {
+        this.error = err.error?.message || 'Erro ao receber parcela.';
+        this.loading = false;
+        console.error(err);
+      }
+    });
+  }
+
+  private recarregarDuplicataSelecionada(): void {
+    const duplicataIdSelecionada = this.duplicataSelecionada?.duplicataId;
+    this.carregarDuplicatas(() => {
+      if (duplicataIdSelecionada != null) {
+        const duplicataAtualizada = this.duplicatas.find(d => d.duplicataId === duplicataIdSelecionada);
+        if (duplicataAtualizada) {
+          this.duplicataSelecionada = duplicataAtualizada;
         }
-      });
+      }
+    });
   }
 
   reativarParcela(parcela: ParcelaResponseDto) {
@@ -439,70 +465,14 @@ export class ContasReceberComponent implements OnInit {
   fecharParcelas() {
     this.showParcelas = false;
     this.duplicataSelecionada = null;
-    this.fecharEdicaoClassificacao();
   }
 
   parcelaPaga(parcela: ParcelaResponseDto): boolean {
     return parcela.status?.toLowerCase() === 'paga';
   }
 
-  abrirEdicaoClassificacao(parcela: ParcelaResponseDto): void {
-    if (!this.parcelaPaga(parcela)) return;
-    this.parcelaClassificacaoEditando = parcela;
-    this.classificacaoForm = {
-      centroCustoId: parcela.centroCustoId,
-      planoContasId: parcela.planoContasId
-    };
-    this.showClassificacaoForm = true;
-    this.error = null;
-  }
-
-  fecharEdicaoClassificacao(): void {
-    this.showClassificacaoForm = false;
-    this.parcelaClassificacaoEditando = null;
-    this.classificacaoForm = {};
-  }
-
-  salvarClassificacaoParcela(): void {
-    if (!this.parcelaClassificacaoEditando) return;
-    if (!this.classificacaoForm.centroCustoId || !this.classificacaoForm.planoContasId) {
-      this.notificacao.aviso('Selecione o centro de custo e o plano de contas.');
-      return;
-    }
-
-    this.loading = true;
-    this.error = null;
-    this.duplicataService.atualizarClassificacaoParcela(this.parcelaClassificacaoEditando.parcelaId, {
-      centroCustoId: this.classificacaoForm.centroCustoId,
-      planoContasId: this.classificacaoForm.planoContasId
-    }).subscribe({
-      next: (parcelaAtualizada) => {
-        this.atualizarParcelaNaLista(parcelaAtualizada);
-        this.fecharEdicaoClassificacao();
-        this.loading = false;
-        this.notificacao.sucesso('Classificação da parcela atualizada com sucesso.');
-      },
-      error: (err) => {
-        this.error = err.error?.message || 'Erro ao atualizar classificação da parcela.';
-        this.loading = false;
-        this.notificacao.erro(this.error ?? 'Erro ao atualizar classificação da parcela.');
-      }
-    });
-  }
-
-  private atualizarParcelaNaLista(parcelaAtualizada: ParcelaResponseDto): void {
-    if (!this.duplicataSelecionada) return;
-
-    const parcelasAtualizadas = this.duplicataSelecionada.parcelas.map(p =>
-      p.parcelaId === parcelaAtualizada.parcelaId ? parcelaAtualizada : p
-    );
-    this.duplicataSelecionada = { ...this.duplicataSelecionada, parcelas: parcelasAtualizadas };
-
-    const indiceDuplicata = this.duplicatas.findIndex(d => d.duplicataId === this.duplicataSelecionada?.duplicataId);
-    if (indiceDuplicata >= 0) {
-      this.duplicatas[indiceDuplicata] = { ...this.duplicatas[indiceDuplicata], parcelas: parcelasAtualizadas };
-      this.aplicarFiltros();
-    }
+  parcelaPendente(parcela: ParcelaResponseDto): boolean {
+    return parcela.status?.toLowerCase() === 'pendente';
   }
 
   filtrarDuplicatas() {
@@ -525,7 +495,9 @@ export class ContasReceberComponent implements OnInit {
     if (termoBuscaNormalizado) {
       lista = lista.filter((duplicata: DuplicataResponseDto) =>
         duplicata.numero.toString().includes(termoBuscaNormalizado) ||
-        duplicata.dataEmissao.toLowerCase().includes(termoBuscaNormalizado)
+        duplicata.dataEmissao.toLowerCase().includes(termoBuscaNormalizado) ||
+        (duplicata.clienteNome?.toLowerCase().includes(termoBuscaNormalizado) ?? false) ||
+        (duplicata.centroCustoDescricao?.toLowerCase().includes(termoBuscaNormalizado) ?? false)
       );
     }
 

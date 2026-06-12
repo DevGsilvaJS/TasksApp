@@ -28,8 +28,8 @@
           }
           @if (edicaoParcial) {
             <div class="alert alert-info alert-form">
-              Esta duplicata possui parcelas pagas. Você pode alterar descrição, data de emissão, centro de custo e plano de contas.
-              Centro e plano serão atualizados em <strong>todas</strong> as parcelas (incluindo as já pagas). Valores e vencimentos não podem ser alterados.
+              Esta duplicata possui parcelas pagas. Você pode alterar os dados cadastrais abaixo.
+              Centro e plano serão atualizados em todas as parcelas. Valores e vencimentos não podem ser alterados.
             </div>
           }
           <div class="form-row form-row-quatro">
@@ -42,18 +42,18 @@
               <input id="cp-emissao" type="date" class="form-input" [(ngModel)]="novaDuplicata.dataEmissao" name="dataEmissao" required>
             </div>
             <div class="form-group">
-              <label for="cp-centro-custo">Centro de Custo *</label>
-              <select id="cp-centro-custo" class="form-input" [(ngModel)]="novaDuplicata.centroCustoId" name="centroCustoId" required>
+              <label for="cp-empresa">Centro de Custo *</label>
+              <select id="cp-empresa" class="form-input" [(ngModel)]="novaDuplicata.empresaId" name="empresaId" required>
                 <option [ngValue]="undefined">Selecione o centro de custo...</option>
-                @for (cc of centrosCusto; track cc.centroCustoId) {
-                  <option [ngValue]="cc.centroCustoId">{{ obterLabelCentroCusto(cc) }}</option>
+                @for (empresa of empresas; track empresa.empresaId) {
+                  <option [ngValue]="empresa.empresaId">{{ obterLabelEmpresa(empresa) }}</option>
                 }
               </select>
             </div>
             <div class="form-group">
-              <label for="cp-plano-contas">Plano de Contas *</label>
-              <select id="cp-plano-contas" class="form-input" [(ngModel)]="novaDuplicata.planoContasId" name="planoContasId" required>
-                <option [ngValue]="undefined">Selecione o plano de contas...</option>
+              <label for="cp-plano-contas">Plano de Contas (opcional)</label>
+              <select id="cp-plano-contas" class="form-input" [(ngModel)]="novaDuplicata.planoContasId" name="planoContasId">
+                <option [ngValue]="undefined">Nenhum — não entra no fluxo de caixa</option>
                 @for (plano of planosContas; track plano.planoContasId) {
                   <option [ngValue]="plano.planoContasId">{{ plano.descricao }}</option>
                 }
@@ -197,10 +197,10 @@
                     </span>
                   </td>
                   <td>{{ parcela.dataPagamento ? formatarData(parcela.dataPagamento) : '-' }}</td>
-                  <td>{{ parcela.centroCustoEmpresaFantasia || '-' }}</td>
+                  <td>{{ parcela.centroCustoDescricao || '-' }}</td>
                   <td>{{ parcela.planoContasDescricao || '-' }}</td>
                   <td class="actions-cell">
-                    @if (parcela.status === 'Pendente') {
+                    @if (parcelaPendente(parcela)) {
                       <button class="btn-baixar" (click)="baixarParcela(parcela)" title="Baixar Parcela" [disabled]="loading">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M9 11l3 3L22 4"></path>
@@ -209,13 +209,6 @@
                         Baixar
                       </button>
                     } @else {
-                      <button class="btn-classificar" (click)="abrirEdicaoClassificacao(parcela)" title="Editar classificação" [disabled]="loading">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                        Classificar
-                      </button>
                       <button class="btn-reativar" (click)="reativarParcela(parcela)" title="Reativar Parcela" [disabled]="loading">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
@@ -232,44 +225,6 @@
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
-  }
-
-  @if (showClassificacaoForm && parcelaClassificacaoEditando) {
-    <div class="modal-overlay modal-overlay-nested" (click)="fecharEdicaoClassificacao()">
-      <div class="modal-content modal-classificacao" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Classificar Parcela {{ parcelaClassificacaoEditando.numeroParcela }}</h3>
-          <button type="button" class="btn-close" (click)="fecharEdicaoClassificacao()" aria-label="Fechar">×</button>
-        </div>
-        <form (ngSubmit)="salvarClassificacaoParcela()" class="form">
-          <p class="form-hint">Altere o centro de custo e o plano de contas desta parcela já paga. O fluxo de caixa usará a nova classificação.</p>
-          <div class="form-group">
-            <label for="class-cc">Centro de Custo *</label>
-            <select id="class-cc" class="form-input" [(ngModel)]="classificacaoForm.centroCustoId" name="classificacaoCentroCustoId" required>
-              <option [ngValue]="undefined">Selecione o centro de custo...</option>
-              @for (cc of centrosCusto; track cc.centroCustoId) {
-                <option [ngValue]="cc.centroCustoId">{{ obterLabelCentroCusto(cc) }}</option>
-              }
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="class-plano">Plano de Contas *</label>
-            <select id="class-plano" class="form-input" [(ngModel)]="classificacaoForm.planoContasId" name="classificacaoPlanoContasId" required>
-              <option [ngValue]="undefined">Selecione o plano de contas...</option>
-              @for (plano of planosContas; track plano.planoContasId) {
-                <option [ngValue]="plano.planoContasId">{{ plano.descricao }}</option>
-              }
-            </select>
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" (click)="fecharEdicaoClassificacao()">Cancelar</button>
-            <button type="submit" class="btn-primary" [disabled]="loading">
-              {{ loading ? 'Salvando...' : 'Salvar' }}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   }

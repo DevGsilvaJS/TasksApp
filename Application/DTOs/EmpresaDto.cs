@@ -20,6 +20,7 @@ public class CadastroEmpresaDto
 public class EmpresaResponseDto
 {
     public int EmpresaId { get; set; }
+    public int? CentroCustoId { get; set; }
     public string Cnpj { get; set; } = string.Empty;
     public string RazaoSocial { get; set; } = string.Empty;
     public string Fantasia { get; set; } = string.Empty;

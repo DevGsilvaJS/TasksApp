@@ -12,7 +12,7 @@ public class FluxoCaixaResponseDto
 
 public class FluxoCaixaCentroCustoDto
 {
-    public int CentroCustoId { get; set; }
+    public int EmpresaId { get; set; }
     public string EmpresaFantasia { get; set; } = string.Empty;
     public string? EmpresaCnpj { get; set; }
     public List<FluxoCaixaMesDto> Meses { get; set; } = new();

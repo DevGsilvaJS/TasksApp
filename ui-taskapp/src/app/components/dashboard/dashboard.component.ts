@@ -43,8 +43,8 @@ export class DashboardComponent implements OnInit {
   showModalAtendimentosUsuario = false;
   showModalContasPagar = false;
   showModalContasPagas = false;
-  showModalContasPagarPagas = false;
-  showModalContasReceberRecebidas = false;
+  showModalContasAReceber = false;
+  showModalContasRecebidas = false;
   showModalAtendimentosCliente = false;
   showModalAtendimentosClienteMes = false;
   showModalValoresPorMes = false;
@@ -69,9 +69,6 @@ export class DashboardComponent implements OnInit {
   dadosModalValoresPorMes: ValorPorMesPorUsuarioDto[] = [];
   
   anoSelecionado: number = new Date().getFullYear();
-  abaContasSelecionada: 'pagar' | 'pagas' = 'pagar';
-  abaContasReceberSelecionada: 'receber' | 'recebidas' = 'receber';
-
   contatosTelemarketing: TelemarketingContatosDto | null = null;
 
   constructor(
@@ -211,10 +208,10 @@ export class DashboardComponent implements OnInit {
     this.animarValor(0, e.totalAtendimentosPorUsuario ?? 0, DURATION, v => this.totalAtendimentosPorUsuarioDisplay = v);
     const totalAtendimentosCliente = (e.atendimentosPorClienteMes ?? []).reduce((sum, item) => sum + (item.quantidade ?? 0), 0);
     this.animarValor(0, totalAtendimentosCliente, DURATION, v => this.atendimentosPorClienteMesCountDisplay = v);
-    this.animarValor(0, e.totalContasAReceber ?? 0, DURATION, v => this.totalContasAReceberDisplay = v);
-    this.animarValor(0, e.totalContasRecebidas ?? 0, DURATION, v => this.totalContasRecebidasDisplay = v);
-    this.animarValor(0, e.totalContasAPagar ?? 0, DURATION, v => this.totalContasAPagarDisplay = v);
-    this.animarValor(0, e.totalContasPagas ?? 0, DURATION, v => this.totalContasPagasDisplay = v);
+    this.animarValor(0, e.valorTotalContasAReceber ?? 0, DURATION, v => this.totalContasAReceberDisplay = v, false);
+    this.animarValor(0, e.valorTotalContasRecebidas ?? 0, DURATION, v => this.totalContasRecebidasDisplay = v, false);
+    this.animarValor(0, e.valorTotalContasAPagar ?? 0, DURATION, v => this.totalContasAPagarDisplay = v, false);
+    this.animarValor(0, e.valorTotalContasPagas ?? 0, DURATION, v => this.totalContasPagasDisplay = v, false);
     this.animarValor(0, e.lucro ?? 0, DURATION, v => this.lucroDisplay = v, false);
   }
 
@@ -285,28 +282,26 @@ export class DashboardComponent implements OnInit {
     this.showModalContasPagas = false;
   }
 
-  abrirModalContasPagarPagas() {
-    if (this.estatisticas) {
-      this.dadosModalContasPagar = this.estatisticas.contasAPagar;
-      this.dadosModalContasPagas = this.estatisticas.contasPagas;
-      this.showModalContasPagarPagas = true;
-    }
-  }
-
-  fecharModalContasPagarPagas() {
-    this.showModalContasPagarPagas = false;
-  }
-
-  abrirModalContasReceberRecebidas() {
+  abrirModalContasAReceber() {
     if (this.estatisticas) {
       this.dadosModalContasAReceber = this.estatisticas.contasAReceber;
-      this.dadosModalContasRecebidas = this.estatisticas.contasRecebidas;
-      this.showModalContasReceberRecebidas = true;
+      this.showModalContasAReceber = true;
     }
   }
 
-  fecharModalContasReceberRecebidas() {
-    this.showModalContasReceberRecebidas = false;
+  fecharModalContasAReceber() {
+    this.showModalContasAReceber = false;
+  }
+
+  abrirModalContasRecebidas() {
+    if (this.estatisticas) {
+      this.dadosModalContasRecebidas = this.estatisticas.contasRecebidas;
+      this.showModalContasRecebidas = true;
+    }
+  }
+
+  fecharModalContasRecebidas() {
+    this.showModalContasRecebidas = false;
   }
 
   abrirModalAtendimentosClienteMes() {

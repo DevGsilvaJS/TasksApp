@@ -2,7 +2,7 @@
   <div class="page-header">
     <div class="header-titulo">
       <h2>Fluxo de Caixa</h2>
-      <p class="page-subtitle">Receitas e despesas por centro de custo (MEI) e plano de contas — mês a mês</p>
+      <p class="page-subtitle">Receitas e despesas por centro de custo e plano de contas — mês a mês</p>
     </div>
     <div class="header-filtros">
       <label for="ano">Ano</label>
@@ -43,13 +43,13 @@
     </section>
 
     @if (dados.centros.length === 0) {
-      <p class="empty-msg">Nenhum centro de custo cadastrado. Cadastre empresas e centros de custo para visualizar o balanço.</p>
+      <p class="empty-msg">Nenhum centro de custo com movimentação classificada. Cadastre empresas e classifique as parcelas para visualizar o balanço.</p>
     } @else {
       <div class="table-wrap">
         <table class="fluxo-table">
           <thead>
             <tr>
-              <th class="col-centro sticky-col">Centro / MEI</th>
+              <th class="col-centro sticky-col">Centro de Custo</th>
               <th class="col-plano sticky-col-plano">Plano de Contas</th>
               @for (m of mesesCabecalho; track m) {
                 <th class="col-mes">{{ m }}</th>
@@ -60,15 +60,12 @@
             </tr>
           </thead>
           <tbody>
-            @for (centro of dados.centros; track centro.centroCustoId) {
+            @for (centro of dados.centros; track centro.empresaId) {
               <tr class="linha-centro">
                 <td class="col-centro sticky-col" [attr.rowspan]="(centro.planosContas?.length ?? 0) + 1">
                   <strong>{{ centro.empresaFantasia }}</strong>
                   @if (centro.empresaCnpj) {
                     <small>{{ formatarCnpj(centro.empresaCnpj) }}</small>
-                  }
-                  @if (centro.centroCustoId > 0) {
-                    <small class="id-centro">CC #{{ centro.centroCustoId }}</small>
                   }
                 </td>
                 <td class="col-plano sticky-col-plano subtotal-label"><em>Subtotal</em></td>

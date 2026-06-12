@@ -6,43 +6,45 @@ namespace Application.Services;
 
 public class DuplicataService : IDuplicataService
 {
+    private const string PlanoReceitaConsultoria = "RECEITA DE CONSULTORIA";
+
     private readonly IRepository<Duplicata> _duplicataRepository;
     private readonly IRepository<Parcela> _parcelaRepository;
     private readonly IRepository<Cliente> _clienteRepository;
     private readonly IRepository<Pessoa> _pessoaRepository;
-    private readonly IRepository<CentroCusto> _centroCustoRepository;
     private readonly IRepository<Empresa> _empresaRepository;
     private readonly IRepository<PlanoContas> _planoContasRepository;
+    private readonly IRepository<CentroCusto> _centroCustoRepository;
 
     public DuplicataService(
         IRepository<Duplicata> duplicataRepository,
         IRepository<Parcela> parcelaRepository,
         IRepository<Cliente> clienteRepository,
         IRepository<Pessoa> pessoaRepository,
-        IRepository<CentroCusto> centroCustoRepository,
         IRepository<Empresa> empresaRepository,
-        IRepository<PlanoContas> planoContasRepository)
+        IRepository<PlanoContas> planoContasRepository,
+        IRepository<CentroCusto> centroCustoRepository)
     {
         _duplicataRepository = duplicataRepository;
         _parcelaRepository = parcelaRepository;
         _clienteRepository = clienteRepository;
         _pessoaRepository = pessoaRepository;
-        _centroCustoRepository = centroCustoRepository;
         _empresaRepository = empresaRepository;
         _planoContasRepository = planoContasRepository;
+        _centroCustoRepository = centroCustoRepository;
     }
 
     public async Task<DuplicataResponseDto> CadastrarDuplicataAsync(CadastroDuplicataDto dto)
     {
-        await ValidarCentroEPlanoContasAsync(dto);
-        // Se número não foi informado, buscar o próximo disponível para o tipo
+        await AplicarPadroesContasReceberAsync(dto);
+        await ValidarClienteContasReceberAsync(dto);
+        await ValidarCadastroDuplicataAsync(dto);
         int numeroDuplicata = dto.Numero;
         if (numeroDuplicata == 0)
         {
             numeroDuplicata = await ObterProximoNumeroAsync(dto.Tipo ?? "CP");
         }
 
-        // Criar Duplicata
         var duplicata = new Duplicata
         {
             DupNumero = numeroDuplicata,
@@ -51,17 +53,15 @@ public class DuplicataService : IDuplicataService
             DupDescricaoDespesa = dto.DescricaoDespesa,
             DupTipo = dto.Tipo ?? "CP",
             CliId = dto.ClienteId,
-            CcuId = dto.CentroCustoId,
-            PlcId = dto.PlanoContasId
+            EmpId = dto.EmpresaId,
+            PlcId = ResolverPlanoContasIdCadastro(dto)
         };
 
         await _duplicataRepository.InserirAsync(duplicata);
         await _duplicataRepository.SalvarAlteracoesAsync();
 
-        // Verificar se há parcelas personalizadas
         if (dto.Parcelas != null && dto.Parcelas.Any())
         {
-            // Usar parcelas personalizadas
             foreach (var parcelaDto in dto.Parcelas.OrderBy(p => p.NumeroParcela))
             {
                 var parcela = new Parcela
@@ -74,22 +74,20 @@ public class DuplicataService : IDuplicataService
                     ParVencimento = parcelaDto.Vencimento.ToUniversalTime(),
                     ParStatus = "Pendente",
                     ParDataPagamento = null,
-                    CcuId = dto.CentroCustoId,
-                    PlcId = dto.PlanoContasId
+                    PlcId = ResolverPlanoContasIdCadastro(dto)
                 };
                 await _parcelaRepository.InserirAsync(parcela);
             }
         }
         else
         {
-            // Gerar parcelas automaticamente
             if (!dto.DataPrimeiroVencimento.HasValue)
             {
                 throw new InvalidOperationException("Data de primeiro vencimento é obrigatória quando não há parcelas personalizadas.");
             }
 
-            // O valor total informado é o valor de cada parcela, não o total dividido
             var valorPorParcela = dto.ValorTotal;
+            var planoIdCadastro = ResolverPlanoContasIdCadastro(dto);
 
             for (int i = 1; i <= dto.NumeroParcelas; i++)
             {
@@ -103,8 +101,7 @@ public class DuplicataService : IDuplicataService
                     ParVencimento = dto.DataPrimeiroVencimento.Value.AddMonths(i - 1).ToUniversalTime(),
                     ParStatus = "Pendente",
                     ParDataPagamento = null,
-                    CcuId = dto.CentroCustoId,
-                    PlcId = dto.PlanoContasId
+                    PlcId = planoIdCadastro
                 };
                 await _parcelaRepository.InserirAsync(parcela);
             }
@@ -152,7 +149,9 @@ public class DuplicataService : IDuplicataService
 
     public async Task<DuplicataResponseDto> AtualizarDuplicataAsync(int id, CadastroDuplicataDto dto)
     {
-        await ValidarCentroEPlanoContasAsync(dto);
+        await AplicarPadroesContasReceberAsync(dto);
+        await ValidarClienteContasReceberAsync(dto);
+        await ValidarCadastroDuplicataAsync(dto);
 
         var duplicata = await _duplicataRepository.GetByIdAsync(id);
         if (duplicata == null)
@@ -166,19 +165,17 @@ public class DuplicataService : IDuplicataService
             return await AtualizarDuplicataComParcelasPagasAsync(duplicata, dto, parcelas);
         }
 
-        // Atualizar Duplicata
         duplicata.DupNumero = dto.Numero;
         duplicata.DupDataEmissao = dto.DataEmissao.ToUniversalTime();
         duplicata.DupNumeroParcelas = dto.NumeroParcelas;
         duplicata.DupDescricaoDespesa = dto.DescricaoDespesa;
         duplicata.DupTipo = dto.Tipo ?? "CP";
         duplicata.CliId = dto.ClienteId;
-        duplicata.CcuId = dto.CentroCustoId;
-        duplicata.PlcId = dto.PlanoContasId;
+        duplicata.EmpId = dto.EmpresaId;
+        duplicata.PlcId = ResolverPlanoContasIdCadastro(dto);
 
         await _duplicataRepository.AtualizarAsync(duplicata);
 
-        // Remover parcelas antigas
         var parcelasAntigas = await _parcelaRepository.BuscarTodosAsync(p => p.DupId == duplicata.DupId);
         foreach (var parcela in parcelasAntigas)
         {
@@ -186,10 +183,10 @@ public class DuplicataService : IDuplicataService
         }
         await _parcelaRepository.SalvarAlteracoesAsync();
 
-        // Verificar se há parcelas personalizadas
+        var planoIdCadastro = ResolverPlanoContasIdCadastro(dto);
+
         if (dto.Parcelas != null && dto.Parcelas.Any())
         {
-            // Usar parcelas personalizadas
             foreach (var parcelaDto in dto.Parcelas.OrderBy(p => p.NumeroParcela))
             {
                 var parcela = new Parcela
@@ -202,21 +199,18 @@ public class DuplicataService : IDuplicataService
                     ParVencimento = parcelaDto.Vencimento.ToUniversalTime(),
                     ParStatus = "Pendente",
                     ParDataPagamento = null,
-                    CcuId = dto.CentroCustoId,
-                    PlcId = dto.PlanoContasId
+                    PlcId = planoIdCadastro
                 };
                 await _parcelaRepository.InserirAsync(parcela);
             }
         }
         else
         {
-            // Gerar parcelas automaticamente
             if (!dto.DataPrimeiroVencimento.HasValue)
             {
                 throw new InvalidOperationException("Data de primeiro vencimento é obrigatória quando não há parcelas personalizadas.");
             }
 
-            // O valor total informado é o valor de cada parcela, não o total dividido
             var valorPorParcela = dto.ValorTotal;
             for (int i = 1; i <= dto.NumeroParcelas; i++)
             {
@@ -230,8 +224,7 @@ public class DuplicataService : IDuplicataService
                     ParVencimento = dto.DataPrimeiroVencimento.Value.AddMonths(i - 1).ToUniversalTime(),
                     ParStatus = "Pendente",
                     ParDataPagamento = null,
-                    CcuId = dto.CentroCustoId,
-                    PlcId = dto.PlanoContasId
+                    PlcId = planoIdCadastro
                 };
                 await _parcelaRepository.InserirAsync(parcela);
             }
@@ -247,7 +240,6 @@ public class DuplicataService : IDuplicataService
         if (duplicata == null)
             throw new InvalidOperationException("Duplicata não encontrada.");
 
-        // Verificar se há parcelas pagas
         var parcelas = await _parcelaRepository.BuscarTodosAsync(p => p.DupId == duplicata.DupId);
         var temParcelaPaga = parcelas.Any(ParcelaEstaPaga);
 
@@ -256,19 +248,17 @@ public class DuplicataService : IDuplicataService
             throw new InvalidOperationException("Não é possível excluir uma duplicata que possui parcelas pagas.");
         }
 
-        // Excluir parcelas
         foreach (var parcela in parcelas)
         {
             await _parcelaRepository.ExcluirAsync(parcela);
         }
         await _parcelaRepository.SalvarAlteracoesAsync();
 
-        // Excluir duplicata
         await _duplicataRepository.ExcluirAsync(duplicata);
         await _duplicataRepository.SalvarAlteracoesAsync();
     }
 
-    public async Task<ParcelaResponseDto> BaixarParcelaAsync(int parcelaId)
+    public async Task<ParcelaResponseDto> BaixarParcelaAsync(int parcelaId, BaixarParcelaDto? dto = null)
     {
         var parcela = await _parcelaRepository.GetByIdAsync(parcelaId);
         if (parcela == null)
@@ -280,13 +270,35 @@ public class DuplicataService : IDuplicataService
         }
 
         var duplicata = await _duplicataRepository.GetByIdAsync(parcela.DupId);
+        if (duplicata == null)
+            throw new InvalidOperationException("Duplicata não encontrada.");
 
+        var isContasReceber = string.Equals(duplicata.DupTipo, "CR", StringComparison.OrdinalIgnoreCase);
+        var centrosPorId = (await _centroCustoRepository.ListarTodosAsync()).ToDictionary(c => c.CcuId);
+        var empresaId = ResolverEmpresaIdDuplicata(duplicata, centrosPorId);
+
+        if (dto?.PlanoContasId is > 0)
+            parcela.PlcId = dto.PlanoContasId;
+        if (!parcela.PlcId.HasValue)
+            parcela.PlcId = duplicata.PlcId;
+
+        if (isContasReceber && (!parcela.PlcId.HasValue || parcela.PlcId.Value <= 0))
+            parcela.PlcId = await ObterPlanoReceitaConsultoriaIdAsync();
+
+        var planoId = parcela.PlcId ?? duplicata.PlcId;
+
+        if (!empresaId.HasValue || empresaId.Value <= 0)
+            throw new InvalidOperationException("Informe o centro de custo na duplicata antes de baixar a parcela.");
+
+        if (isContasReceber)
+        {
+            if (!planoId.HasValue || planoId.Value <= 0)
+                planoId = await ObterPlanoReceitaConsultoriaIdAsync();
+        }
+
+        parcela.PlcId = planoId is > 0 ? planoId : null;
         parcela.ParStatus = "Paga";
         parcela.ParDataPagamento = DateTime.UtcNow;
-        if (!parcela.CcuId.HasValue)
-            parcela.CcuId = duplicata?.CcuId;
-        if (!parcela.PlcId.HasValue)
-            parcela.PlcId = duplicata?.PlcId;
 
         await _parcelaRepository.AtualizarAsync(parcela);
         await _parcelaRepository.SalvarAlteracoesAsync();
@@ -324,27 +336,37 @@ public class DuplicataService : IDuplicataService
         if (!string.Equals(parcela.ParStatus, "Paga", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("A classificação só pode ser alterada em parcelas pagas.");
 
-        if (dto.CentroCustoId <= 0)
+        if (dto.EmpresaId <= 0)
             throw new InvalidOperationException("Centro de custo é obrigatório.");
 
-        if (dto.PlanoContasId <= 0)
-            throw new InvalidOperationException("Plano de contas é obrigatório.");
+        var duplicata = await _duplicataRepository.GetByIdAsync(parcela.DupId);
+        if (duplicata == null)
+            throw new InvalidOperationException("Duplicata não encontrada.");
 
-        var centro = await _centroCustoRepository.GetByIdAsync(dto.CentroCustoId);
-        if (centro == null)
+        var empresa = await _empresaRepository.GetByIdAsync(dto.EmpresaId);
+        if (empresa == null)
             throw new InvalidOperationException("Centro de custo informado não existe.");
 
-        var plano = await _planoContasRepository.GetByIdAsync(dto.PlanoContasId);
-        if (plano == null)
-            throw new InvalidOperationException("Plano de contas informado não existe.");
+        var isContasReceber = string.Equals(duplicata.DupTipo, "CR", StringComparison.OrdinalIgnoreCase);
+        int? planoId = dto.PlanoContasId;
 
-        parcela.CcuId = dto.CentroCustoId;
-        parcela.PlcId = dto.PlanoContasId;
+        if (isContasReceber && (!planoId.HasValue || planoId.Value <= 0))
+            planoId = await ObterPlanoReceitaConsultoriaIdAsync();
 
+        if (planoId is > 0)
+        {
+            var plano = await _planoContasRepository.GetByIdAsync(planoId.Value);
+            if (plano == null)
+                throw new InvalidOperationException("Plano de contas informado não existe.");
+        }
+
+        duplicata.EmpId = dto.EmpresaId;
+        parcela.PlcId = planoId is > 0 ? planoId : null;
+
+        await _duplicataRepository.AtualizarAsync(duplicata);
         await _parcelaRepository.AtualizarAsync(parcela);
         await _parcelaRepository.SalvarAlteracoesAsync();
 
-        var duplicata = await _duplicataRepository.GetByIdAsync(parcela.DupId);
         return await MontarParcelaResponseDtoAsync(parcela, duplicata);
     }
 
@@ -372,15 +394,14 @@ public class DuplicataService : IDuplicataService
             }
         }
 
-        string? centroEmpresaFantasia = null;
-        if (duplicata.CcuId.HasValue)
+        var centrosPorId = (await _centroCustoRepository.ListarTodosAsync()).ToDictionary(c => c.CcuId);
+        var empresaId = ResolverEmpresaIdDuplicata(duplicata, centrosPorId);
+
+        string? centroCustoDescricao = null;
+        if (empresaId.HasValue)
         {
-            var centro = await _centroCustoRepository.GetByIdAsync(duplicata.CcuId.Value);
-            if (centro != null)
-            {
-                var empresa = await _empresaRepository.GetByIdAsync(centro.EmpId);
-                centroEmpresaFantasia = empresa?.EmpFantasia;
-            }
+            var empresa = await _empresaRepository.GetByIdAsync(empresaId.Value);
+            centroCustoDescricao = empresa?.EmpFantasia;
         }
 
         string? planoContasDescricao = null;
@@ -400,8 +421,8 @@ public class DuplicataService : IDuplicataService
             Tipo = duplicata.DupTipo,
             ClienteId = duplicata.CliId,
             ClienteNome = clienteNome,
-            CentroCustoId = duplicata.CcuId,
-            CentroCustoEmpresaFantasia = centroEmpresaFantasia,
+            EmpresaId = empresaId,
+            CentroCustoDescricao = centroCustoDescricao,
             PlanoContasId = duplicata.PlcId,
             PlanoContasDescricao = planoContasDescricao,
             Parcelas = parcelasDto,
@@ -414,7 +435,7 @@ public class DuplicataService : IDuplicataService
     public async Task<int> ObterProximoNumeroAsync(string tipo)
     {
         var duplicatas = await _duplicataRepository.BuscarTodosAsync(d => d.DupTipo == tipo);
-        
+
         if (!duplicatas.Any())
         {
             return 1;
@@ -432,15 +453,15 @@ public class DuplicataService : IDuplicataService
         duplicata.DupDescricaoDespesa = dto.DescricaoDespesa;
         duplicata.DupDataEmissao = dto.DataEmissao.ToUniversalTime();
         duplicata.CliId = dto.ClienteId;
-        duplicata.CcuId = dto.CentroCustoId;
-        duplicata.PlcId = dto.PlanoContasId;
+        duplicata.EmpId = dto.EmpresaId;
+        var planoId = ResolverPlanoContasIdCadastro(dto);
+        duplicata.PlcId = planoId;
 
         await _duplicataRepository.AtualizarAsync(duplicata);
 
         foreach (var parcela in parcelas)
         {
-            parcela.CcuId = dto.CentroCustoId;
-            parcela.PlcId = dto.PlanoContasId;
+            parcela.PlcId = planoId;
             await _parcelaRepository.AtualizarAsync(parcela);
         }
 
@@ -454,38 +475,96 @@ public class DuplicataService : IDuplicataService
     private static bool ParcelaDtoEstaPaga(string? status) =>
         string.Equals(status, "Paga", StringComparison.OrdinalIgnoreCase);
 
-    private async Task ValidarCentroEPlanoContasAsync(CadastroDuplicataDto dto)
+    private async Task AplicarPadroesContasReceberAsync(CadastroDuplicataDto dto)
     {
-        if (!dto.CentroCustoId.HasValue || dto.CentroCustoId.Value <= 0)
-            throw new InvalidOperationException("Centro de custo é obrigatório.");
+        if (!string.Equals(dto.Tipo, "CR", StringComparison.OrdinalIgnoreCase))
+            return;
 
         if (!dto.PlanoContasId.HasValue || dto.PlanoContasId.Value <= 0)
-            throw new InvalidOperationException("Plano de contas é obrigatório.");
+            dto.PlanoContasId = await ObterPlanoReceitaConsultoriaIdAsync();
+    }
 
-        var centro = await _centroCustoRepository.GetByIdAsync(dto.CentroCustoId.Value);
-        if (centro == null)
+    private async Task<int> ObterPlanoReceitaConsultoriaIdAsync()
+    {
+        var planos = await _planoContasRepository.ListarTodosAsync();
+        var plano = planos.FirstOrDefault(p =>
+            string.Equals(p.PlcDescricao.Trim(), PlanoReceitaConsultoria, StringComparison.OrdinalIgnoreCase));
+        if (plano == null)
+            throw new InvalidOperationException($"Plano de contas {PlanoReceitaConsultoria} não está cadastrado.");
+
+        return plano.PlcId;
+    }
+
+    private async Task ValidarClienteContasReceberAsync(CadastroDuplicataDto dto)
+    {
+        if (!string.Equals(dto.Tipo, "CR", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        if (!dto.ClienteId.HasValue || dto.ClienteId.Value <= 0)
+            throw new InvalidOperationException("Cliente é obrigatório em contas a receber.");
+
+        var cliente = await _clienteRepository.GetByIdAsync(dto.ClienteId.Value);
+        if (cliente == null)
+            throw new InvalidOperationException("Cliente informado não existe.");
+    }
+
+    private async Task ValidarCadastroDuplicataAsync(CadastroDuplicataDto dto)
+    {
+        if (!dto.EmpresaId.HasValue || dto.EmpresaId.Value <= 0)
+            throw new InvalidOperationException("Centro de custo é obrigatório.");
+
+        var empresa = await _empresaRepository.GetByIdAsync(dto.EmpresaId.Value);
+        if (empresa == null)
             throw new InvalidOperationException("Centro de custo informado não existe.");
 
-        var plano = await _planoContasRepository.GetByIdAsync(dto.PlanoContasId.Value);
-        if (plano == null)
-            throw new InvalidOperationException("Plano de contas informado não existe.");
+        var isContasReceber = string.Equals(dto.Tipo, "CR", StringComparison.OrdinalIgnoreCase);
+
+        if (isContasReceber)
+        {
+            if (!dto.PlanoContasId.HasValue || dto.PlanoContasId.Value <= 0)
+                throw new InvalidOperationException("Plano de contas é obrigatório em contas a receber.");
+
+            var planoCr = await _planoContasRepository.GetByIdAsync(dto.PlanoContasId.Value);
+            if (planoCr == null)
+                throw new InvalidOperationException("Plano de contas informado não existe.");
+        }
+        else if (dto.PlanoContasId is > 0)
+        {
+            var planoCp = await _planoContasRepository.GetByIdAsync(dto.PlanoContasId.Value);
+            if (planoCp == null)
+                throw new InvalidOperationException("Plano de contas informado não existe.");
+        }
+    }
+
+    private static int? ResolverPlanoContasIdCadastro(CadastroDuplicataDto dto) =>
+        dto.PlanoContasId is > 0 ? dto.PlanoContasId : null;
+
+    /// <summary>Centro de custo sempre na duplicata (EMPID ou legado CCUID).</summary>
+    private static int? ResolverEmpresaIdDuplicata(
+        Duplicata? duplicata,
+        IReadOnlyDictionary<int, CentroCusto> centrosPorId)
+    {
+        if (duplicata?.EmpId is > 0)
+            return duplicata.EmpId;
+
+        if (duplicata?.CcuId.HasValue == true && centrosPorId.TryGetValue(duplicata.CcuId.Value, out var centro))
+            return centro.EmpId;
+
+        return null;
     }
 
     private async Task<ParcelaResponseDto> MontarParcelaResponseDtoAsync(Parcela parcela, Duplicata? duplicata)
     {
         var valorTotal = parcela.ParValor + parcela.ParMulta + parcela.ParJuros;
-        var centroCustoId = parcela.CcuId ?? duplicata?.CcuId;
+        var centrosPorId = (await _centroCustoRepository.ListarTodosAsync()).ToDictionary(c => c.CcuId);
+        var empresaId = ResolverEmpresaIdDuplicata(duplicata, centrosPorId);
         var planoContasId = parcela.PlcId ?? duplicata?.PlcId;
 
-        string? centroEmpresaFantasia = null;
-        if (centroCustoId.HasValue)
+        string? centroCustoDescricao = null;
+        if (empresaId.HasValue)
         {
-            var centro = await _centroCustoRepository.GetByIdAsync(centroCustoId.Value);
-            if (centro != null)
-            {
-                var empresa = await _empresaRepository.GetByIdAsync(centro.EmpId);
-                centroEmpresaFantasia = empresa?.EmpFantasia;
-            }
+            var empresa = await _empresaRepository.GetByIdAsync(empresaId.Value);
+            centroCustoDescricao = empresa?.EmpFantasia;
         }
 
         string? planoContasDescricao = null;
@@ -507,8 +586,8 @@ public class DuplicataService : IDuplicataService
             Vencimento = parcela.ParVencimento,
             Status = parcela.ParStatus,
             DataPagamento = parcela.ParDataPagamento,
-            CentroCustoId = centroCustoId,
-            CentroCustoEmpresaFantasia = centroEmpresaFantasia,
+            EmpresaId = empresaId,
+            CentroCustoDescricao = centroCustoDescricao,
             PlanoContasId = planoContasId,
             PlanoContasDescricao = planoContasDescricao
         };

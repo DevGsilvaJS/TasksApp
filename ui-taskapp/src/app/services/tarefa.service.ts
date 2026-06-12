@@ -46,14 +46,14 @@ export const ANDAMENTO_TAREFA_OPTIONS: { value: AndamentoTarefa; label: string }
 export interface CadastroTarefaDto {
   clienteId: number;
   usuarioId: number;
-  status: StatusTarefa;
+  status: number;
   dataConclusao?: string;
   descricao?: string;
   titulo?: string;
   protocolo?: string;
   solicitante?: string;
   celularSolicitante?: string;
-  andamento?: AndamentoTarefa;
+  andamento?: number;
   tipoAtendimento?: TipoAtendimento;
   prioridade?: PrioridadeTarefa;
   tipoContato?: TipoContato;
@@ -85,13 +85,13 @@ export interface TarefaResponseDto {
   usuarioNome: string;
   dataCadastro?: string;
   dataConclusao?: string;
-  status: StatusTarefa;
+  status: number;
   statusDescricao: string;
   titulo?: string;
   protocolo?: string;
   solicitante?: string;
   celularSolicitante?: string;
-  andamento?: AndamentoTarefa;
+  andamento?: number;
   andamentoDescricao?: string;
   tipoAtendimento?: TipoAtendimento;
   tipoAtendimentoDescricao?: string;
@@ -192,7 +192,7 @@ export class TarefaService {
     return this.api.delete<void>(`tarefa/${id}`);
   }
 
-  alterarStatusTarefa(id: number, status: StatusTarefa): Observable<TarefaResponseDto> {
+  alterarStatusTarefa(id: number, status: number): Observable<TarefaResponseDto> {
     return this.api.patch<TarefaResponseDto>(`tarefa/${id}/status`, { status });
   }
 }

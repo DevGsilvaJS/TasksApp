@@ -25,54 +25,76 @@
         <form (ngSubmit)="salvarDuplicata()" class="form">
           @if (edicaoParcial) {
             <div class="alert alert-info alert-form">
-              Esta duplicata possui parcelas recebidas. Você pode alterar descrição, data de emissão, cliente, centro de custo e plano de contas das parcelas pendentes.
-              Para parcelas já recebidas, use <strong>Classificar</strong> na tela de parcelas.
+              Esta duplicata possui parcelas recebidas. Você pode alterar os dados cadastrais abaixo.
+              Valores e vencimentos das parcelas não podem ser alterados.
             </div>
           }
-          <div class="form-row form-row-numero-emissao-cliente-descricao">
-            <div class="form-group">
-              <label>Número</label>
-              <input type="number" [(ngModel)]="novaDuplicata.numero" name="numero" readonly class="form-input">
+          @if (editando) {
+            <div class="form-row form-row-quatro">
+              <div class="form-group">
+                <label>Número</label>
+                <input type="number" [(ngModel)]="novaDuplicata.numero" name="numero" readonly class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Data de Emissão *</label>
+                <input type="date" [(ngModel)]="novaDuplicata.dataEmissao" name="dataEmissao" required>
+              </div>
+              <div class="form-group">
+                <label>Cliente *</label>
+                <select [(ngModel)]="novaDuplicata.clienteId" name="clienteId" class="form-input" required>
+                  <option [ngValue]="undefined">Selecione o cliente...</option>
+                  @for (cliente of clientes; track cliente.clienteId) {
+                    <option [ngValue]="cliente.clienteId">{{ cliente.codigo }} - {{ cliente.fantasia }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Centro de Custo *</label>
+                <select class="form-input" [(ngModel)]="novaDuplicata.empresaId" name="empresaId" required>
+                  <option [ngValue]="undefined">Selecione o centro de custo...</option>
+                  @for (empresa of empresas; track empresa.empresaId) {
+                    <option [ngValue]="empresa.empresaId">{{ obterLabelEmpresa(empresa) }}</option>
+                  }
+                </select>
+              </div>
             </div>
-            <div class="form-group">
-              <label>Data de Emissão *</label>
-              <input type="date" [(ngModel)]="novaDuplicata.dataEmissao" name="dataEmissao" required>
-            </div>
-            <div class="form-group form-group-cliente">
-              <label>Cliente (opcional)</label>
-              <select [(ngModel)]="novaDuplicata.clienteId" name="clienteId" class="form-input">
-                <option [ngValue]="undefined">Nenhum</option>
-                @for (cliente of clientes; track cliente.clienteId) {
-                  <option [ngValue]="cliente.clienteId">{{ cliente.codigo }} - {{ cliente.fantasia }}</option>
-                }
-              </select>
-            </div>
-            <div class="form-group form-group-descricao">
+            <div class="form-group form-group-full">
               <label>Descrição da Despesa</label>
-              <input type="text" [(ngModel)]="novaDuplicata.descricaoDespesa" name="descricaoDespesa" 
+              <input type="text" [(ngModel)]="novaDuplicata.descricaoDespesa" name="descricaoDespesa"
                      class="form-input" placeholder="Digite a descrição da despesa..." maxlength="500">
             </div>
             <div class="form-group">
-              <label>Centro de Custo (MEI) *</label>
-              <select class="form-input" [(ngModel)]="novaDuplicata.centroCustoId" name="centroCustoId" required>
-                <option [ngValue]="undefined">Selecione o MEI...</option>
-                @for (cc of centrosCusto; track cc.centroCustoId) {
-                  <option [ngValue]="cc.centroCustoId">{{ obterLabelCentroCusto(cc) }}</option>
-                }
-              </select>
+              <label>Plano de Contas</label>
+              <input type="text" class="form-input" [value]="planoPadraoDescricao" readonly>
             </div>
-            <div class="form-group">
-              <label>Plano de Contas *</label>
-              <select class="form-input" [(ngModel)]="novaDuplicata.planoContasId" name="planoContasId" required>
-                <option [ngValue]="undefined">Selecione a conta...</option>
-                @for (plano of planosContas; track plano.planoContasId) {
-                  <option [ngValue]="plano.planoContasId">{{ plano.descricao }}</option>
-                }
-              </select>
+          } @else {
+            <div class="form-row form-row-numero-emissao-cliente-descricao">
+              <div class="form-group">
+                <label>Número</label>
+                <input type="number" [(ngModel)]="novaDuplicata.numero" name="numero" readonly class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Data de Emissão *</label>
+                <input type="date" [(ngModel)]="novaDuplicata.dataEmissao" name="dataEmissao" required>
+              </div>
+              <div class="form-group form-group-cliente">
+                <label>Cliente *</label>
+                <select [(ngModel)]="novaDuplicata.clienteId" name="clienteId" class="form-input" required>
+                  <option [ngValue]="undefined">Selecione o cliente...</option>
+                  @for (cliente of clientes; track cliente.clienteId) {
+                    <option [ngValue]="cliente.clienteId">{{ cliente.codigo }} - {{ cliente.fantasia }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group form-group-descricao">
+                <label>Descrição da Despesa</label>
+                <input type="text" [(ngModel)]="novaDuplicata.descricaoDespesa" name="descricaoDespesa"
+                       class="form-input" placeholder="Digite a descrição da despesa..." maxlength="500">
+              </div>
             </div>
-          </div>
+          }
           @if (!edicaoParcial) {
-          <div class="form-row form-row-five">
+          <div class="form-row form-row-parcelas-vencimento">
             <div class="form-group">
               <label>Número de Parcelas *</label>
               <input type="number" [(ngModel)]="novaDuplicata.numeroParcelas" name="numeroParcelas" required min="1" (change)="atualizarNumeroParcelas()">
@@ -82,20 +104,21 @@
               <input type="number" [(ngModel)]="novaDuplicata.valorTotal" name="valorTotal" required min="0.01" step="0.01" (change)="atualizarValorTotal()">
             </div>
             <div class="form-group">
-              <label>Juros</label>
-              <input type="number" [(ngModel)]="novaDuplicata.juros" name="juros" min="0" step="0.01" (change)="atualizarMultaJuros()">
-            </div>
-            <div class="form-group">
-              <label>Multa</label>
-              <input type="number" [(ngModel)]="novaDuplicata.multa" name="multa" min="0" step="0.01" (change)="atualizarMultaJuros()">
-            </div>
-            <div class="form-group">
               <label>Data 1º Vencimento *</label>
               @if (!gerarParcelasManual) {
                 <input type="date" [(ngModel)]="novaDuplicata.dataPrimeiroVencimento" name="dataPrimeiroVencimento" required>
               } @else {
                 <input type="date" [(ngModel)]="novaDuplicata.dataPrimeiroVencimento" name="dataPrimeiroVencimento" class="form-input" disabled>
               }
+            </div>
+            <div class="form-group form-group-centro-custo">
+              <label>Centro de Custo *</label>
+              <select class="form-input" [(ngModel)]="novaDuplicata.empresaId" name="empresaId" required>
+                <option [ngValue]="undefined">Selecione o centro de custo...</option>
+                @for (empresa of empresas; track empresa.empresaId) {
+                  <option [ngValue]="empresa.empresaId">{{ obterLabelEmpresa(empresa) }}</option>
+                }
+              </select>
             </div>
           </div>
           <div class="form-group">
@@ -122,16 +145,6 @@
                       <div class="form-group">
                         <label>Data de Vencimento *</label>
                         <input type="date" [(ngModel)]="parcela.vencimento" name="vencimento{{parcela.numeroParcela}}" required>
-                      </div>
-                    </div>
-                    <div class="form-row">
-                      <div class="form-group">
-                        <label>Multa</label>
-                        <input type="number" [(ngModel)]="parcela.multa" name="multa{{parcela.numeroParcela}}" min="0" step="0.01">
-                      </div>
-                      <div class="form-group">
-                        <label>Juros</label>
-                        <input type="number" [(ngModel)]="parcela.juros" name="juros{{parcela.numeroParcela}}" min="0" step="0.01">
                       </div>
                     </div>
                   </div>
@@ -176,15 +189,12 @@
             <thead>
               <tr>
                 <th>Parcela</th>
+                <th>Centro de Custo</th>
                 <th>Valor</th>
-                <th>Multa</th>
-                <th>Juros</th>
                 <th>Valor Total</th>
                 <th>Vencimento</th>
                 <th>Status</th>
                 <th>Data Recebimento</th>
-                <th>Centro de Custo</th>
-                <th>Plano de Contas</th>
                 <th class="actions-column">Ações</th>
               </tr>
             </thead>
@@ -192,9 +202,8 @@
               @for (parcela of duplicataSelecionada.parcelas; track parcela.parcelaId) {
                 <tr>
                   <td>{{ parcela.numeroParcela }}</td>
+                  <td>{{ parcela.centroCustoDescricao || '-' }}</td>
                   <td>{{ formatarMoeda(parcela.valor) }}</td>
-                  <td>{{ formatarMoeda(parcela.multa) }}</td>
-                  <td>{{ formatarMoeda(parcela.juros) }}</td>
                   <td>{{ formatarMoeda(parcela.valorTotal) }}</td>
                   <td>{{ formatarData(parcela.vencimento) }}</td>
                   <td>
@@ -203,10 +212,8 @@
                     </span>
                   </td>
                   <td>{{ parcela.dataPagamento ? formatarData(parcela.dataPagamento) : '-' }}</td>
-                  <td>{{ parcela.centroCustoEmpresaFantasia || '-' }}</td>
-                  <td>{{ parcela.planoContasDescricao || '-' }}</td>
                   <td class="actions-cell">
-                    @if (parcela.status === 'Pendente') {
+                    @if (parcelaPendente(parcela)) {
                       <button class="btn-baixar" (click)="baixarParcela(parcela)" title="Receber Parcela" [disabled]="loading">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M9 11l3 3L22 4"></path>
@@ -215,13 +222,6 @@
                         Receber
                       </button>
                     } @else {
-                      <button class="btn-classificar" (click)="abrirEdicaoClassificacao(parcela)" title="Editar classificação" [disabled]="loading">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                        Classificar
-                      </button>
                       <button class="btn-reativar" (click)="reativarParcela(parcela)" title="Reativar Parcela" [disabled]="loading">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
@@ -242,44 +242,6 @@
     </div>
   }
 
-  @if (showClassificacaoForm && parcelaClassificacaoEditando) {
-    <div class="modal-overlay modal-overlay-nested" (click)="fecharEdicaoClassificacao()">
-      <div class="modal-content modal-classificacao" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Classificar Parcela {{ parcelaClassificacaoEditando.numeroParcela }}</h3>
-          <button type="button" class="btn-close" (click)="fecharEdicaoClassificacao()" aria-label="Fechar">×</button>
-        </div>
-        <form (ngSubmit)="salvarClassificacaoParcela()" class="form">
-          <p class="form-hint">Altere o centro de custo e o plano de contas desta parcela já recebida. O fluxo de caixa usará a nova classificação.</p>
-          <div class="form-group">
-            <label for="cr-class-cc">Centro de Custo *</label>
-            <select id="cr-class-cc" class="form-input" [(ngModel)]="classificacaoForm.centroCustoId" name="classificacaoCentroCustoId" required>
-              <option [ngValue]="undefined">Selecione o centro de custo...</option>
-              @for (cc of centrosCusto; track cc.centroCustoId) {
-                <option [ngValue]="cc.centroCustoId">{{ obterLabelCentroCusto(cc) }}</option>
-              }
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="cr-class-plano">Plano de Contas *</label>
-            <select id="cr-class-plano" class="form-input" [(ngModel)]="classificacaoForm.planoContasId" name="classificacaoPlanoContasId" required>
-              <option [ngValue]="undefined">Selecione o plano de contas...</option>
-              @for (plano of planosContas; track plano.planoContasId) {
-                <option [ngValue]="plano.planoContasId">{{ plano.descricao }}</option>
-              }
-            </select>
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" (click)="fecharEdicaoClassificacao()">Cancelar</button>
-            <button type="submit" class="btn-primary" [disabled]="loading">
-              {{ loading ? 'Salvando...' : 'Salvar' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  }
-
   <div class="filtros-container">
     <label class="checkbox-filtro">
       <input
@@ -294,7 +256,7 @@
   <div class="search-container">
     <input 
       type="text" 
-      placeholder="Buscar por número ou data..." 
+      placeholder="Buscar por número, cliente ou data..." 
       [(ngModel)]="termoBusca"
       (input)="filtrarDuplicatas()"
       class="search-input">
@@ -313,6 +275,8 @@
           <tr>
             <th>Número</th>
             <th>Data Emissão</th>
+            <th>Cliente</th>
+            <th>Centro de Custo</th>
             <th>Descrição da Despesa</th>
             <th>Parcelas</th>
             <th>Valor Total</th>
@@ -326,7 +290,9 @@
             <tr>
               <td>{{ duplicata.numero }}</td>
               <td>{{ formatarData(duplicata.dataEmissao) }}</td>
-              <td>{{ duplicata.descricaoDespesa || '-' }}</td>
+              <td [title]="duplicata.clienteNome || '-'">{{ duplicata.clienteNome || '-' }}</td>
+              <td [title]="duplicata.centroCustoDescricao || '-'">{{ duplicata.centroCustoDescricao || '-' }}</td>
+              <td [title]="duplicata.descricaoDespesa || '-'">{{ duplicata.descricaoDespesa || '-' }}</td>
               <td>{{ duplicata.numeroParcelas }}</td>
               <td>{{ formatarMoeda(duplicata.valorTotal) }}</td>
               <td class="status-paga">{{ formatarMoeda(duplicata.valorPago) }}</td>

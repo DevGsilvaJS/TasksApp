@@ -4,10 +4,12 @@ public class DashboardEstatisticasDto
 {
     public int TotalAtendimentosPorUsuario { get; set; }
     public int TotalContasAPagar { get; set; }
+    public decimal ValorTotalContasAPagar { get; set; }
     public int TotalAtendimentosPorCliente { get; set; }
     public int TotalContasPagas { get; set; }
     public decimal ValorTotalContasPagas { get; set; }
     public int TotalContasAReceber { get; set; }
+    public decimal ValorTotalContasAReceber { get; set; }
     public int TotalContasRecebidas { get; set; }
     public decimal ValorTotalContasRecebidas { get; set; }
     public decimal Lucro { get; set; }
@@ -47,6 +49,9 @@ public class ContaAPagarDto
     public DateTime? DataPagamento { get; set; }
     public decimal Valor { get; set; }
     public bool Paga { get; set; }
+    public string? ClienteNome { get; set; }
+    public string? CentroCustoDescricao { get; set; }
+    public string? PlanoContasDescricao { get; set; }
 }
 
 public class AtendimentoPorClienteDto

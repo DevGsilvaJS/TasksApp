@@ -1,4 +1,5 @@
 using Application.DTOs;
+using Application.Helpers;
 using Application.Interfaces;
 using Domain.Entities;
 
@@ -14,65 +15,63 @@ public class FluxoCaixaService : IFluxoCaixaService
 
     private readonly IRepository<Parcela> _parcelaRepository;
     private readonly IRepository<Duplicata> _duplicataRepository;
-    private readonly IRepository<CentroCusto> _centroCustoRepository;
     private readonly IRepository<Empresa> _empresaRepository;
     private readonly IRepository<PlanoContas> _planoContasRepository;
+    private readonly IRepository<CentroCusto> _centroCustoRepository;
 
     public FluxoCaixaService(
         IRepository<Parcela> parcelaRepository,
         IRepository<Duplicata> duplicataRepository,
-        IRepository<CentroCusto> centroCustoRepository,
         IRepository<Empresa> empresaRepository,
-        IRepository<PlanoContas> planoContasRepository)
+        IRepository<PlanoContas> planoContasRepository,
+        IRepository<CentroCusto> centroCustoRepository)
     {
         _parcelaRepository = parcelaRepository;
         _duplicataRepository = duplicataRepository;
-        _centroCustoRepository = centroCustoRepository;
         _empresaRepository = empresaRepository;
         _planoContasRepository = planoContasRepository;
+        _centroCustoRepository = centroCustoRepository;
     }
 
     public async Task<FluxoCaixaResponseDto> ObterFluxoCaixaPorAnoAsync(int ano)
     {
-        var centros = (await _centroCustoRepository.ListarTodosAsync()).OrderBy(c => c.CcuId).ToList();
         var empresas = (await _empresaRepository.ListarTodosAsync()).ToDictionary(e => e.EmpId);
         var planos = (await _planoContasRepository.ListarTodosAsync()).ToDictionary(p => p.PlcId);
         var duplicatas = (await _duplicataRepository.ListarTodosAsync()).ToDictionary(d => d.DupId);
+        var centrosPorId = (await _centroCustoRepository.ListarTodosAsync()).ToDictionary(c => c.CcuId);
 
-        var parcelasPagas = (await _parcelaRepository.BuscarTodosAsync(p =>
-            p.ParStatus != null &&
-            p.ParStatus.ToUpper() == "PAGA" &&
-            p.ParDataPagamento.HasValue &&
-            p.ParDataPagamento.Value.Year == ano)).ToList();
+        var parcelasPagas = (await _parcelaRepository.ListarTodosAsync())
+            .Where(p => ParcelaStatusHelper.IsPaga(p.ParStatus) && p.ParDataPagamento.HasValue)
+            .Where(p => ObterAnoDataPagamento(p.ParDataPagamento!.Value) == ano)
+            .ToList();
 
         var acumuladores = new Dictionary<int, CentroAcumulador>();
-        var centrosPorId = centros.ToDictionary(c => c.CcuId);
 
         foreach (var parcela in parcelasPagas)
         {
             if (!duplicatas.TryGetValue(parcela.DupId, out var duplicata))
                 continue;
 
-            var centroId = parcela.CcuId ?? duplicata.CcuId;
+            var empresaId = ResolverEmpresaId(duplicata, centrosPorId);
             var planoId = parcela.PlcId ?? duplicata.PlcId;
 
-            if (!centroId.HasValue || centroId.Value <= 0 || !planoId.HasValue || planoId.Value <= 0)
+            // Somente pagamentos/recebimentos com centro de custo (duplicata) e plano de contas (parcela ou duplicata).
+            if (!empresaId.HasValue || empresaId.Value <= 0 || !planoId.HasValue || planoId.Value <= 0)
                 continue;
 
-            if (!centrosPorId.TryGetValue(centroId.Value, out var centro) || !planos.TryGetValue(planoId.Value, out var plano))
+            if (!empresas.TryGetValue(empresaId.Value, out var empresa) || !planos.TryGetValue(planoId.Value, out var plano))
                 continue;
 
-            if (!acumuladores.ContainsKey(centroId.Value))
+            if (!acumuladores.ContainsKey(empresaId.Value))
             {
-                empresas.TryGetValue(centro.EmpId, out var empresa);
-                acumuladores[centroId.Value] = new CentroAcumulador(
-                    CriarLinhaCentro(centroId.Value, empresa?.EmpFantasia ?? "-", empresa?.EmpCnpj));
+                acumuladores[empresaId.Value] = new CentroAcumulador(
+                    CriarLinhaCentro(empresaId.Value, empresa.EmpFantasia ?? "-", empresa.EmpCnpj));
             }
 
-            var acc = acumuladores[centroId.Value];
+            var acc = acumuladores[empresaId.Value];
             var linhaPlano = acc.ObterOuCriarPlano(planoId.Value, plano.PlcDescricao);
 
-            var mes = parcela.ParDataPagamento!.Value.Month;
+            var mes = ObterMesDataPagamento(parcela.ParDataPagamento!.Value);
             var valor = parcela.ParValor + parcela.ParMulta + parcela.ParJuros;
             var isReceita = string.Equals(duplicata.DupTipo, "CR", StringComparison.OrdinalIgnoreCase);
 
@@ -113,6 +112,30 @@ public class FluxoCaixaService : IFluxoCaixaService
             SaldoAno = totalReceitas - totalDespesas
         };
     }
+
+    private static int? ResolverEmpresaId(
+        Duplicata duplicata,
+        IReadOnlyDictionary<int, CentroCusto> centrosPorId)
+    {
+        if (duplicata.EmpId is > 0)
+            return duplicata.EmpId;
+
+        if (duplicata.CcuId.HasValue && centrosPorId.TryGetValue(duplicata.CcuId.Value, out var centro))
+            return centro.EmpId;
+
+        return null;
+    }
+
+    private static int ObterAnoDataPagamento(DateTime dataPagamento) =>
+        NormalizarDataPagamento(dataPagamento).Year;
+
+    private static int ObterMesDataPagamento(DateTime dataPagamento) =>
+        NormalizarDataPagamento(dataPagamento).Month;
+
+    private static DateTime NormalizarDataPagamento(DateTime dataPagamento) =>
+        dataPagamento.Kind == DateTimeKind.Utc
+            ? dataPagamento.ToLocalTime()
+            : dataPagamento;
 
     private static FluxoCaixaCentroCustoDto FinalizarCentro(CentroAcumulador acc)
     {
@@ -157,9 +180,9 @@ public class FluxoCaixaService : IFluxoCaixaService
         linha.Saldo = linha.TotalReceitas - linha.TotalDespesas;
     }
 
-    private static FluxoCaixaCentroCustoDto CriarLinhaCentro(int centroId, string fantasia, string? cnpj) => new()
+    private static FluxoCaixaCentroCustoDto CriarLinhaCentro(int empresaId, string fantasia, string? cnpj) => new()
     {
-        CentroCustoId = centroId,
+        EmpresaId = empresaId,
         EmpresaFantasia = fantasia,
         EmpresaCnpj = cnpj,
         Meses = CriarMeses()

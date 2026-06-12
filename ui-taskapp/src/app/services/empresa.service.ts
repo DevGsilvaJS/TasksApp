@@ -10,6 +10,7 @@ export interface CadastroEmpresaDto {
 
 export interface EmpresaResponseDto {
   empresaId: number;
+  centroCustoId?: number;
   cnpj: string;
   razaoSocial: string;
   fantasia: string;

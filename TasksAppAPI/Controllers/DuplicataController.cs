@@ -202,11 +202,11 @@ public class DuplicataController : ControllerBase
     [ProducesResponseType(typeof(ParcelaResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> BaixarParcela(int parcelaId)
+    public async Task<IActionResult> BaixarParcela(int parcelaId, [FromBody] BaixarParcelaDto? dto = null)
     {
         try
         {
-            var parcela = await _duplicataService.BaixarParcelaAsync(parcelaId);
+            var parcela = await _duplicataService.BaixarParcelaAsync(parcelaId, dto);
             return Ok(parcela);
         }
         catch (InvalidOperationException ex)

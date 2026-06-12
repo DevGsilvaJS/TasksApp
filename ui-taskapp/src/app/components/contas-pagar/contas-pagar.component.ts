@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DuplicataService, DuplicataResponseDto, CadastroDuplicataDto, ParcelaResponseDto, CadastroParcelaDto } from '../../services/duplicata.service';
-import { CentroCustoService, CentroCustoResponseDto } from '../../services/centro-custo.service';
+import { EmpresaService, EmpresaResponseDto } from '../../services/empresa.service';
 import { PlanoContasService, PlanoContasResponseDto } from '../../services/plano-contas.service';
 import { NotificacaoService } from '../../services/notificacao.service';
 
@@ -28,11 +28,8 @@ export class ContasPagarComponent implements OnInit {
   termoBusca = '';
   gerarParcelasManual = false;
   parcelasManuais: CadastroParcelaDto[] = [];
-  centrosCusto: CentroCustoResponseDto[] = [];
+  empresas: EmpresaResponseDto[] = [];
   planosContas: PlanoContasResponseDto[] = [];
-  showClassificacaoForm = false;
-  parcelaClassificacaoEditando: ParcelaResponseDto | null = null;
-  classificacaoForm: { centroCustoId?: number; planoContasId?: number } = {};
 
   // Modal de confirmação
   showConfirmModal = false;
@@ -58,15 +55,15 @@ export class ContasPagarComponent implements OnInit {
 
   constructor(
     private duplicataService: DuplicataService,
-    private centroCustoService: CentroCustoService,
+    private empresaService: EmpresaService,
     private planoContasService: PlanoContasService,
     private notificacao: NotificacaoService
   ) { }
 
   ngOnInit() {
     this.carregarDuplicatas();
-    this.centroCustoService.listarTodosCentrosCusto().subscribe({
-      next: (data) => this.centrosCusto = data,
+    this.empresaService.listarTodasEmpresas().subscribe({
+      next: (data) => this.empresas = data,
       error: () => {}
     });
     this.planoContasService.listarTodosPlanosContas().subscribe({
@@ -113,7 +110,7 @@ export class ContasPagarComponent implements OnInit {
           juros: 0,
           descricaoDespesa: undefined,
           tipo: 'CP',
-          centroCustoId: undefined,
+          empresaId: undefined,
           planoContasId: undefined,
           dataPrimeiroVencimento: new Date().toISOString().split('T')[0]
         };
@@ -141,7 +138,7 @@ export class ContasPagarComponent implements OnInit {
       juros: duplicata.parcelas[0]?.juros || 0,
       descricaoDespesa: duplicata.descricaoDespesa,
       tipo: duplicata.tipo || 'CP',
-      centroCustoId: duplicata.centroCustoId,
+      empresaId: duplicata.empresaId,
       planoContasId: duplicata.planoContasId,
       dataPrimeiroVencimento: duplicata.parcelas[0]?.vencimento.split('T')[0] || new Date().toISOString().split('T')[0]
     };
@@ -150,12 +147,12 @@ export class ContasPagarComponent implements OnInit {
     window.scrollTo(0, 0);
   }
 
-  obterLabelCentroCusto(centro: CentroCustoResponseDto): string {
-    const cnpj = centro.empresaCnpj?.replace(/\D/g, '') ?? '';
+  obterLabelEmpresa(empresa: EmpresaResponseDto): string {
+    const cnpj = empresa.cnpj?.replace(/\D/g, '') ?? '';
     const cnpjFmt = cnpj.length === 14
       ? cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
-      : centro.empresaCnpj ?? '';
-    return `${centro.empresaFantasia ?? 'MEI'} (CC #${centro.centroCustoId})${cnpjFmt ? ' — ' + cnpjFmt : ''}`;
+      : empresa.cnpj ?? '';
+    return `${empresa.fantasia}${cnpjFmt ? ' — ' + cnpjFmt : ''}`;
   }
 
   fecharFormulario() {
@@ -236,17 +233,11 @@ export class ContasPagarComponent implements OnInit {
   salvarDuplicata() {
     if (this.loading) return;
 
-    if (!this.novaDuplicata.centroCustoId) {
+    if (!this.novaDuplicata.empresaId) {
       this.error = 'Selecione o centro de custo.';
       this.notificacao.aviso(this.error);
       return;
     }
-    if (!this.novaDuplicata.planoContasId) {
-      this.error = 'Selecione o plano de contas.';
-      this.notificacao.aviso(this.error);
-      return;
-    }
-
     if (this.edicaoParcial) {
       this.novaDuplicata.parcelas = undefined;
     } else if (this.gerarParcelasManual) {
@@ -427,70 +418,14 @@ export class ContasPagarComponent implements OnInit {
   fecharParcelas() {
     this.showParcelas = false;
     this.duplicataSelecionada = null;
-    this.fecharEdicaoClassificacao();
   }
 
   parcelaPaga(parcela: ParcelaResponseDto): boolean {
     return parcela.status?.toLowerCase() === 'paga';
   }
 
-  abrirEdicaoClassificacao(parcela: ParcelaResponseDto): void {
-    if (!this.parcelaPaga(parcela)) return;
-    this.parcelaClassificacaoEditando = parcela;
-    this.classificacaoForm = {
-      centroCustoId: parcela.centroCustoId,
-      planoContasId: parcela.planoContasId
-    };
-    this.showClassificacaoForm = true;
-    this.error = null;
-  }
-
-  fecharEdicaoClassificacao(): void {
-    this.showClassificacaoForm = false;
-    this.parcelaClassificacaoEditando = null;
-    this.classificacaoForm = {};
-  }
-
-  salvarClassificacaoParcela(): void {
-    if (!this.parcelaClassificacaoEditando) return;
-    if (!this.classificacaoForm.centroCustoId || !this.classificacaoForm.planoContasId) {
-      this.notificacao.aviso('Selecione o centro de custo e o plano de contas.');
-      return;
-    }
-
-    this.loading = true;
-    this.error = null;
-    this.duplicataService.atualizarClassificacaoParcela(this.parcelaClassificacaoEditando.parcelaId, {
-      centroCustoId: this.classificacaoForm.centroCustoId,
-      planoContasId: this.classificacaoForm.planoContasId
-    }).subscribe({
-      next: (parcelaAtualizada) => {
-        this.atualizarParcelaNaLista(parcelaAtualizada);
-        this.fecharEdicaoClassificacao();
-        this.loading = false;
-        this.notificacao.sucesso('Classificação da parcela atualizada com sucesso.');
-      },
-      error: (err) => {
-        this.error = err.error?.message || 'Erro ao atualizar classificação da parcela.';
-        this.loading = false;
-        this.notificacao.erro(this.error ?? 'Erro ao atualizar classificação da parcela.');
-      }
-    });
-  }
-
-  private atualizarParcelaNaLista(parcelaAtualizada: ParcelaResponseDto): void {
-    if (!this.duplicataSelecionada) return;
-
-    const parcelasAtualizadas = this.duplicataSelecionada.parcelas.map(p =>
-      p.parcelaId === parcelaAtualizada.parcelaId ? parcelaAtualizada : p
-    );
-    this.duplicataSelecionada = { ...this.duplicataSelecionada, parcelas: parcelasAtualizadas };
-
-    const indiceDuplicata = this.duplicatas.findIndex(d => d.duplicataId === this.duplicataSelecionada?.duplicataId);
-    if (indiceDuplicata >= 0) {
-      this.duplicatas[indiceDuplicata] = { ...this.duplicatas[indiceDuplicata], parcelas: parcelasAtualizadas };
-      this.aplicarFiltros();
-    }
+  parcelaPendente(parcela: ParcelaResponseDto): boolean {
+    return parcela.status?.toLowerCase() === 'pendente';
   }
 
   filtrarDuplicatas() {

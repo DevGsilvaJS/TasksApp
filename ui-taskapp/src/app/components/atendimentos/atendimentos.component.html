@@ -83,9 +83,9 @@
             </div>
             <div class="form-group">
               <label>Status</label>
-              <select [(ngModel)]="novoTarefa.status" name="status" class="form-select" [value]="novoTarefa.status" (change)="onStatusChange($event)">
+              <select [(ngModel)]="novoTarefa.status" name="status" class="form-select" (change)="onStatusChange($event)">
                 @for (status of statusOptions; track status.value) {
-                  <option [value]="status.value">{{ status.label }}</option>
+                  <option [ngValue]="status.value">{{ status.label }}</option>
                 }
               </select>
             </div>

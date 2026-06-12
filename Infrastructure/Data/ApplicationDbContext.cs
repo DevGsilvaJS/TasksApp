@@ -60,9 +60,9 @@ public class ApplicationDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Duplicata>()
-            .HasOne(d => d.CentroCusto)
+            .HasOne(d => d.Empresa)
             .WithMany()
-            .HasForeignKey(d => d.CcuId)
+            .HasForeignKey(d => d.EmpId)
             .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<Duplicata>()
@@ -72,9 +72,9 @@ public class ApplicationDbContext : DbContext
             .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<Parcela>()
-            .HasOne(p => p.CentroCusto)
+            .HasOne(p => p.Empresa)
             .WithMany()
-            .HasForeignKey(p => p.CcuId)
+            .HasForeignKey(p => p.EmpId)
             .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<Parcela>()

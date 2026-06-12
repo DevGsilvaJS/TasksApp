@@ -31,9 +31,25 @@ export class AppComponent implements OnInit {
   currentAlertaIndex = 0;
   private popupAlertasMostrado = false;
   cienteAlertaAtual = false;
-  menuBalancoAberto = false;
-  balancoAtivo = false;
-  private readonly rotasBalanco = ['/empresas', '/centros-custo', '/plano-contas', '/fluxo-caixa'];
+  menuComercialAberto = false;
+  comercialAtivo = false;
+  menuFinanceiroAberto = false;
+  financeiroAtivo = false;
+  menuFiscalAberto = false;
+  fiscalAtivo = false;
+  menuUtilitariosAberto = false;
+  utilitariosAtivo = false;
+  private readonly rotasComercial = [
+    '/clientes',
+    '/atendimentos',
+    '/anotacoes',
+    '/possiveis-clientes',
+    '/cadastro-atendimento',
+    '/status-atendimento-comercial'
+  ];
+  private readonly rotasFinanceiro = ['/contas-pagar', '/contas-receber', '/relatorios-gerenciais'];
+  private readonly rotasFiscal = ['/empresas', '/plano-contas', '/fluxo-caixa'];
+  private readonly rotasUtilitarios = ['/usuarios'];
   private readonly CHAVE_CIENCIA_ALERTAS = 'alertas_ciencia';
   private readonly CHAVE_CIENCIA_CONTRATOS_LEGADO = 'contratos_vencendo_ciencia';
 
@@ -58,9 +74,9 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.atualizarMenuBalanco();
+    this.atualizarMenusLaterais();
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
-      this.atualizarMenuBalanco();
+      this.atualizarMenusLaterais();
     });
 
     this.authService.usuario$.subscribe(usuario => {
@@ -242,15 +258,40 @@ export class AppComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  alternarMenuBalanco(): void {
-    this.menuBalancoAberto = !this.menuBalancoAberto;
+  alternarMenuComercial(): void {
+    this.menuComercialAberto = !this.menuComercialAberto;
   }
 
-  private atualizarMenuBalanco(): void {
+  alternarMenuFinanceiro(): void {
+    this.menuFinanceiroAberto = !this.menuFinanceiroAberto;
+  }
+
+  alternarMenuFiscal(): void {
+    this.menuFiscalAberto = !this.menuFiscalAberto;
+  }
+
+  alternarMenuUtilitarios(): void {
+    this.menuUtilitariosAberto = !this.menuUtilitariosAberto;
+  }
+
+  private atualizarMenusLaterais(): void {
     const url = this.router.url.split('?')[0];
-    this.balancoAtivo = this.rotasBalanco.some(rota => url === rota || url.startsWith(`${rota}/`));
-    if (this.balancoAtivo) {
-      this.menuBalancoAberto = true;
+    this.comercialAtivo = this.rotasComercial.some(rota => url === rota || url.startsWith(`${rota}/`));
+    this.financeiroAtivo = this.rotasFinanceiro.some(rota => url === rota || url.startsWith(`${rota}/`));
+    this.fiscalAtivo = this.rotasFiscal.some(rota => url === rota || url.startsWith(`${rota}/`));
+    this.utilitariosAtivo = this.rotasUtilitarios.some(rota => url === rota || url.startsWith(`${rota}/`));
+
+    if (this.comercialAtivo) {
+      this.menuComercialAberto = true;
+    }
+    if (this.financeiroAtivo) {
+      this.menuFinanceiroAberto = true;
+    }
+    if (this.fiscalAtivo) {
+      this.menuFiscalAberto = true;
+    }
+    if (this.utilitariosAtivo) {
+      this.menuUtilitariosAberto = true;
     }
   }
 }

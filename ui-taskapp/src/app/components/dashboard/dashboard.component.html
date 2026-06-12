@@ -133,30 +133,54 @@
           <div class="card-content">
             <h3>Contratos vencendo (30 dias)</h3>
             <p class="card-value">{{ alertasContratosVencendo.length }}</p>
-            <p class="card-subtitle">
-              @if (carregandoAlertasContratosVencendo) {
-                Carregando...
-              } @else if (erroAlertasContratosVencendo) {
-                {{ erroAlertasContratosVencendo }}
-              } @else if (alertasContratosVencendo.length > 0) {
-                Exibido no lembrete ao logar (ex.: {{ alertasContratosVencendo[0].clienteCodigo }})
-              } @else {
-                Nenhum contrato prestes a vencer
-              }
-            </p>
           </div>
         </div>
-        <div class="stat-card" (click)="abrirModalContasReceberRecebidas()">
-          <div class="card-icon">
+        <div class="stat-card stat-card-financeiro-pendente" (click)="abrirModalContasAReceber()">
+          <div class="card-icon card-icon-receber">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
               <line x1="1" y1="10" x2="23" y2="10"></line>
             </svg>
           </div>
           <div class="card-content">
-            <h3>Contas a Receber / Recebidas</h3>
-            <p class="card-value">{{ totalContasAReceberDisplay }} / {{ totalContasRecebidasDisplay }}</p>
-            <p class="card-subtitle">Pendentes / Recebidas (Mês Atual)</p>
+            <h3>Contas a Receber</h3>
+            <p class="card-value">{{ formatarMoeda(totalContasAReceberDisplay) }}</p>
+          </div>
+        </div>
+        <div class="stat-card stat-card-financeiro-recebido" (click)="abrirModalContasRecebidas()">
+          <div class="card-icon card-icon-recebido">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <div class="card-content">
+            <h3>Contas Recebidas</h3>
+            <p class="card-value">{{ formatarMoeda(totalContasRecebidasDisplay) }}</p>
+          </div>
+        </div>
+        <div class="stat-card stat-card-financeiro-pendente" (click)="abrirModalContasPagar()">
+          <div class="card-icon card-icon-pagar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+              <line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+          </div>
+          <div class="card-content">
+            <h3>Contas a Pagar</h3>
+            <p class="card-value">{{ formatarMoeda(totalContasAPagarDisplay) }}</p>
+          </div>
+        </div>
+        <div class="stat-card stat-card-financeiro-pago" (click)="abrirModalContasPagas()">
+          <div class="card-icon card-icon-pago">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <div class="card-content">
+            <h3>Contas Pagas</h3>
+            <p class="card-value">{{ formatarMoeda(totalContasPagasDisplay) }}</p>
           </div>
         </div>
         <div class="stat-card" (click)="abrirModalDRE()">
@@ -169,20 +193,6 @@
           <div class="card-content">
             <h3>DRE</h3>
             <p class="card-value">{{ formatarMoeda(lucroDisplay) }}</p>
-            <p class="card-subtitle">Lucro (Mês Atual)</p>
-          </div>
-        </div>
-        <div class="stat-card" (click)="abrirModalContasPagarPagas()">
-          <div class="card-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-              <line x1="1" y1="10" x2="23" y2="10"></line>
-            </svg>
-          </div>
-          <div class="card-content">
-            <h3>Contas a Pagar / Pagas</h3>
-            <p class="card-value">{{ totalContasAPagarDisplay }} / {{ totalContasPagasDisplay }}</p>
-            <p class="card-subtitle">Pendentes / Pagas (Mês Atual)</p>
           </div>
         </div>
         <div class="stat-card" (click)="abrirModalNotasServico()">
@@ -198,7 +208,6 @@
           <div class="card-content">
             <h3>Notas de serviço</h3>
             <p class="card-value">{{ notasPendentesDisplay }} / {{ notasTotalDisplay }}</p>
-            <p class="card-subtitle">Pendentes / Total (mês atual)</p>
           </div>
         </div>
         <div class="stat-card" (click)="abrirModalValoresPorMes()">
@@ -211,7 +220,6 @@
           <div class="card-content">
             <h3>Valores por Mês</h3>
             <p class="card-value">{{ valoresPorMesDisplay() }}</p>
-            <p class="card-subtitle">Total de contratos</p>
           </div>
         </div>
       </div>
@@ -277,137 +285,17 @@
         </div>
         <div class="modal-body">
           @if (dadosModalContasPagar.length === 0) {
-            <p class="empty-state">Nenhuma conta a pagar encontrada no período selecionado.</p>
+            <p class="empty-state">Nenhuma conta a pagar encontrada no mês atual.</p>
           } @else {
-            <table class="detail-table">
-              <thead>
-                <tr>
-                  <th>Número Duplicata</th>
-                  <th>Data Vencimento</th>
-                  <th>Valor</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of dadosModalContasPagar; track item.parcelaId) {
-                  <tr>
-                    <td>{{ item.numeroDuplicata }}</td>
-                    <td>{{ formatarData(item.dataVencimento) }}</td>
-                    <td>{{ formatarMoeda(item.valor) }}</td>
-                    <td>
-                      <span class="status-badge" [ngClass]="item.paga ? 'status-paga' : 'status-pendente'">
-                        {{ item.paga ? 'Paga' : 'Pendente' }}
-                      </span>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          }
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- Modal: Contas Pagas no Mês -->
-  @if (showModalContasPagas) {
-    <div class="modal-overlay" (click)="fecharModalContasPagas()">
-      <div class="modal-content modal-large" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Contas Pagas no Mês Atual</h3>
-          <button class="btn-close" (click)="fecharModalContasPagas()">×</button>
-        </div>
-        <div class="modal-body">
-          @if (dadosModalContasPagas.length === 0) {
-            <p class="empty-state">Nenhuma conta paga encontrada no mês atual.</p>
-          } @else {
-            <div class="summary-info" style="margin-bottom: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 0.5rem;">
-              <p style="margin: 0; font-weight: 600; color: #1e293b;">
-                Total: <span style="color: #059669;">{{ formatarMoeda(estatisticas?.valorTotalContasPagas || 0) }}</span>
-              </p>
-            </div>
-            <table class="detail-table">
-              <thead>
-                <tr>
-                  <th>Número Duplicata</th>
-                  <th>Data Vencimento</th>
-                  <th>Data Pagamento</th>
-                  <th>Valor</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of dadosModalContasPagas; track item.parcelaId) {
-                  <tr>
-                    <td>{{ item.numeroDuplicata }}</td>
-                    <td>{{ formatarData(item.dataVencimento) }}</td>
-                    <td>{{ item.dataPagamento ? formatarData(item.dataPagamento) : '-' }}</td>
-                    <td>{{ formatarMoeda(item.valor) }}</td>
-                    <td>
-                      <span class="status-badge status-paga">
-                        Paga
-                      </span>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          }
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- Modal: Contas a Pagar / Pagas (Unificado) -->
-  @if (showModalContasPagarPagas) {
-    <div class="modal-overlay" (click)="fecharModalContasPagarPagas()">
-      <div class="modal-content modal-large" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Contas a Pagar / Pagas</h3>
-          <button class="btn-close" (click)="fecharModalContasPagarPagas()">×</button>
-        </div>
-        <div class="modal-body">
-          <!-- Resumo -->
-          <div class="summary-info" style="margin-bottom: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 0.5rem; display: flex; gap: 2rem;">
-            <div>
-              <p style="margin: 0; font-weight: 600; color: #1e293b;">
-                Pendentes: <span style="color: #f59e0b;">{{ estatisticas?.totalContasAPagar || 0 }}</span>
-              </p>
-            </div>
-            <div>
-              <p style="margin: 0; font-weight: 600; color: #1e293b;">
-                Pagas (Mês Atual): <span style="color: #059669;">{{ estatisticas?.totalContasPagas || 0 }} - {{ formatarMoeda(estatisticas?.valorTotalContasPagas || 0) }}</span>
-              </p>
-            </div>
-          </div>
-
-          <!-- Abas -->
-          <div class="tabs-container">
-            <button 
-              class="tab-button"
-              [class.active]="abaContasSelecionada === 'pagar'"
-              (click)="abaContasSelecionada = 'pagar'">
-              Contas a Pagar ({{ dadosModalContasPagar.length }})
-            </button>
-            <button 
-              class="tab-button"
-              [class.active]="abaContasSelecionada === 'pagas'"
-              (click)="abaContasSelecionada = 'pagas'">
-              Contas Pagas ({{ dadosModalContasPagas.length }})
-            </button>
-          </div>
-
-          <!-- Conteúdo: Contas a Pagar -->
-          @if (abaContasSelecionada === 'pagar') {
-            @if (dadosModalContasPagar.length === 0) {
-              <p class="empty-state">Nenhuma conta a pagar encontrada no período selecionado.</p>
-            } @else {
+            <div class="modal-table-wrap">
               <table class="detail-table">
                 <thead>
                   <tr>
-                    <th>Número Duplicata</th>
+                    <th>Número</th>
                     <th>Descrição</th>
-                    <th>Data Vencimento</th>
+                    <th>Centro de Custo</th>
+                    <th>Plano de Contas</th>
+                    <th>Vencimento</th>
                     <th>Valor</th>
                     <th>Status</th>
                   </tr>
@@ -417,32 +305,46 @@
                     <tr>
                       <td>{{ item.numeroDuplicata }}</td>
                       <td>{{ item.descricaoDespesa || '-' }}</td>
+                      <td>{{ item.centroCustoDescricao || '-' }}</td>
+                      <td>{{ item.planoContasDescricao || '-' }}</td>
                       <td>{{ formatarData(item.dataVencimento) }}</td>
                       <td>{{ formatarMoeda(item.valor) }}</td>
                       <td>
-                        <span class="status-badge status-pendente">
-                          Pendente
-                        </span>
+                        <span class="status-badge status-pendente">Pendente</span>
                       </td>
                     </tr>
                   }
                 </tbody>
               </table>
-            }
+            </div>
           }
+        </div>
+      </div>
+    </div>
+  }
 
-          <!-- Conteúdo: Contas Pagas -->
-          @if (abaContasSelecionada === 'pagas') {
-            @if (dadosModalContasPagas.length === 0) {
-              <p class="empty-state">Nenhuma conta paga encontrada no mês atual.</p>
-            } @else {
+  <!-- Modal: Contas Pagas -->
+  @if (showModalContasPagas) {
+    <div class="modal-overlay" (click)="fecharModalContasPagas()">
+      <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Contas Pagas</h3>
+          <button class="btn-close" (click)="fecharModalContasPagas()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (dadosModalContasPagas.length === 0) {
+            <p class="empty-state">Nenhuma conta paga encontrada no mês atual.</p>
+          } @else {
+            <div class="modal-table-wrap">
               <table class="detail-table">
                 <thead>
                   <tr>
-                    <th>Número Duplicata</th>
+                    <th>Número</th>
                     <th>Descrição</th>
-                    <th>Data Vencimento</th>
-                    <th>Data Pagamento</th>
+                    <th>Centro de Custo</th>
+                    <th>Plano de Contas</th>
+                    <th>Vencimento</th>
+                    <th>Pagamento</th>
                     <th>Valor</th>
                     <th>Status</th>
                   </tr>
@@ -452,75 +354,45 @@
                     <tr>
                       <td>{{ item.numeroDuplicata }}</td>
                       <td>{{ item.descricaoDespesa || '-' }}</td>
+                      <td>{{ item.centroCustoDescricao || '-' }}</td>
+                      <td>{{ item.planoContasDescricao || '-' }}</td>
                       <td>{{ formatarData(item.dataVencimento) }}</td>
                       <td>{{ item.dataPagamento ? formatarData(item.dataPagamento) : '-' }}</td>
                       <td>{{ formatarMoeda(item.valor) }}</td>
                       <td>
-                        <span class="status-badge status-paga">
-                          Paga
-                        </span>
+                        <span class="status-badge status-paga">Paga</span>
                       </td>
                     </tr>
                   }
                 </tbody>
               </table>
-            }
+            </div>
           }
         </div>
       </div>
     </div>
   }
 
-  <!-- Modal: Contas a Receber / Recebidas (Unificado) -->
-  @if (showModalContasReceberRecebidas) {
-    <div class="modal-overlay" (click)="fecharModalContasReceberRecebidas()">
+  <!-- Modal: Contas a Receber -->
+  @if (showModalContasAReceber) {
+    <div class="modal-overlay" (click)="fecharModalContasAReceber()">
       <div class="modal-content modal-large" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h3>Contas a Receber / Recebidas</h3>
-          <button class="btn-close" (click)="fecharModalContasReceberRecebidas()">×</button>
+          <h3>Contas a Receber</h3>
+          <button class="btn-close" (click)="fecharModalContasAReceber()">×</button>
         </div>
         <div class="modal-body">
-          <!-- Resumo -->
-          <div class="summary-info" style="margin-bottom: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 0.5rem; display: flex; gap: 2rem;">
-            <div>
-              <p style="margin: 0; font-weight: 600; color: #1e293b;">
-                Pendentes: <span style="color: #f59e0b;">{{ estatisticas?.totalContasAReceber || 0 }}</span>
-              </p>
-            </div>
-            <div>
-              <p style="margin: 0; font-weight: 600; color: #1e293b;">
-                Recebidas (Mês Atual): <span style="color: #059669;">{{ estatisticas?.totalContasRecebidas || 0 }} - {{ formatarMoeda(estatisticas?.valorTotalContasRecebidas || 0) }}</span>
-              </p>
-            </div>
-          </div>
-
-          <!-- Abas -->
-          <div class="tabs-container">
-            <button 
-              class="tab-button"
-              [class.active]="abaContasReceberSelecionada === 'receber'"
-              (click)="abaContasReceberSelecionada = 'receber'">
-              Contas a Receber ({{ dadosModalContasAReceber.length }})
-            </button>
-            <button 
-              class="tab-button"
-              [class.active]="abaContasReceberSelecionada === 'recebidas'"
-              (click)="abaContasReceberSelecionada = 'recebidas'">
-              Contas Recebidas ({{ dadosModalContasRecebidas.length }})
-            </button>
-          </div>
-
-          <!-- Conteúdo: Contas a Receber -->
-          @if (abaContasReceberSelecionada === 'receber') {
-            @if (dadosModalContasAReceber.length === 0) {
-              <p class="empty-state">Nenhuma conta a receber encontrada no período selecionado.</p>
-            } @else {
+          @if (dadosModalContasAReceber.length === 0) {
+            <p class="empty-state">Nenhuma conta a receber encontrada no mês atual.</p>
+          } @else {
+            <div class="modal-table-wrap">
               <table class="detail-table">
                 <thead>
                   <tr>
-                    <th>Número Duplicata</th>
+                    <th>Número</th>
+                    <th>Cliente</th>
                     <th>Descrição</th>
-                    <th>Data Vencimento</th>
+                    <th>Vencimento</th>
                     <th>Valor</th>
                     <th>Status</th>
                   </tr>
@@ -529,33 +401,45 @@
                   @for (item of dadosModalContasAReceber; track item.parcelaId) {
                     <tr>
                       <td>{{ item.numeroDuplicata }}</td>
+                      <td [title]="item.clienteNome || '-'">{{ item.clienteNome || '-' }}</td>
                       <td>{{ item.descricaoDespesa || '-' }}</td>
                       <td>{{ formatarData(item.dataVencimento) }}</td>
                       <td>{{ formatarMoeda(item.valor) }}</td>
                       <td>
-                        <span class="status-badge status-pendente">
-                          Pendente
-                        </span>
+                        <span class="status-badge status-pendente">Pendente</span>
                       </td>
                     </tr>
                   }
                 </tbody>
               </table>
-            }
+            </div>
           }
+        </div>
+      </div>
+    </div>
+  }
 
-          <!-- Conteúdo: Contas Recebidas -->
-          @if (abaContasReceberSelecionada === 'recebidas') {
-            @if (dadosModalContasRecebidas.length === 0) {
-              <p class="empty-state">Nenhuma conta recebida encontrada no mês atual.</p>
-            } @else {
+  <!-- Modal: Contas Recebidas -->
+  @if (showModalContasRecebidas) {
+    <div class="modal-overlay" (click)="fecharModalContasRecebidas()">
+      <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Contas Recebidas</h3>
+          <button class="btn-close" (click)="fecharModalContasRecebidas()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (dadosModalContasRecebidas.length === 0) {
+            <p class="empty-state">Nenhuma conta recebida encontrada no mês atual.</p>
+          } @else {
+            <div class="modal-table-wrap">
               <table class="detail-table">
                 <thead>
                   <tr>
-                    <th>Número Duplicata</th>
+                    <th>Número</th>
+                    <th>Cliente</th>
                     <th>Descrição</th>
-                    <th>Data Vencimento</th>
-                    <th>Data Recebimento</th>
+                    <th>Vencimento</th>
+                    <th>Recebimento</th>
                     <th>Valor</th>
                     <th>Status</th>
                   </tr>
@@ -564,20 +448,19 @@
                   @for (item of dadosModalContasRecebidas; track item.parcelaId) {
                     <tr>
                       <td>{{ item.numeroDuplicata }}</td>
+                      <td [title]="item.clienteNome || '-'">{{ item.clienteNome || '-' }}</td>
                       <td>{{ item.descricaoDespesa || '-' }}</td>
                       <td>{{ formatarData(item.dataVencimento) }}</td>
                       <td>{{ item.dataPagamento ? formatarData(item.dataPagamento) : '-' }}</td>
                       <td>{{ formatarMoeda(item.valor) }}</td>
                       <td>
-                        <span class="status-badge status-paga">
-                          Recebida
-                        </span>
+                        <span class="status-badge status-paga">Recebida</span>
                       </td>
                     </tr>
                   }
                 </tbody>
               </table>
-            }
+            </div>
           }
         </div>
       </div>

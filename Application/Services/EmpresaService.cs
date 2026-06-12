@@ -17,14 +17,6 @@ public class EmpresaService : IEmpresaService
         _centroCustoRepository = centroCustoRepository;
     }
 
-    private static EmpresaResponseDto Mapear(Empresa empresa) => new()
-    {
-        EmpresaId = empresa.EmpId,
-        Cnpj = empresa.EmpCnpj,
-        RazaoSocial = empresa.EmpRazaoSocial,
-        Fantasia = empresa.EmpFantasia
-    };
-
     public async Task<EmpresaResponseDto> CadastrarEmpresaAsync(CadastroEmpresaDto dto)
     {
         var cnpjLimpo = NormalizarCnpj(dto.Cnpj);
@@ -39,19 +31,35 @@ public class EmpresaService : IEmpresaService
 
         await _empresaRepository.InserirAsync(empresa);
         await _empresaRepository.SalvarAlteracoesAsync();
-        return Mapear(empresa);
+
+        var centro = new CentroCusto { EmpId = empresa.EmpId };
+        await _centroCustoRepository.InserirAsync(centro);
+        await _centroCustoRepository.SalvarAlteracoesAsync();
+
+        return Mapear(empresa, centro.CcuId);
     }
 
     public async Task<EmpresaResponseDto?> ObterEmpresaPorIdAsync(int id)
     {
         var empresa = await _empresaRepository.GetByIdAsync(id);
-        return empresa == null ? null : Mapear(empresa);
+        if (empresa == null)
+            return null;
+
+        var centroCustoId = await ObterCentroCustoIdDaEmpresaAsync(empresa.EmpId);
+        return Mapear(empresa, centroCustoId);
     }
 
     public async Task<IEnumerable<EmpresaResponseDto>> ListarTodasEmpresasAsync()
     {
         var empresas = await _empresaRepository.ListarTodosAsync();
-        return empresas.OrderBy(e => e.EmpFantasia).Select(Mapear);
+        var centros = await _centroCustoRepository.ListarTodosAsync();
+        var centroPorEmpresa = centros
+            .GroupBy(c => c.EmpId)
+            .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CcuId).First().CcuId);
+
+        return empresas
+            .OrderBy(e => e.EmpFantasia)
+            .Select(e => Mapear(e, centroPorEmpresa.GetValueOrDefault(e.EmpId)));
     }
 
     public async Task<EmpresaResponseDto> AtualizarEmpresaAsync(int id, CadastroEmpresaDto dto)
@@ -69,7 +77,17 @@ public class EmpresaService : IEmpresaService
 
         await _empresaRepository.AtualizarAsync(empresa);
         await _empresaRepository.SalvarAlteracoesAsync();
-        return Mapear(empresa);
+
+        var centroCustoId = await ObterCentroCustoIdDaEmpresaAsync(empresa.EmpId);
+        if (!centroCustoId.HasValue)
+        {
+            var centro = new CentroCusto { EmpId = empresa.EmpId };
+            await _centroCustoRepository.InserirAsync(centro);
+            await _centroCustoRepository.SalvarAlteracoesAsync();
+            centroCustoId = centro.CcuId;
+        }
+
+        return Mapear(empresa, centroCustoId);
     }
 
     public async Task ExcluirEmpresaAsync(int id)
@@ -78,13 +96,31 @@ public class EmpresaService : IEmpresaService
         if (empresa == null)
             throw new InvalidOperationException("Empresa não encontrada.");
 
-        var centrosVinculados = await _centroCustoRepository.BuscarTodosAsync(c => c.EmpId == id);
-        if (centrosVinculados.Any())
-            throw new InvalidOperationException("Não é possível excluir: existem centros de custo vinculados a esta empresa.");
+        var centrosVinculados = (await _centroCustoRepository.BuscarTodosAsync(c => c.EmpId == id)).ToList();
+        foreach (var centro in centrosVinculados)
+        {
+            await _centroCustoRepository.ExcluirAsync(centro);
+        }
 
+        await _centroCustoRepository.SalvarAlteracoesAsync();
         await _empresaRepository.ExcluirAsync(empresa);
         await _empresaRepository.SalvarAlteracoesAsync();
     }
+
+    private async Task<int?> ObterCentroCustoIdDaEmpresaAsync(int empresaId)
+    {
+        var centros = await _centroCustoRepository.BuscarTodosAsync(c => c.EmpId == empresaId);
+        return centros.OrderBy(c => c.CcuId).FirstOrDefault()?.CcuId;
+    }
+
+    private static EmpresaResponseDto Mapear(Empresa empresa, int? centroCustoId) => new()
+    {
+        EmpresaId = empresa.EmpId,
+        CentroCustoId = centroCustoId,
+        Cnpj = empresa.EmpCnpj,
+        RazaoSocial = empresa.EmpRazaoSocial,
+        Fantasia = empresa.EmpFantasia
+    };
 
     private async Task ValidarCnpjUnicoAsync(string cnpj, int? idIgnorar)
     {

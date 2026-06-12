@@ -5,10 +5,12 @@ import { ApiService } from './api.service';
 export interface DashboardEstatisticasDto {
   totalAtendimentosPorUsuario: number;
   totalContasAPagar: number;
+  valorTotalContasAPagar: number;
   totalAtendimentosPorCliente: number;
   totalContasPagas: number;
   valorTotalContasPagas: number;
   totalContasAReceber: number;
+  valorTotalContasAReceber: number;
   totalContasRecebidas: number;
   valorTotalContasRecebidas: number;
   lucro: number;
@@ -45,6 +47,9 @@ export interface ContaAPagarDto {
   dataPagamento?: string;
   valor: number;
   paga: boolean;
+  clienteNome?: string;
+  centroCustoDescricao?: string;
+  planoContasDescricao?: string;
 }
 
 export interface AtendimentoPorClienteDto {

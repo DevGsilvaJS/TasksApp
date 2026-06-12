@@ -24,7 +24,7 @@ public class Tarefa
     public DateTime? TarDtConclusao { get; set; }
 
     [Column("TARSTATUS")]
-    public StatusTarefa TarStatus { get; set; } = StatusTarefa.EmAberto;
+    public int TarStatus { get; set; } = (int)StatusTarefa.EmAberto;
 
     [Column("TARTITULO")]
     [MaxLength(255)]
@@ -43,7 +43,7 @@ public class Tarefa
     public string? TarCelularSolicitante { get; set; }
 
     [Column("TARANDAMENTO")]
-    public AndamentoTarefa TarAndamento { get; set; } = AndamentoTarefa.AFazer;
+    public int TarAndamento { get; set; } = (int)AndamentoTarefa.AFazer;
 
     [Column("TARTIPOATENDIMENTO")]
     public TipoAtendimento? TarTipoAtendimento { get; set; }

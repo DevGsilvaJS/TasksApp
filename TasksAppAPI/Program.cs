@@ -344,6 +344,8 @@ try
         await GarantirColunaCentroCustoDuplicataRunner.ExecutarAsync(db);
         await GarantirColunaPlanoContasDuplicataRunner.ExecutarAsync(db);
         await GarantirColunaCentroCustoPlanoContasParcelaRunner.ExecutarAsync(db);
+        await GarantirColunaEmpresaDuplicataParcelaRunner.ExecutarAsync(db);
+        await GarantirPlanoContasReceitaConsultoriaRunner.ExecutarAsync(db);
     }
 }
 catch (Exception ex)

@@ -20,7 +20,7 @@ export interface CadastroDuplicataDto {
   descricaoDespesa?: string;
   tipo?: string; // CP = Contas a Pagar, CR = Contas a Receber
   clienteId?: number;
-  centroCustoId?: number;
+  empresaId?: number;
   planoContasId?: number;
   dataPrimeiroVencimento?: string;
   parcelas?: CadastroParcelaDto[];
@@ -37,15 +37,19 @@ export interface ParcelaResponseDto {
   vencimento: string;
   status: string;
   dataPagamento?: string;
-  centroCustoId?: number;
-  centroCustoEmpresaFantasia?: string;
+  empresaId?: number;
+  centroCustoDescricao?: string;
   planoContasId?: number;
   planoContasDescricao?: string;
 }
 
 export interface AtualizarClassificacaoParcelaDto {
-  centroCustoId: number;
-  planoContasId: number;
+  empresaId: number;
+  planoContasId?: number;
+}
+
+export interface BaixarParcelaDto {
+  planoContasId?: number;
 }
 
 export interface DuplicataResponseDto {
@@ -56,8 +60,8 @@ export interface DuplicataResponseDto {
   descricaoDespesa?: string;
   tipo?: string; // CP = Contas a Pagar, CR = Contas a Receber
   clienteId?: number;
-  centroCustoId?: number;
-  centroCustoEmpresaFantasia?: string;
+  empresaId?: number;
+  centroCustoDescricao?: string;
   planoContasId?: number;
   planoContasDescricao?: string;
   clienteNome?: string;
@@ -93,8 +97,8 @@ export class DuplicataService {
     return this.api.delete<void>(`duplicata/${id}`);
   }
 
-  baixarParcela(parcelaId: number): Observable<ParcelaResponseDto> {
-    return this.api.post<ParcelaResponseDto>(`duplicata/parcelas/${parcelaId}/baixar`, {});
+  baixarParcela(parcelaId: number, dto?: BaixarParcelaDto): Observable<ParcelaResponseDto> {
+    return this.api.post<ParcelaResponseDto>(`duplicata/parcelas/${parcelaId}/baixar`, dto ?? {});
   }
 
   reativarParcela(parcelaId: number): Observable<ParcelaResponseDto> {

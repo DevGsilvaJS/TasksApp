@@ -15,5 +15,5 @@ public interface ITarefaService
     Task<IEnumerable<TarefaResponseDto>> ListarTarefasAsync(int? usuarioId, bool incluirConcluidas);
     Task<TarefaResponseDto> AtualizarTarefaAsync(int id, CadastroTarefaDto dto);
     Task ExcluirTarefaAsync(int id);
-    Task<TarefaResponseDto> AlterarStatusTarefaAsync(int id, Domain.Enums.StatusTarefa novoStatus);
+    Task<TarefaResponseDto> AlterarStatusTarefaAsync(int id, int novoStatus);
 }

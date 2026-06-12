@@ -7,6 +7,8 @@ namespace Application.Services;
 
 public class TarefaService : ITarefaService
 {
+    private const int StatusConcluidaId = (int)StatusTarefa.Concluida;
+
     private readonly IRepository<Tarefa> _tarefaRepository;
     private readonly IRepository<Cliente> _clienteRepository;
     private readonly IRepository<Usuario> _usuarioRepository;
@@ -74,7 +76,7 @@ public class TarefaService : ITarefaService
             UsuId = dto.UsuarioId,
             TarDtCadastro = DateTime.UtcNow,
             TarDtConclusao = dto.DataConclusao?.ToUniversalTime(),
-            TarStatus = (StatusTarefa)dto.Status,
+            TarStatus = dto.Status,
             TarTitulo = dto.Titulo?.ToUpper(),
             TarProtocolo = dto.Protocolo?.ToUpper(),
             TarSolicitante = dto.Solicitante?.ToUpper(),
@@ -126,7 +128,7 @@ public class TarefaService : ITarefaService
         var tarefas = await _tarefaRepository.ListarTodosAsync();
         var filtradas = tarefas.Where(t =>
             (!usuarioId.HasValue || t.UsuId == usuarioId.Value) &&
-            (incluirConcluidas || t.TarStatus != StatusTarefa.Concluida));
+            (incluirConcluidas || t.TarStatus != StatusConcluidaId));
         var resultado = new List<TarefaResponseDto>();
         foreach (var tarefa in filtradas)
         {
@@ -155,7 +157,7 @@ public class TarefaService : ITarefaService
         tarefa.CliId = dto.ClienteId;
         tarefa.UsuId = dto.UsuarioId;
         tarefa.TarDtConclusao = dto.DataConclusao?.ToUniversalTime();
-        tarefa.TarStatus = (StatusTarefa)dto.Status;
+        tarefa.TarStatus = dto.Status;
         tarefa.TarTitulo = dto.Titulo?.ToUpper();
         tarefa.TarProtocolo = dto.Protocolo?.ToUpper();
         tarefa.TarSolicitante = dto.Solicitante?.ToUpper();
@@ -220,7 +222,7 @@ public class TarefaService : ITarefaService
         await _tarefaRepository.SalvarAlteracoesAsync();
     }
 
-    public async Task<TarefaResponseDto> AlterarStatusTarefaAsync(int id, StatusTarefa novoStatus)
+    public async Task<TarefaResponseDto> AlterarStatusTarefaAsync(int id, int novoStatus)
     {
         var tarefa = await _tarefaRepository.GetByIdAsync(id);
         if (tarefa == null)
@@ -229,12 +231,12 @@ public class TarefaService : ITarefaService
         tarefa.TarStatus = novoStatus;
 
         // Se concluída, definir data de conclusão
-        if (novoStatus == StatusTarefa.Concluida && tarefa.TarDtConclusao == null)
+        if (novoStatus == StatusConcluidaId && tarefa.TarDtConclusao == null)
         {
             tarefa.TarDtConclusao = DateTime.UtcNow;
         }
         // Se não concluída, limpar data de conclusão
-        else if (novoStatus != StatusTarefa.Concluida)
+        else if (novoStatus != StatusConcluidaId)
         {
             tarefa.TarDtConclusao = null;
         }
@@ -348,24 +350,23 @@ public class TarefaService : ITarefaService
         };
     }
 
-    private async Task<string> ObterDescricaoStatusAsync(StatusTarefa status)
+    private async Task<string> ObterDescricaoStatusAsync(int statusId)
     {
-        if (Enum.IsDefined(typeof(StatusTarefa), status))
+        if (Enum.IsDefined(typeof(StatusTarefa), statusId))
         {
-            return status switch
+            return ((StatusTarefa)statusId) switch
             {
                 StatusTarefa.EmAberto => "Em Aberto",
                 StatusTarefa.Concluida => "Concluída",
                 StatusTarefa.Cancelada => "Cancelada",
                 StatusTarefa.Reativada => "Reativada",
                 StatusTarefa.AguardandoCliente => "Aguardando Cliente",
-                _ => status.ToString()
+                _ => statusId.ToString()
             };
         }
 
-        var id = (int)status;
-        var cadastro = await _cadastroStatusTarefaRepository.GetByIdAsync(id);
-        return cadastro?.Descricao ?? status.ToString();
+        var cadastro = await _cadastroStatusTarefaRepository.GetByIdAsync(statusId);
+        return cadastro?.Descricao ?? statusId.ToString();
     }
 
     private async Task<string> ObterDescricaoTipoAtendimentoAsync(TipoAtendimento? tipo)
@@ -399,23 +400,22 @@ public class TarefaService : ITarefaService
         };
     }
 
-    private async Task<string> ObterDescricaoAndamentoAsync(AndamentoTarefa andamento)
+    private async Task<string> ObterDescricaoAndamentoAsync(int andamentoId)
     {
-        if (Enum.IsDefined(typeof(AndamentoTarefa), andamento))
+        if (Enum.IsDefined(typeof(AndamentoTarefa), andamentoId))
         {
-            return andamento switch
+            return ((AndamentoTarefa)andamentoId) switch
             {
                 AndamentoTarefa.AFazer => "A FAZER",
                 AndamentoTarefa.EmAndamento => "EM ANDAMENTO",
                 AndamentoTarefa.Testar => "TESTAR",
                 AndamentoTarefa.Resolvido => "RESOLVIDO",
-                _ => andamento.ToString()
+                _ => andamentoId.ToString()
             };
         }
 
-        var id = (int)andamento;
-        var cadastro = await _cadastroAndamentoRepository.GetByIdAsync(id);
-        return cadastro?.Descricao ?? andamento.ToString();
+        var cadastro = await _cadastroAndamentoRepository.GetByIdAsync(andamentoId);
+        return cadastro?.Descricao ?? andamentoId.ToString();
     }
 
     private async Task<string> ObterDescricaoTipoContatoAsync(TipoContato? tipo)

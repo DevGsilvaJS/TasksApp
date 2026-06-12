@@ -29,15 +29,14 @@ public class CadastroDuplicataDto
     [MaxLength(2)]
     public string Tipo { get; set; } = "CP"; // CP = Contas a Pagar, CR = Contas a Receber
 
-    /// <summary>Cliente (opcional; usado em Contas a Receber para agrupar por cliente).</summary>
+    /// <summary>Cliente (obrigatório em Contas a Receber).</summary>
     public int? ClienteId { get; set; }
 
     /// <summary>Centro de custo (MEI/empresa) para fluxo de caixa.</summary>
     [Required(ErrorMessage = "Centro de custo é obrigatório")]
-    public int? CentroCustoId { get; set; }
+    public int? EmpresaId { get; set; }
 
-    /// <summary>Plano de contas para classificação contábil.</summary>
-    [Required(ErrorMessage = "Plano de contas é obrigatório")]
+    /// <summary>Plano de contas (obrigatório em CR; opcional em CP — sem plano não entra no fluxo de caixa).</summary>
     public int? PlanoContasId { get; set; }
 
     // Se não fornecido, será usado para gerar automaticamente
