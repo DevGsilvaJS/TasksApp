@@ -100,6 +100,24 @@ public class CadastroAtendimentoController : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("tipo-atendimento/{id}")]
+    public async Task<ActionResult> ExcluirTipoAtendimento(int id)
+    {
+        try
+        {
+            await _service.ExcluirTipoAtendimentoAsync(id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpGet("tipo-contato")]
     public async Task<ActionResult<IEnumerable<CadastroTipoContatoResponseDto>>> ListarTipoContato([FromQuery] bool? apenasAtivos)
     {
@@ -136,6 +154,46 @@ public class CadastroAtendimentoController : ControllerBase
     public async Task<ActionResult> AlterarAtivoTipoContato(int id, [FromBody] AlterarAtivoDto dto)
     {
         var ok = await _service.AlterarAtivoTipoContatoAsync(id, dto.Ativo);
+        if (!ok) return NotFound();
+        return NoContent();
+    }
+
+    [HttpGet("andamento")]
+    public async Task<ActionResult<IEnumerable<CadastroAndamentoResponseDto>>> ListarAndamento([FromQuery] bool? apenasAtivos)
+    {
+        var list = await _service.ListarAndamentoAsync(apenasAtivos);
+        return Ok(list);
+    }
+
+    [HttpGet("andamento/{id}")]
+    public async Task<ActionResult<CadastroAndamentoResponseDto>> ObterAndamento(int id)
+    {
+        var item = await _service.ObterAndamentoPorIdAsync(id);
+        if (item == null) return NotFound();
+        return Ok(item);
+    }
+
+    [HttpPost("andamento")]
+    public async Task<ActionResult<CadastroAndamentoResponseDto>> CriarAndamento([FromBody] CadastroAndamentoRequestDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Descricao)) return BadRequest(new { message = "Descrição é obrigatória." });
+        var created = await _service.CriarAndamentoAsync(dto);
+        return CreatedAtAction(nameof(ObterAndamento), new { id = created.Id }, created);
+    }
+
+    [HttpPut("andamento/{id}")]
+    public async Task<ActionResult<CadastroAndamentoResponseDto>> AtualizarAndamento(int id, [FromBody] CadastroAndamentoRequestDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Descricao)) return BadRequest(new { message = "Descrição é obrigatória." });
+        var updated = await _service.AtualizarAndamentoAsync(id, dto);
+        if (updated == null) return NotFound();
+        return Ok(updated);
+    }
+
+    [HttpPatch("andamento/{id}/ativo")]
+    public async Task<ActionResult> AlterarAtivoAndamento(int id, [FromBody] AlterarAtivoDto dto)
+    {
+        var ok = await _service.AlterarAtivoAndamentoAsync(id, dto.Ativo);
         if (!ok) return NotFound();
         return NoContent();
     }

@@ -15,12 +15,19 @@ public interface ICadastroAtendimentoService
     Task<CadastroTipoAtendimentoResponseDto> CriarTipoAtendimentoAsync(CadastroTipoAtendimentoRequestDto dto);
     Task<CadastroTipoAtendimentoResponseDto?> AtualizarTipoAtendimentoAsync(int id, CadastroTipoAtendimentoRequestDto dto);
     Task<bool> AlterarAtivoTipoAtendimentoAsync(int id, bool ativo);
+    Task ExcluirTipoAtendimentoAsync(int id);
 
     Task<IEnumerable<CadastroTipoContatoResponseDto>> ListarTipoContatoAsync(bool? apenasAtivos = null);
     Task<CadastroTipoContatoResponseDto?> ObterTipoContatoPorIdAsync(int id);
     Task<CadastroTipoContatoResponseDto> CriarTipoContatoAsync(CadastroTipoContatoRequestDto dto);
     Task<CadastroTipoContatoResponseDto?> AtualizarTipoContatoAsync(int id, CadastroTipoContatoRequestDto dto);
     Task<bool> AlterarAtivoTipoContatoAsync(int id, bool ativo);
+
+    Task<IEnumerable<CadastroAndamentoResponseDto>> ListarAndamentoAsync(bool? apenasAtivos = null);
+    Task<CadastroAndamentoResponseDto?> ObterAndamentoPorIdAsync(int id);
+    Task<CadastroAndamentoResponseDto> CriarAndamentoAsync(CadastroAndamentoRequestDto dto);
+    Task<CadastroAndamentoResponseDto?> AtualizarAndamentoAsync(int id, CadastroAndamentoRequestDto dto);
+    Task<bool> AlterarAtivoAndamentoAsync(int id, bool ativo);
 
     Task<IEnumerable<CadastroStatusAtendimentoComercialResponseDto>> ListarStatusAtendimentoComercialAsync(bool? apenasAtivos = null);
     Task<CadastroStatusAtendimentoComercialResponseDto?> ObterStatusAtendimentoComercialPorIdAsync(int id);

@@ -48,6 +48,11 @@ export const routes: Routes = [
     canActivate: [authGuard, perfilGuard]
   },
   {
+    path: 'relatorios-gerenciais',
+    loadComponent: () => import('./components/relatorios-gerenciais/relatorios-gerenciais.component').then(m => m.RelatoriosGerenciaisComponent),
+    canActivate: [authGuard, perfilGuard]
+  },
+  {
     path: 'possiveis-clientes',
     loadComponent: () => import('./components/possiveis-clientes/possiveis-clientes.component').then(m => m.PossiveisClientesComponent),
     canActivate: [authGuard]

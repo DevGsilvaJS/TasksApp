@@ -42,9 +42,9 @@
             <div class="form-group">
               <label>Usuário *</label>
               <select [(ngModel)]="novoCliente.usuarioId" name="usuarioId" required class="form-select">
-                <option [value]="0">Selecione um usuário</option>
+                <option [ngValue]="0">Selecione um usuário</option>
                 @for (usuario of usuarios; track usuario.usuarioId) {
-                  <option [value]="usuario.usuarioId">{{ usuario.nome }}</option>
+                  <option [ngValue]="usuario.usuarioId">{{ usuario.nome }}</option>
                 }
               </select>
             </div>
@@ -54,7 +54,7 @@
               <label>Status</label>
               <select [(ngModel)]="novoCliente.status" name="status" class="form-select">
                 @for (status of statusOptions; track status.value) {
-                  <option [value]="status.value">{{ status.icon }} {{ status.label }}</option>
+                  <option [ngValue]="status.value">{{ status.icon }} {{ status.label }}</option>
                 }
               </select>
             </div>

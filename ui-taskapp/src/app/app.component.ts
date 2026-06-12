@@ -147,15 +147,25 @@ export class AppComponent implements OnInit {
     }
   }
 
+  fecharAlertaPendencias(): void {
+    if (this.alertaAtual?.tipo !== 'pendencias') return;
+    this.avancarAlerta();
+  }
+
+  confirmarPendenciasEAvancar(): void {
+    if (this.alertaAtual?.tipo !== 'pendencias') return;
+    if (this.cienteAlertaAtual) {
+      this.marcarCiencia(this.chaveCienciaPendencias());
+    }
+    this.avancarAlerta();
+  }
+
   confirmarCienciaEAvancar() {
     if (!this.alertaAtual) return;
     if (!this.cienteAlertaAtual) return;
 
     if (this.alertaAtual.tipo === 'contrato-vencendo') {
       this.marcarCiencia(this.chaveCienciaContrato(this.alertaAtual.data));
-    }
-    if (this.alertaAtual.tipo === 'pendencias') {
-      this.marcarCiencia(this.chaveCienciaPendencias());
     }
     if (this.alertaAtual.tipo === 'reunioes') {
       this.marcarCiencia(this.chaveCienciaReunioes(this.alertaAtual.data));

@@ -5,6 +5,7 @@ import { ClienteService, ClienteResponseDto, CadastroClienteDto, StatusCliente, 
 import { UsuarioService, UsuarioResponseDto } from '../../services/usuario.service';
 import { MascaraMoedaBrDirective } from '../../directives/mascara-moeda-br.directive';
 import { NotificacaoService } from '../../services/notificacao.service';
+import { extrairMensagemErroApi } from '../../utils/erro-api.util';
 
 @Component({
   selector: 'app-clientes',
@@ -97,7 +98,7 @@ export class ClientesComponent implements OnInit {
     let lista = [...this.clientes];
 
     if (!this.exibirInativos) {
-      lista = lista.filter(c => c.status === StatusCliente.Ativo);
+      lista = lista.filter(c => c.status !== StatusCliente.Inativo);
     }
 
     if (termo) {
@@ -155,7 +156,7 @@ export class ClientesComponent implements OnInit {
       diaPagamento: cliente.diaPagamento,
       diaNfServico: cliente.diaNfServico ?? undefined,
       emails: cliente.emails?.length ? [...cliente.emails] : undefined,
-      status: cliente.status || StatusCliente.Ativo,
+      status: Number(cliente.status ?? StatusCliente.Ativo) as StatusCliente,
       contratos: cliente.contratos?.length
         ? cliente.contratos.map(c => ({
             valorMensal: c.valorMensal,
@@ -228,6 +229,9 @@ export class ClientesComponent implements OnInit {
       this.novoCliente.diaNfServico = undefined;
     }
 
+    this.novoCliente.usuarioId = Number(this.novoCliente.usuarioId);
+    this.novoCliente.status = Number(this.novoCliente.status) as StatusCliente;
+
     this.loading = true;
     this.error = null;
 
@@ -243,7 +247,7 @@ export class ClientesComponent implements OnInit {
         this.notificacao.sucesso(this.editando ? 'Cliente atualizado com sucesso.' : 'Cliente cadastrado com sucesso.');
       },
       error: (err) => {
-        this.error = err.error?.message || 'Erro ao salvar cliente';
+        this.error = extrairMensagemErroApi(err, 'Erro ao salvar cliente');
         this.loading = false;
       }
     });

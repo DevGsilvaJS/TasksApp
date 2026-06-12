@@ -20,7 +20,7 @@
     </div>
   }
 
-  @if (loading && statusList.length === 0 && tipoAtendimentoList.length === 0 && tipoContatoList.length === 0) {
+  @if (loading && statusList.length === 0 && tipoAtendimentoList.length === 0 && tipoContatoList.length === 0 && andamentoList.length === 0) {
     <div class="loading">Carregando...</div>
   } @else {
     <div class="cadastros-grid">
@@ -139,6 +139,49 @@
                     </button>
                     <button type="button" class="btn-action" [class.btn-ativar]="!item.ativo" [class.btn-inativar]="item.ativo"
                       (click)="alterarAtivo('tipoContato', item)" [title]="item.ativo ? 'Inativar' : 'Ativar'">
+                      @if (item.ativo) {
+                        <i class="pi pi-ban"></i>
+                      } @else {
+                        <i class="pi pi-check"></i>
+                      }
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="cadastro-section">
+        <div class="cadastro-section-header">
+          <h3>Andamento</h3>
+          <button type="button" class="btn-primary btn-sm" (click)="abrirNovo('andamento')">
+            <i class="pi pi-plus"></i> Novo
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="cadastro-table">
+            <thead>
+              <tr>
+                <th>Id</th>
+                <th>Descrição</th>
+                <th>Ativo</th>
+                <th class="col-acoes">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of andamentoList; track item.id) {
+                <tr [class.inativo]="!item.ativo">
+                  <td>{{ item.id }}</td>
+                  <td>{{ item.descricao }}</td>
+                  <td>{{ item.ativo ? 'Sim' : 'Não' }}</td>
+                  <td>
+                    <button type="button" class="btn-action btn-edit" (click)="abrirEditar('andamento', item)" title="Editar">
+                      <i class="pi pi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn-action" [class.btn-ativar]="!item.ativo" [class.btn-inativar]="item.ativo"
+                      (click)="alterarAtivo('andamento', item)" [title]="item.ativo ? 'Inativar' : 'Ativar'">
                       @if (item.ativo) {
                         <i class="pi pi-ban"></i>
                       } @else {

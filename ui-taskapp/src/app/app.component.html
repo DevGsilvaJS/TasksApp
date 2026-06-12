@@ -16,16 +16,16 @@
             <h3>Lembrete do mês</h3>
             <p>Você tem pendências para não esquecer</p>
           </div>
-          <button type="button" class="pendencias-btn-close" aria-label="Fechar" disabled title="Marque ciência para prosseguir">×</button>
+          <button type="button" class="pendencias-btn-close" aria-label="Fechar" (click)="fecharAlertaPendencias()">×</button>
         </div>
         <div class="pendencias-body">
           @if (alertaAtual.data.notasServicoPendentesMes.length > 0) {
             <section class="pendencias-section">
-              <h4 class="pendencias-section-title">
+              <h4 class="pendencias-section-title pendencias-section-title-notas">
                 <span class="pendencias-section-icon pendencias-icon-doc">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                 </span>
-                Notas de serviço pendentes
+                NOTAS DE SERVIÇO PENDENTES
               </h4>
               <ul class="pendencias-lista">
                 @for (item of alertaAtual.data.notasServicoPendentesMes; track item.clienteId) {
@@ -53,7 +53,7 @@
             <input type="checkbox" [(ngModel)]="cienteAlertaAtual" />
             <span>Estou ciente das pendências deste mês.</span>
           </label>
-          <button type="button" class="pendencias-btn-ok" (click)="confirmarCienciaEAvancar()" [disabled]="!cienteAlertaAtual">Entendi</button>
+          <button type="button" class="pendencias-btn-ok" (click)="confirmarPendenciasEAvancar()">Entendi</button>
         </div>
       }
       @if (alertaAtual.tipo === 'contrato-vencendo') {
@@ -200,6 +200,14 @@
               <polyline points="10 9 9 9 8 9"></polyline>
             </svg>
             <span>Anotações</span>
+          </a>
+          <a routerLink="/relatorios-gerenciais" routerLinkActive="active" class="nav-item">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            <span>Relatórios Gerenciais</span>
           </a>
         }
         <a routerLink="/possiveis-clientes" routerLinkActive="active" class="nav-item">
