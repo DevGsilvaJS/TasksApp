@@ -463,6 +463,19 @@ export class ContasPagarComponent implements OnInit {
     return duplicata.parcelas?.some((parcela: ParcelaResponseDto) => parcela.status?.toLowerCase() === 'paga') ?? false;
   }
 
+  obterValorParcela(duplicata: DuplicataResponseDto): number {
+    const primeiraParcela = duplicata.parcelas?.[0];
+    if (primeiraParcela?.valor != null) {
+      return primeiraParcela.valor;
+    }
+
+    if (duplicata.numeroParcelas > 0) {
+      return duplicata.valorTotal / duplicata.numeroParcelas;
+    }
+
+    return 0;
+  }
+
   formatarMoeda(valor: number): string {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',

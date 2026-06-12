@@ -279,6 +279,7 @@
             <th>Centro de Custo</th>
             <th>Descrição da Despesa</th>
             <th>Parcelas</th>
+            <th>Valor da Parcela</th>
             <th>Valor Total</th>
             <th>Valor Recebido</th>
             <th>Valor Pendente</th>
@@ -294,6 +295,7 @@
               <td [title]="duplicata.centroCustoDescricao || '-'">{{ duplicata.centroCustoDescricao || '-' }}</td>
               <td [title]="duplicata.descricaoDespesa || '-'">{{ duplicata.descricaoDespesa || '-' }}</td>
               <td>{{ duplicata.numeroParcelas }}</td>
+              <td>{{ formatarMoeda(obterValorParcela(duplicata)) }}</td>
               <td>{{ formatarMoeda(duplicata.valorTotal) }}</td>
               <td class="status-paga">{{ formatarMoeda(duplicata.valorPago) }}</td>
               <td class="status-pendente">{{ formatarMoeda(duplicata.valorPendente) }}</td>
