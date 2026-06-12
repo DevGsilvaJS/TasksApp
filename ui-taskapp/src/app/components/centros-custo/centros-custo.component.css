@@ -1,0 +1,10 @@
+@import '../empresas/empresas.component.css';
+
+.aviso-cadastro {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  color: #b45309;
+  background: #fffbeb;
+  border-bottom: 1px solid #fde68a;
+  font-size: 0.875rem;
+}

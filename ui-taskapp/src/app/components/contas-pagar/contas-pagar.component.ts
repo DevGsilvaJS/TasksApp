@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DuplicataService, DuplicataResponseDto, CadastroDuplicataDto, ParcelaResponseDto, CadastroParcelaDto } from '../../services/duplicata.service';
+import { CentroCustoService, CentroCustoResponseDto } from '../../services/centro-custo.service';
+import { PlanoContasService, PlanoContasResponseDto } from '../../services/plano-contas.service';
 import { NotificacaoService } from '../../services/notificacao.service';
 
 @Component({
@@ -20,12 +22,18 @@ export class ContasPagarComponent implements OnInit {
   loading = false;
   error: string | null = null;
   editando = false;
+  edicaoParcial = false;
   duplicataEditando: DuplicataResponseDto | null = null;
   duplicataSelecionada: DuplicataResponseDto | null = null;
   termoBusca = '';
   gerarParcelasManual = false;
   parcelasManuais: CadastroParcelaDto[] = [];
-  
+  centrosCusto: CentroCustoResponseDto[] = [];
+  planosContas: PlanoContasResponseDto[] = [];
+  showClassificacaoForm = false;
+  parcelaClassificacaoEditando: ParcelaResponseDto | null = null;
+  classificacaoForm: { centroCustoId?: number; planoContasId?: number } = {};
+
   // Modal de confirmação
   showConfirmModal = false;
   confirmTitle = '';
@@ -50,11 +58,21 @@ export class ContasPagarComponent implements OnInit {
 
   constructor(
     private duplicataService: DuplicataService,
+    private centroCustoService: CentroCustoService,
+    private planoContasService: PlanoContasService,
     private notificacao: NotificacaoService
   ) { }
 
   ngOnInit() {
     this.carregarDuplicatas();
+    this.centroCustoService.listarTodosCentrosCusto().subscribe({
+      next: (data) => this.centrosCusto = data,
+      error: () => {}
+    });
+    this.planoContasService.listarTodosPlanosContas().subscribe({
+      next: (data) => this.planosContas = data,
+      error: () => {}
+    });
   }
 
   /** Recarrega a lista de duplicatas. Opcionalmente chama onConcluido após atualizar (ex.: atualizar parcelas na tela). */
@@ -78,6 +96,7 @@ export class ContasPagarComponent implements OnInit {
 
   abrirFormularioNovo() {
     this.editando = false;
+    this.edicaoParcial = false;
     this.duplicataEditando = null;
     this.gerarParcelasManual = false;
     this.parcelasManuais = [];
@@ -94,6 +113,8 @@ export class ContasPagarComponent implements OnInit {
           juros: 0,
           descricaoDespesa: undefined,
           tipo: 'CP',
+          centroCustoId: undefined,
+          planoContasId: undefined,
           dataPrimeiroVencimento: new Date().toISOString().split('T')[0]
         };
         this.showForm = true;
@@ -109,6 +130,7 @@ export class ContasPagarComponent implements OnInit {
 
   abrirFormularioEdicao(duplicata: DuplicataResponseDto) {
     this.editando = true;
+    this.edicaoParcial = this.duplicataPossuiParcelaPaga(duplicata);
     this.duplicataEditando = duplicata;
     this.novaDuplicata = {
       numero: duplicata.numero,
@@ -119,6 +141,8 @@ export class ContasPagarComponent implements OnInit {
       juros: duplicata.parcelas[0]?.juros || 0,
       descricaoDespesa: duplicata.descricaoDespesa,
       tipo: duplicata.tipo || 'CP',
+      centroCustoId: duplicata.centroCustoId,
+      planoContasId: duplicata.planoContasId,
       dataPrimeiroVencimento: duplicata.parcelas[0]?.vencimento.split('T')[0] || new Date().toISOString().split('T')[0]
     };
     this.showForm = true;
@@ -126,9 +150,18 @@ export class ContasPagarComponent implements OnInit {
     window.scrollTo(0, 0);
   }
 
+  obterLabelCentroCusto(centro: CentroCustoResponseDto): string {
+    const cnpj = centro.empresaCnpj?.replace(/\D/g, '') ?? '';
+    const cnpjFmt = cnpj.length === 14
+      ? cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
+      : centro.empresaCnpj ?? '';
+    return `${centro.empresaFantasia ?? 'MEI'} (CC #${centro.centroCustoId})${cnpjFmt ? ' — ' + cnpjFmt : ''}`;
+  }
+
   fecharFormulario() {
     this.showForm = false;
     this.editando = false;
+    this.edicaoParcial = false;
     this.duplicataEditando = null;
     this.gerarParcelasManual = false;
     this.parcelasManuais = [];
@@ -203,8 +236,20 @@ export class ContasPagarComponent implements OnInit {
   salvarDuplicata() {
     if (this.loading) return;
 
-    // Validar parcelas manuais se estiver gerando manualmente
-    if (this.gerarParcelasManual) {
+    if (!this.novaDuplicata.centroCustoId) {
+      this.error = 'Selecione o centro de custo.';
+      this.notificacao.aviso(this.error);
+      return;
+    }
+    if (!this.novaDuplicata.planoContasId) {
+      this.error = 'Selecione o plano de contas.';
+      this.notificacao.aviso(this.error);
+      return;
+    }
+
+    if (this.edicaoParcial) {
+      this.novaDuplicata.parcelas = undefined;
+    } else if (this.gerarParcelasManual) {
       if (this.parcelasManuais.length !== this.novaDuplicata.numeroParcelas) {
         this.error = 'Número de parcelas não corresponde ao número informado.';
         this.notificacao.aviso(this.error);
@@ -382,6 +427,70 @@ export class ContasPagarComponent implements OnInit {
   fecharParcelas() {
     this.showParcelas = false;
     this.duplicataSelecionada = null;
+    this.fecharEdicaoClassificacao();
+  }
+
+  parcelaPaga(parcela: ParcelaResponseDto): boolean {
+    return parcela.status?.toLowerCase() === 'paga';
+  }
+
+  abrirEdicaoClassificacao(parcela: ParcelaResponseDto): void {
+    if (!this.parcelaPaga(parcela)) return;
+    this.parcelaClassificacaoEditando = parcela;
+    this.classificacaoForm = {
+      centroCustoId: parcela.centroCustoId,
+      planoContasId: parcela.planoContasId
+    };
+    this.showClassificacaoForm = true;
+    this.error = null;
+  }
+
+  fecharEdicaoClassificacao(): void {
+    this.showClassificacaoForm = false;
+    this.parcelaClassificacaoEditando = null;
+    this.classificacaoForm = {};
+  }
+
+  salvarClassificacaoParcela(): void {
+    if (!this.parcelaClassificacaoEditando) return;
+    if (!this.classificacaoForm.centroCustoId || !this.classificacaoForm.planoContasId) {
+      this.notificacao.aviso('Selecione o centro de custo e o plano de contas.');
+      return;
+    }
+
+    this.loading = true;
+    this.error = null;
+    this.duplicataService.atualizarClassificacaoParcela(this.parcelaClassificacaoEditando.parcelaId, {
+      centroCustoId: this.classificacaoForm.centroCustoId,
+      planoContasId: this.classificacaoForm.planoContasId
+    }).subscribe({
+      next: (parcelaAtualizada) => {
+        this.atualizarParcelaNaLista(parcelaAtualizada);
+        this.fecharEdicaoClassificacao();
+        this.loading = false;
+        this.notificacao.sucesso('Classificação da parcela atualizada com sucesso.');
+      },
+      error: (err) => {
+        this.error = err.error?.message || 'Erro ao atualizar classificação da parcela.';
+        this.loading = false;
+        this.notificacao.erro(this.error ?? 'Erro ao atualizar classificação da parcela.');
+      }
+    });
+  }
+
+  private atualizarParcelaNaLista(parcelaAtualizada: ParcelaResponseDto): void {
+    if (!this.duplicataSelecionada) return;
+
+    const parcelasAtualizadas = this.duplicataSelecionada.parcelas.map(p =>
+      p.parcelaId === parcelaAtualizada.parcelaId ? parcelaAtualizada : p
+    );
+    this.duplicataSelecionada = { ...this.duplicataSelecionada, parcelas: parcelasAtualizadas };
+
+    const indiceDuplicata = this.duplicatas.findIndex(d => d.duplicataId === this.duplicataSelecionada?.duplicataId);
+    if (indiceDuplicata >= 0) {
+      this.duplicatas[indiceDuplicata] = { ...this.duplicatas[indiceDuplicata], parcelas: parcelasAtualizadas };
+      this.aplicarFiltros();
+    }
   }
 
   filtrarDuplicatas() {
@@ -413,6 +522,10 @@ export class ContasPagarComponent implements OnInit {
 
   private possuiParcelaEmAberto(duplicata: DuplicataResponseDto): boolean {
     return duplicata.parcelas?.some((parcela: ParcelaResponseDto) => parcela.status?.toLowerCase() === 'pendente') ?? false;
+  }
+
+  duplicataPossuiParcelaPaga(duplicata: DuplicataResponseDto): boolean {
+    return duplicata.parcelas?.some((parcela: ParcelaResponseDto) => parcela.status?.toLowerCase() === 'paga') ?? false;
   }
 
   formatarMoeda(valor: number): string {

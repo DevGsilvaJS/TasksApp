@@ -10,6 +10,10 @@ public class DuplicataResponseDto
     public string Tipo { get; set; } = "CP"; // CP = Contas a Pagar, CR = Contas a Receber
     public int? ClienteId { get; set; }
     public string? ClienteNome { get; set; }
+    public int? CentroCustoId { get; set; }
+    public string? CentroCustoEmpresaFantasia { get; set; }
+    public int? PlanoContasId { get; set; }
+    public string? PlanoContasDescricao { get; set; }
     public List<ParcelaResponseDto> Parcelas { get; set; } = new();
     public double ValorTotal { get; set; }
     public double ValorPago { get; set; }

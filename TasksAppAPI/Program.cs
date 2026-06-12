@@ -127,6 +127,7 @@ try
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        SincronizarHistoricoMigrationsRunner.Executar(db);
         Console.WriteLine("🔄 Aplicando migrations automaticamente...");
         try
         {
@@ -293,6 +294,10 @@ try
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await GarantirTabelaClienteContratoValorRunner.ExecutarAsync(db);
         await GarantirColunaCodigoClienteTextoRunner.ExecutarAsync(db);
+        await GarantirTabelasEmpresaCentroCustoPlanoContasRunner.ExecutarAsync(db);
+        await GarantirColunaCentroCustoDuplicataRunner.ExecutarAsync(db);
+        await GarantirColunaPlanoContasDuplicataRunner.ExecutarAsync(db);
+        await GarantirColunaCentroCustoPlanoContasParcelaRunner.ExecutarAsync(db);
     }
 }
 catch (Exception ex)

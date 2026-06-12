@@ -1,0 +1,109 @@
+<div class="page-container">
+  <div class="page-header">
+    <h2>Centros de Custo</h2>
+    <p class="page-subtitle">Cadastro de centros de custo vinculados às empresas</p>
+  </div>
+
+  @if (error && !showModal && !showModalExcluir) {
+    <div class="alert-error">{{ error }}</div>
+  }
+
+  @if (loading && centros.length === 0) {
+    <div class="loading">Carregando...</div>
+  } @else {
+    <section class="cadastro-section">
+      <div class="cadastro-section-header">
+        <h3>Lista de Centros de Custo</h3>
+        <button type="button" class="btn-primary" (click)="abrirNovo()" [disabled]="empresas.length === 0">
+          Incluir
+        </button>
+      </div>
+      @if (empresas.length === 0) {
+        <p class="aviso-cadastro">Cadastre ao menos uma empresa antes de incluir centros de custo.</p>
+      }
+      <div class="table-wrap">
+        <table class="cadastro-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Empresa</th>
+              <th>CNPJ</th>
+              <th class="col-acoes">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of centros; track item.centroCustoId) {
+              <tr>
+                <td>{{ item.centroCustoId }}</td>
+                <td>{{ item.empresaFantasia || '-' }}</td>
+                <td>{{ formatarCnpj(item.empresaCnpj) }}</td>
+                <td>
+                  <button type="button" class="btn-action btn-edit" (click)="abrirEditar(item)" title="Editar">✎</button>
+                  <button type="button" class="btn-action btn-delete" (click)="abrirModalExcluir(item)" title="Excluir">🗑</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="empty-row">Nenhum centro de custo cadastrado.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  @if (showModal) {
+    <div class="modal-overlay" (click)="fecharModal()">
+      <div class="modal-content modal-cadastro" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ editandoId != null ? 'Editar centro de custo' : 'Novo centro de custo' }}</h3>
+          <button type="button" class="btn-close" (click)="fecharModal()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (error) {
+            <div class="alert-error">{{ error }}</div>
+          }
+          <div class="form-group">
+            <label>Empresa *</label>
+            <select class="form-input" [(ngModel)]="form.empresaId">
+              <option [ngValue]="0" disabled>Selecione...</option>
+              @for (empresa of empresas; track empresa.empresaId) {
+                <option [ngValue]="empresa.empresaId">{{ empresa.fantasia }} ({{ formatarCnpj(empresa.cnpj) }})</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="fecharModal()">Cancelar</button>
+          <button type="button" class="btn-primary" (click)="salvar()" [disabled]="saving">
+            {{ saving ? 'Salvando...' : 'Salvar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showModalExcluir && itemParaExcluir) {
+    <div class="modal-overlay" (click)="fecharModalExcluir()">
+      <div class="modal-content modal-cadastro" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Excluir centro de custo</h3>
+          <button type="button" class="btn-close" (click)="fecharModalExcluir()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (error) {
+            <div class="alert-error">{{ error }}</div>
+          }
+          <p>Deseja realmente excluir o centro de custo <strong>#{{ itemParaExcluir.centroCustoId }}</strong>?</p>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="fecharModalExcluir()" [disabled]="excluindo">Cancelar</button>
+          <button type="button" class="btn-delete-confirm" (click)="confirmarExcluir()" [disabled]="excluindo">
+            {{ excluindo ? 'Excluindo...' : 'Excluir' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

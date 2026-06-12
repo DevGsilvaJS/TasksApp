@@ -1,0 +1,106 @@
+<div class="page-container">
+  <div class="page-header">
+    <h2>Plano de Contas</h2>
+    <p class="page-subtitle">Cadastro de contas contábeis</p>
+  </div>
+
+  @if (error && !showModal && !showModalExcluir) {
+    <div class="alert-error">{{ error }}</div>
+  }
+
+  @if (loading && planos.length === 0) {
+    <div class="loading">Carregando...</div>
+  } @else {
+    <section class="cadastro-section">
+      <div class="cadastro-section-header">
+        <div class="header-left">
+          <h3>Lista de Contas</h3>
+          <input
+            type="text"
+            class="form-input busca"
+            placeholder="Buscar por descrição..."
+            [(ngModel)]="termoBusca"
+            (ngModelChange)="filtrar()"
+          />
+        </div>
+        <button type="button" class="btn-primary" (click)="abrirNovo()">Incluir</button>
+      </div>
+      <div class="table-wrap">
+        <table class="cadastro-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Descrição</th>
+              <th class="col-acoes">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of planosFiltrados; track item.planoContasId) {
+              <tr>
+                <td>{{ item.planoContasId }}</td>
+                <td>{{ item.descricao }}</td>
+                <td>
+                  <button type="button" class="btn-action btn-edit" (click)="abrirEditar(item)" title="Editar">✎</button>
+                  <button type="button" class="btn-action btn-delete" (click)="abrirModalExcluir(item)" title="Excluir">🗑</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3" class="empty-row">Nenhuma conta cadastrada.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  @if (showModal) {
+    <div class="modal-overlay" (click)="fecharModal()">
+      <div class="modal-content modal-cadastro" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ editandoId != null ? 'Editar conta' : 'Nova conta' }}</h3>
+          <button type="button" class="btn-close" (click)="fecharModal()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (error) {
+            <div class="alert-error">{{ error }}</div>
+          }
+          <div class="form-group">
+            <label>Descrição *</label>
+            <input type="text" class="form-input" [(ngModel)]="form.descricao" maxlength="500" placeholder="Ex.: Despesas Administrativas">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="fecharModal()">Cancelar</button>
+          <button type="button" class="btn-primary" (click)="salvar()" [disabled]="saving">
+            {{ saving ? 'Salvando...' : 'Salvar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showModalExcluir && itemParaExcluir) {
+    <div class="modal-overlay" (click)="fecharModalExcluir()">
+      <div class="modal-content modal-cadastro" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Excluir conta</h3>
+          <button type="button" class="btn-close" (click)="fecharModalExcluir()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (error) {
+            <div class="alert-error">{{ error }}</div>
+          }
+          <p>Deseja realmente excluir a conta <strong>{{ itemParaExcluir.descricao }}</strong>?</p>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="fecharModalExcluir()" [disabled]="excluindo">Cancelar</button>
+          <button type="button" class="btn-delete-confirm" (click)="confirmarExcluir()" [disabled]="excluindo">
+            {{ excluindo ? 'Excluindo...' : 'Excluir' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

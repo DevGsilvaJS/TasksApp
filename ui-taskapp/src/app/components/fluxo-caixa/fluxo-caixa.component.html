@@ -1,0 +1,148 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-titulo">
+      <h2>Fluxo de Caixa</h2>
+      <p class="page-subtitle">Receitas e despesas por centro de custo (MEI) e plano de contas — mês a mês</p>
+    </div>
+    <div class="header-filtros">
+      <label for="ano">Ano</label>
+      <select id="ano" class="form-input select-ano" [(ngModel)]="ano" (ngModelChange)="onAnoChange()">
+        @for (a of anosDisponiveis; track a) {
+          <option [ngValue]="a">{{ a }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div class="legenda">
+    <span class="legenda-item"><span class="dot receita"></span> Contas recebidas</span>
+    <span class="legenda-item"><span class="dot despesa"></span> Contas pagas</span>
+    <span class="legenda-aviso">Somente parcelas <strong>Pagas</strong> com centro de custo e plano de contas informados entram no fluxo (data de pagamento).</span>
+  </div>
+
+  @if (error) {
+    <div class="alert-error">{{ error }}</div>
+  }
+
+  @if (loading) {
+    <div class="loading">Carregando fluxo de caixa...</div>
+  } @else if (dados) {
+    <section class="resumo-cards">
+      <div class="card resumo-receita">
+        <span class="card-label">Total recebido no ano</span>
+        <span class="card-valor">{{ formatarMoeda(dados.totalReceitasAno) }}</span>
+      </div>
+      <div class="card resumo-despesa">
+        <span class="card-label">Total pago no ano</span>
+        <span class="card-valor">{{ formatarMoeda(dados.totalDespesasAno) }}</span>
+      </div>
+      <div class="card" [class.resumo-positivo]="dados.saldoAno >= 0" [class.resumo-negativo]="dados.saldoAno < 0">
+        <span class="card-label">Saldo do ano</span>
+        <span class="card-valor">{{ formatarMoeda(dados.saldoAno) }}</span>
+      </div>
+    </section>
+
+    @if (dados.centros.length === 0) {
+      <p class="empty-msg">Nenhum centro de custo cadastrado. Cadastre empresas e centros de custo para visualizar o balanço.</p>
+    } @else {
+      <div class="table-wrap">
+        <table class="fluxo-table">
+          <thead>
+            <tr>
+              <th class="col-centro sticky-col">Centro / MEI</th>
+              <th class="col-plano sticky-col-plano">Plano de Contas</th>
+              @for (m of mesesCabecalho; track m) {
+                <th class="col-mes">{{ m }}</th>
+              }
+              <th class="col-total receita">Σ Receitas</th>
+              <th class="col-total despesa">Σ Despesas</th>
+              <th class="col-total">Saldo</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (centro of dados.centros; track centro.centroCustoId) {
+              <tr class="linha-centro">
+                <td class="col-centro sticky-col" [attr.rowspan]="(centro.planosContas?.length ?? 0) + 1">
+                  <strong>{{ centro.empresaFantasia }}</strong>
+                  @if (centro.empresaCnpj) {
+                    <small>{{ formatarCnpj(centro.empresaCnpj) }}</small>
+                  }
+                  @if (centro.centroCustoId > 0) {
+                    <small class="id-centro">CC #{{ centro.centroCustoId }}</small>
+                  }
+                </td>
+                <td class="col-plano sticky-col-plano subtotal-label"><em>Subtotal</em></td>
+                @for (m of [1,2,3,4,5,6,7,8,9,10,11,12]; track m) {
+                  <td class="col-mes celula-mes">
+                    @if (obterMes(centro, m).receitas > 0) {
+                      <span class="valor receita">{{ formatarMoeda(obterMes(centro, m).receitas) }}</span>
+                    }
+                    @if (obterMes(centro, m).despesas > 0) {
+                      <span class="valor despesa">{{ formatarMoeda(obterMes(centro, m).despesas) }}</span>
+                    }
+                    @if (obterMes(centro, m).receitas === 0 && obterMes(centro, m).despesas === 0) {
+                      <span class="valor vazio">-</span>
+                    }
+                  </td>
+                }
+                <td class="col-total receita">{{ formatarMoeda(centro.totalReceitas) }}</td>
+                <td class="col-total despesa">{{ formatarMoeda(centro.totalDespesas) }}</td>
+                <td class="col-total" [class.saldo-positivo]="centro.saldo >= 0" [class.saldo-negativo]="centro.saldo < 0">
+                  {{ formatarMoeda(centro.saldo) }}
+                </td>
+              </tr>
+              @for (plano of centro.planosContas; track plano.planoContasId) {
+                <tr class="linha-plano">
+                  <td class="col-plano sticky-col-plano">{{ plano.descricao }}</td>
+                  @for (m of [1,2,3,4,5,6,7,8,9,10,11,12]; track m) {
+                    <td class="col-mes celula-mes">
+                      @if (obterMesPlano(plano, m).receitas > 0) {
+                        <span class="valor receita">{{ formatarMoeda(obterMesPlano(plano, m).receitas) }}</span>
+                      }
+                      @if (obterMesPlano(plano, m).despesas > 0) {
+                        <span class="valor despesa">{{ formatarMoeda(obterMesPlano(plano, m).despesas) }}</span>
+                      }
+                      @if (obterMesPlano(plano, m).receitas === 0 && obterMesPlano(plano, m).despesas === 0) {
+                        <span class="valor vazio">-</span>
+                      }
+                    </td>
+                  }
+                  <td class="col-total receita">{{ formatarMoeda(plano.totalReceitas) }}</td>
+                  <td class="col-total despesa">{{ formatarMoeda(plano.totalDespesas) }}</td>
+                  <td class="col-total" [class.saldo-positivo]="plano.saldo >= 0" [class.saldo-negativo]="plano.saldo < 0">
+                    {{ formatarMoeda(plano.saldo) }}
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+          <tfoot>
+            <tr class="linha-totais">
+              <td class="col-centro sticky-col" colspan="2"><strong>Total geral</strong></td>
+              @for (m of [1,2,3,4,5,6,7,8,9,10,11,12]; track m) {
+                <td class="col-mes celula-mes">
+                  @if (obterTotalMes(m); as total) {
+                    @if (total.receitas > 0) {
+                      <span class="valor receita">{{ formatarMoeda(total.receitas) }}</span>
+                    }
+                    @if (total.despesas > 0) {
+                      <span class="valor despesa">{{ formatarMoeda(total.despesas) }}</span>
+                    }
+                    @if (total.receitas === 0 && total.despesas === 0) {
+                      <span class="valor vazio">-</span>
+                    }
+                  }
+                </td>
+              }
+              <td class="col-total receita">{{ formatarMoeda(dados.totalReceitasAno) }}</td>
+              <td class="col-total despesa">{{ formatarMoeda(dados.totalDespesasAno) }}</td>
+              <td class="col-total" [class.saldo-positivo]="dados.saldoAno >= 0" [class.saldo-negativo]="dados.saldoAno < 0">
+                {{ formatarMoeda(dados.saldoAno) }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    }
+  }
+</div>

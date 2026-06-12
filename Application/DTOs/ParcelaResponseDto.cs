@@ -12,4 +12,8 @@ public class ParcelaResponseDto
     public DateTime Vencimento { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTime? DataPagamento { get; set; }
+    public int? CentroCustoId { get; set; }
+    public string? CentroCustoEmpresaFantasia { get; set; }
+    public int? PlanoContasId { get; set; }
+    public string? PlanoContasDescricao { get; set; }
 }

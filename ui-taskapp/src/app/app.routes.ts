@@ -61,5 +61,25 @@ export const routes: Routes = [
     path: 'status-atendimento-comercial',
     loadComponent: () => import('./components/status-atendimento-comercial/status-atendimento-comercial.component').then(m => m.StatusAtendimentoComercialComponent),
     canActivate: [authGuard, perfilGuard]
+  },
+  {
+    path: 'empresas',
+    loadComponent: () => import('./components/empresas/empresas.component').then(m => m.EmpresasComponent),
+    canActivate: [authGuard, perfilGuard]
+  },
+  {
+    path: 'centros-custo',
+    loadComponent: () => import('./components/centros-custo/centros-custo.component').then(m => m.CentrosCustoComponent),
+    canActivate: [authGuard, perfilGuard]
+  },
+  {
+    path: 'plano-contas',
+    loadComponent: () => import('./components/plano-contas/plano-contas.component').then(m => m.PlanoContasComponent),
+    canActivate: [authGuard, perfilGuard]
+  },
+  {
+    path: 'fluxo-caixa',
+    loadComponent: () => import('./components/fluxo-caixa/fluxo-caixa.component').then(m => m.FluxoCaixaComponent),
+    canActivate: [authGuard, perfilGuard]
   }
 ];

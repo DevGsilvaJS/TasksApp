@@ -20,6 +20,8 @@ export interface CadastroDuplicataDto {
   descricaoDespesa?: string;
   tipo?: string; // CP = Contas a Pagar, CR = Contas a Receber
   clienteId?: number;
+  centroCustoId?: number;
+  planoContasId?: number;
   dataPrimeiroVencimento?: string;
   parcelas?: CadastroParcelaDto[];
 }
@@ -35,6 +37,15 @@ export interface ParcelaResponseDto {
   vencimento: string;
   status: string;
   dataPagamento?: string;
+  centroCustoId?: number;
+  centroCustoEmpresaFantasia?: string;
+  planoContasId?: number;
+  planoContasDescricao?: string;
+}
+
+export interface AtualizarClassificacaoParcelaDto {
+  centroCustoId: number;
+  planoContasId: number;
 }
 
 export interface DuplicataResponseDto {
@@ -45,6 +56,10 @@ export interface DuplicataResponseDto {
   descricaoDespesa?: string;
   tipo?: string; // CP = Contas a Pagar, CR = Contas a Receber
   clienteId?: number;
+  centroCustoId?: number;
+  centroCustoEmpresaFantasia?: string;
+  planoContasId?: number;
+  planoContasDescricao?: string;
   clienteNome?: string;
   parcelas: ParcelaResponseDto[];
   valorTotal: number;
@@ -84,6 +99,10 @@ export class DuplicataService {
 
   reativarParcela(parcelaId: number): Observable<ParcelaResponseDto> {
     return this.api.post<ParcelaResponseDto>(`duplicata/parcelas/${parcelaId}/reativar`, {});
+  }
+
+  atualizarClassificacaoParcela(parcelaId: number, dto: AtualizarClassificacaoParcelaDto): Observable<ParcelaResponseDto> {
+    return this.api.put<ParcelaResponseDto>(`duplicata/parcelas/${parcelaId}/classificacao`, dto);
   }
 
   listarDuplicatasPorTipo(tipo: string): Observable<DuplicataResponseDto[]> {

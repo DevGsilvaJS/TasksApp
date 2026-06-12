@@ -227,6 +227,32 @@
             </svg>
             <span>Parâmetros Comercial</span>
           </a>
+          <div class="nav-group" [class.expanded]="menuBalancoAberto" [class.ativo]="balancoAtivo">
+            <button
+              type="button"
+              class="nav-item nav-group-toggle"
+              [class.active]="balancoAtivo"
+              (click)="alternarMenuBalanco()"
+              [attr.aria-expanded]="menuBalancoAberto"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+              <span>Balanço</span>
+              <svg class="nav-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            @if (menuBalancoAberto) {
+              <div class="nav-submenu">
+                <a routerLink="/empresas" routerLinkActive="active" class="nav-item nav-item-sub">Empresas</a>
+                <a routerLink="/centros-custo" routerLinkActive="active" class="nav-item nav-item-sub">Centro de Custo</a>
+                <a routerLink="/plano-contas" routerLinkActive="active" class="nav-item nav-item-sub">Plano de Contas</a>
+                <a routerLink="/fluxo-caixa" routerLinkActive="active" class="nav-item nav-item-sub">Fluxo de Caixa</a>
+              </div>
+            }
+          </div>
         }
       </nav>
     </aside>

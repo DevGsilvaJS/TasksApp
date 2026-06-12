@@ -32,6 +32,14 @@ public class CadastroDuplicataDto
     /// <summary>Cliente (opcional; usado em Contas a Receber para agrupar por cliente).</summary>
     public int? ClienteId { get; set; }
 
+    /// <summary>Centro de custo (MEI/empresa) para fluxo de caixa.</summary>
+    [Required(ErrorMessage = "Centro de custo é obrigatório")]
+    public int? CentroCustoId { get; set; }
+
+    /// <summary>Plano de contas para classificação contábil.</summary>
+    [Required(ErrorMessage = "Plano de contas é obrigatório")]
+    public int? PlanoContasId { get; set; }
+
     // Se não fornecido, será usado para gerar automaticamente
     public DateTime? DataPrimeiroVencimento { get; set; }
 

@@ -30,6 +30,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<CadastroTipoContato> CadastroTipoContato { get; set; }
     public DbSet<CadastroStatusAtendimentoComercial> CadastroStatusAtendimentoComercial { get; set; }
     public DbSet<ClienteContratoValor> ClienteContratosValores { get; set; }
+    public DbSet<Empresa> Empresas { get; set; }
+    public DbSet<CentroCusto> CentrosCusto { get; set; }
+    public DbSet<PlanoContas> PlanosContas { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -44,6 +47,36 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Das>()
             .Property(d => d.DasStatus)
             .HasConversion<int>();
+
+        modelBuilder.Entity<CentroCusto>()
+            .HasOne(c => c.Empresa)
+            .WithMany(e => e.CentrosCusto)
+            .HasForeignKey(c => c.EmpId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Duplicata>()
+            .HasOne(d => d.CentroCusto)
+            .WithMany()
+            .HasForeignKey(d => d.CcuId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Duplicata>()
+            .HasOne(d => d.PlanoContas)
+            .WithMany()
+            .HasForeignKey(d => d.PlcId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Parcela>()
+            .HasOne(p => p.CentroCusto)
+            .WithMany()
+            .HasForeignKey(p => p.CcuId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Parcela>()
+            .HasOne(p => p.PlanoContas)
+            .WithMany()
+            .HasForeignKey(p => p.PlcId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 
     public override int SaveChanges()

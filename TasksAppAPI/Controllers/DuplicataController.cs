@@ -244,4 +244,28 @@ public class DuplicataController : ControllerBase
             return StatusCode(500, new { message = "Erro interno do servidor" });
         }
     }
+
+    /// <summary>
+    /// Atualiza centro de custo e plano de contas de uma parcela paga
+    /// </summary>
+    [HttpPut("parcelas/{parcelaId}/classificacao")]
+    [ProducesResponseType(typeof(ParcelaResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> AtualizarClassificacaoParcela(int parcelaId, [FromBody] AtualizarClassificacaoParcelaDto dto)
+    {
+        try
+        {
+            var parcela = await _duplicataService.AtualizarClassificacaoParcelaAsync(parcelaId, dto);
+            return Ok(parcela);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao atualizar classificação da parcela: {ParcelaId}", parcelaId);
+            return StatusCode(500, new { message = "Erro interno do servidor" });
+        }
+    }
 }

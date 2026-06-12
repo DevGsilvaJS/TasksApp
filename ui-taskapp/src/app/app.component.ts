@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
@@ -30,6 +31,9 @@ export class AppComponent implements OnInit {
   currentAlertaIndex = 0;
   private popupAlertasMostrado = false;
   cienteAlertaAtual = false;
+  menuBalancoAberto = false;
+  balancoAtivo = false;
+  private readonly rotasBalanco = ['/empresas', '/centros-custo', '/plano-contas', '/fluxo-caixa'];
   private readonly CHAVE_CIENCIA_ALERTAS = 'alertas_ciencia';
   private readonly CHAVE_CIENCIA_CONTRATOS_LEGADO = 'contratos_vencendo_ciencia';
 
@@ -54,6 +58,11 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.atualizarMenuBalanco();
+    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
+      this.atualizarMenuBalanco();
+    });
+
     this.authService.usuario$.subscribe(usuario => {
       this.isAuthenticated = usuario !== null;
       this.usuarioNome = usuario?.nome || '';
@@ -221,5 +230,17 @@ export class AppComponent implements OnInit {
   logout() {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  alternarMenuBalanco(): void {
+    this.menuBalancoAberto = !this.menuBalancoAberto;
+  }
+
+  private atualizarMenuBalanco(): void {
+    const url = this.router.url.split('?')[0];
+    this.balancoAtivo = this.rotasBalanco.some(rota => url === rota || url.startsWith(`${rota}/`));
+    if (this.balancoAtivo) {
+      this.menuBalancoAberto = true;
+    }
   }
 }

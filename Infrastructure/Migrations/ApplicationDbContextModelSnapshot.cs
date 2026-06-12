@@ -214,6 +214,26 @@ namespace Infrastructure.Migrations
                     b.ToTable("TB_CAD_TIPO_CONTATO");
                 });
 
+            modelBuilder.Entity("Domain.Entities.CentroCusto", b =>
+                {
+                    b.Property<int>("CcuId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("CCUID");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CcuId"));
+
+                    b.Property<int>("EmpId")
+                        .HasColumnType("integer")
+                        .HasColumnName("EMPID");
+
+                    b.HasKey("CcuId");
+
+                    b.HasIndex("EmpId");
+
+                    b.ToTable("TB_CCU_CENTRO_CUSTO");
+                });
+
             modelBuilder.Entity("Domain.Entities.Cliente", b =>
                 {
                     b.Property<int>("CliId")
@@ -223,8 +243,10 @@ namespace Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CliId"));
 
-                    b.Property<int>("CliCodigo")
-                        .HasColumnType("integer")
+                    b.Property<string>("CliCodigo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("CLICODIGO");
 
                     b.Property<DateTime?>("CliDataCadastro")
@@ -340,6 +362,10 @@ namespace Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DupId"));
 
+                    b.Property<int?>("CcuId")
+                        .HasColumnType("integer")
+                        .HasColumnName("CCUID");
+
                     b.Property<int?>("CliId")
                         .HasColumnType("integer")
                         .HasColumnName("CLIID");
@@ -367,9 +393,17 @@ namespace Infrastructure.Migrations
                         .HasColumnType("character varying(2)")
                         .HasColumnName("DUPTIPO");
 
+                    b.Property<int?>("PlcId")
+                        .HasColumnType("integer")
+                        .HasColumnName("PLCID");
+
                     b.HasKey("DupId");
 
+                    b.HasIndex("CcuId");
+
                     b.HasIndex("CliId");
+
+                    b.HasIndex("PlcId");
 
                     b.ToTable("TB_DUP_DUPLICATA");
                 });
@@ -397,6 +431,38 @@ namespace Infrastructure.Migrations
                     b.HasIndex("PesId");
 
                     b.ToTable("TB_EMAIL");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Empresa", b =>
+                {
+                    b.Property<int>("EmpId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("EMPID");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("EmpId"));
+
+                    b.Property<string>("EmpCnpj")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("EMPCNPJ");
+
+                    b.Property<string>("EmpFantasia")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("EMPFANTASIA");
+
+                    b.Property<string>("EmpRazaoSocial")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("EMPRAZAOSOCIAL");
+
+                    b.HasKey("EmpId");
+
+                    b.ToTable("TB_EMP_EMPRESA");
                 });
 
             modelBuilder.Entity("Domain.Entities.EnvioNotaServico", b =>
@@ -468,9 +534,17 @@ namespace Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ParId"));
 
+                    b.Property<int?>("CcuId")
+                        .HasColumnType("integer")
+                        .HasColumnName("CCUID");
+
                     b.Property<int>("DupId")
                         .HasColumnType("integer")
                         .HasColumnName("DUPID");
+
+                    b.Property<int?>("PlcId")
+                        .HasColumnType("integer")
+                        .HasColumnName("PLCID");
 
                     b.Property<DateTime?>("ParDataPagamento")
                         .HasColumnType("timestamp with time zone")
@@ -504,7 +578,11 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("ParId");
 
+                    b.HasIndex("CcuId");
+
                     b.HasIndex("DupId");
+
+                    b.HasIndex("PlcId");
 
                     b.ToTable("TB_PAR_PARCELA");
                 });
@@ -536,6 +614,26 @@ namespace Infrastructure.Migrations
                     b.HasKey("PesId");
 
                     b.ToTable("TB_PESSOA");
+                });
+
+            modelBuilder.Entity("Domain.Entities.PlanoContas", b =>
+                {
+                    b.Property<int>("PlcId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("PLCID");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PlcId"));
+
+                    b.Property<string>("PlcDescricao")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("PLCDESCRICAO");
+
+                    b.HasKey("PlcId");
+
+                    b.ToTable("TB_PLC_PLANO_CONTAS");
                 });
 
             modelBuilder.Entity("Domain.Entities.PossivelCliente", b =>
@@ -794,6 +892,17 @@ namespace Infrastructure.Migrations
                     b.Navigation("Usuario");
                 });
 
+            modelBuilder.Entity("Domain.Entities.CentroCusto", b =>
+                {
+                    b.HasOne("Domain.Entities.Empresa", "Empresa")
+                        .WithMany("CentrosCusto")
+                        .HasForeignKey("EmpId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Empresa");
+                });
+
             modelBuilder.Entity("Domain.Entities.Cliente", b =>
                 {
                     b.HasOne("Domain.Entities.Pessoa", "Pessoa")
@@ -826,11 +935,25 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Duplicata", b =>
                 {
+                    b.HasOne("Domain.Entities.CentroCusto", "CentroCusto")
+                        .WithMany()
+                        .HasForeignKey("CcuId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Domain.Entities.Cliente", "Cliente")
                         .WithMany()
                         .HasForeignKey("CliId");
 
+                    b.HasOne("Domain.Entities.PlanoContas", "PlanoContas")
+                        .WithMany()
+                        .HasForeignKey("PlcId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CentroCusto");
+
                     b.Navigation("Cliente");
+
+                    b.Navigation("PlanoContas");
                 });
 
             modelBuilder.Entity("Domain.Entities.Email", b =>
@@ -868,13 +991,27 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Parcela", b =>
                 {
+                    b.HasOne("Domain.Entities.CentroCusto", "CentroCusto")
+                        .WithMany()
+                        .HasForeignKey("CcuId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Domain.Entities.Duplicata", "Duplicata")
                         .WithMany("Parcelas")
                         .HasForeignKey("DupId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Domain.Entities.PlanoContas", "PlanoContas")
+                        .WithMany()
+                        .HasForeignKey("PlcId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CentroCusto");
+
                     b.Navigation("Duplicata");
+
+                    b.Navigation("PlanoContas");
                 });
 
             modelBuilder.Entity("Domain.Entities.PossivelClienteAnotacao", b =>
@@ -940,6 +1077,11 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Entities.Duplicata", b =>
                 {
                     b.Navigation("Parcelas");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Empresa", b =>
+                {
+                    b.Navigation("CentrosCusto");
                 });
 
             modelBuilder.Entity("Domain.Entities.Pessoa", b =>

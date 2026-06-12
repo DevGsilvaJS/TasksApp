@@ -1,0 +1,273 @@
+.page-container {
+  padding: 2rem;
+  max-width: calc(100vw - var(--sidebar-width));
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.page-header h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.875rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.page-subtitle {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9375rem;
+}
+
+.header-filtros {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-filtros label {
+  font-weight: 500;
+  color: #475569;
+}
+
+.select-ano {
+  width: auto;
+  min-width: 6rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+}
+
+.legenda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.legenda-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+}
+
+.dot.receita { background: #16a34a; }
+.dot.despesa { background: #dc2626; }
+
+.legenda-aviso {
+  color: #94a3b8;
+  font-size: 0.8125rem;
+}
+
+.alert-error {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+}
+
+.loading {
+  padding: 2rem;
+  text-align: center;
+  color: #64748b;
+}
+
+.empty-msg {
+  padding: 2rem;
+  text-align: center;
+  color: #64748b;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  border: 1px dashed #cbd5e1;
+}
+
+.resumo-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.card-label {
+  display: block;
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+}
+
+.card-valor {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.resumo-receita .card-valor { color: #16a34a; }
+.resumo-despesa .card-valor { color: #dc2626; }
+.resumo-positivo .card-valor { color: #16a34a; }
+.resumo-negativo .card-valor { color: #dc2626; }
+
+.table-wrap {
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.fluxo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  min-width: 1100px;
+}
+
+.fluxo-table th,
+.fluxo-table td {
+  padding: 0.55rem 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+}
+
+.fluxo-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #475569;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.fluxo-table tfoot td {
+  background: #f8fafc;
+  font-weight: 600;
+  border-top: 2px solid #e2e8f0;
+}
+
+.sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+  min-width: 150px;
+  max-width: 180px;
+  text-align: left !important;
+}
+
+.sticky-col-plano {
+  position: sticky;
+  left: 150px;
+  z-index: 2;
+  background: #fff;
+  min-width: 140px;
+  max-width: 200px;
+  text-align: left !important;
+}
+
+.col-plano {
+  font-size: 0.8125rem;
+  color: #475569;
+}
+
+.linha-centro td {
+  background: #f1f5f9;
+  font-weight: 600;
+}
+
+.linha-centro .sticky-col,
+.linha-centro .sticky-col-plano {
+  background: #f1f5f9;
+}
+
+.linha-plano td {
+  background: #fff;
+}
+
+.linha-plano .sticky-col-plano {
+  padding-left: 1.25rem;
+}
+
+.subtotal-label {
+  color: #64748b;
+  font-style: italic;
+}
+
+.fluxo-table thead .sticky-col,
+.fluxo-table tfoot .sticky-col {
+  background: #f8fafc;
+  z-index: 3;
+}
+
+.col-centro strong {
+  display: block;
+  color: #1e293b;
+}
+
+.col-centro small {
+  display: block;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  margin-top: 0.15rem;
+}
+
+.col-mes {
+  min-width: 88px;
+  text-align: center;
+}
+
+.celula-mes {
+  line-height: 1.35;
+}
+
+.valor {
+  display: block;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.valor.receita { color: #16a34a; }
+.valor.despesa { color: #dc2626; }
+.valor.vazio { color: #cbd5e1; font-weight: 400; }
+
+.col-total {
+  text-align: right !important;
+  white-space: nowrap;
+  min-width: 95px;
+  font-weight: 600;
+}
+
+.col-total.receita { color: #16a34a; }
+.col-total.despesa { color: #dc2626; }
+.saldo-positivo { color: #16a34a; }
+.saldo-negativo { color: #dc2626; }
+
+.fluxo-table tbody tr:hover td {
+  background: #fafbfc;
+}
+
+.fluxo-table tbody tr:hover .sticky-col {
+  background: #fafbfc;
+}

@@ -35,7 +35,18 @@ public class Parcela
     [Column("PAR_DATA_PAGAMENTO")]
     public DateTime? ParDataPagamento { get; set; }
 
-    // Navegação
+    [Column("CCUID")]
+    public int? CcuId { get; set; }
+
+    [Column("PLCID")]
+    public int? PlcId { get; set; }
+
     [ForeignKey("DupId")]
     public virtual Duplicata Duplicata { get; set; } = null!;
+
+    [ForeignKey(nameof(CcuId))]
+    public virtual CentroCusto? CentroCusto { get; set; }
+
+    [ForeignKey(nameof(PlcId))]
+    public virtual PlanoContas? PlanoContas { get; set; }
 }

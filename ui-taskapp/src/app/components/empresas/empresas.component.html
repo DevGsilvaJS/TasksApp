@@ -1,0 +1,119 @@
+<div class="page-container">
+  <div class="page-header">
+    <h2>Empresas</h2>
+    <p class="page-subtitle">Cadastro de empresas (CNPJ, Razão Social e Fantasia)</p>
+  </div>
+
+  @if (error && !showModal && !showModalExcluir) {
+    <div class="alert-error">{{ error }}</div>
+  }
+
+  @if (loading && empresas.length === 0) {
+    <div class="loading">Carregando...</div>
+  } @else {
+    <section class="cadastro-section">
+      <div class="cadastro-section-header">
+        <div class="header-left">
+          <h3>Lista de Empresas</h3>
+          <input
+            type="text"
+            class="form-input busca"
+            placeholder="Buscar por fantasia, razão social ou CNPJ..."
+            [(ngModel)]="termoBusca"
+            (ngModelChange)="filtrar()"
+          />
+        </div>
+        <button type="button" class="btn-primary" (click)="abrirNovo()">Incluir</button>
+      </div>
+      <div class="table-wrap">
+        <table class="cadastro-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>CNPJ</th>
+              <th>Razão Social</th>
+              <th>Fantasia</th>
+              <th class="col-acoes">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of empresasFiltradas; track item.empresaId) {
+              <tr>
+                <td>{{ item.empresaId }}</td>
+                <td>{{ formatarCnpjParaExibicao(item.cnpj) }}</td>
+                <td>{{ item.razaoSocial }}</td>
+                <td>{{ item.fantasia }}</td>
+                <td>
+                  <button type="button" class="btn-action btn-edit" (click)="abrirEditar(item)" title="Editar">✎</button>
+                  <button type="button" class="btn-action btn-delete" (click)="abrirModalExcluir(item)" title="Excluir">🗑</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="empty-row">Nenhuma empresa cadastrada.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  @if (showModal) {
+    <div class="modal-overlay" (click)="fecharModal()">
+      <div class="modal-content modal-cadastro" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ editandoId != null ? 'Editar empresa' : 'Nova empresa' }}</h3>
+          <button type="button" class="btn-close" (click)="fecharModal()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (error) {
+            <div class="alert-error">{{ error }}</div>
+          }
+          <div class="form-group">
+            <label>CNPJ *</label>
+            <input type="text" class="form-input" [(ngModel)]="form.cnpj" (input)="aplicarMascaraCnpj($event)" maxlength="18" placeholder="00.000.000/0000-00">
+          </div>
+          <div class="form-group">
+            <label>Razão Social *</label>
+            <input type="text" class="form-input" [(ngModel)]="form.razaoSocial" maxlength="500">
+          </div>
+          <div class="form-group">
+            <label>Fantasia *</label>
+            <input type="text" class="form-input" [(ngModel)]="form.fantasia" maxlength="300">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="fecharModal()">Cancelar</button>
+          <button type="button" class="btn-primary" (click)="salvar()" [disabled]="saving">
+            {{ saving ? 'Salvando...' : 'Salvar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showModalExcluir && itemParaExcluir) {
+    <div class="modal-overlay" (click)="fecharModalExcluir()">
+      <div class="modal-content modal-cadastro" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Excluir empresa</h3>
+          <button type="button" class="btn-close" (click)="fecharModalExcluir()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (error) {
+            <div class="alert-error">{{ error }}</div>
+          }
+          <p>Deseja realmente excluir a empresa <strong>{{ itemParaExcluir.fantasia }}</strong>?</p>
+          <p class="modal-excluir-aviso">Não será possível excluir se houver centros de custo vinculados.</p>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="fecharModalExcluir()" [disabled]="excluindo">Cancelar</button>
+          <button type="button" class="btn-delete-confirm" (click)="confirmarExcluir()" [disabled]="excluindo">
+            {{ excluindo ? 'Excluindo...' : 'Excluir' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

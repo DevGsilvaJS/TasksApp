@@ -31,9 +31,20 @@ public class Duplicata
     [Column("CLIID")]
     public int? CliId { get; set; }
 
+    [Column("CCUID")]
+    public int? CcuId { get; set; }
+
+    [Column("PLCID")]
+    public int? PlcId { get; set; }
+
     [ForeignKey("CliId")]
     public virtual Cliente? Cliente { get; set; }
 
-    // Navegação
+    [ForeignKey(nameof(CcuId))]
+    public virtual CentroCusto? CentroCusto { get; set; }
+
+    [ForeignKey(nameof(PlcId))]
+    public virtual PlanoContas? PlanoContas { get; set; }
+
     public virtual ICollection<Parcela> Parcelas { get; set; } = new List<Parcela>();
 }

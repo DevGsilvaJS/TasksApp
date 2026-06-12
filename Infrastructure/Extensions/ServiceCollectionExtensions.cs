@@ -57,6 +57,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INotaServicoService, NotaServicoService>();
         services.AddScoped<IPossivelClienteService, PossivelClienteService>();
         services.AddScoped<ICadastroAtendimentoService, CadastroAtendimentoService>();
+        services.AddScoped<IEmpresaService, EmpresaService>();
+        services.AddScoped<ICentroCustoService, CentroCustoService>();
+        services.AddScoped<IPlanoContasService, PlanoContasService>();
+        services.AddScoped<IFluxoCaixaService, FluxoCaixaService>();
 
         return services;
     }
