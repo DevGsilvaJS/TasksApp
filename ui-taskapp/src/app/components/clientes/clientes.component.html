@@ -187,6 +187,10 @@
       <p>{{ termoBusca ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado' }}</p>
     </div>
   } @else {
+    <app-seletor-agrupamento-grid
+      [agruparPor]="agruparPor"
+      (agruparPorChange)="agruparPor = $event"
+      [opcoes]="agruparPorOpcoes" />
     <div class="table-container">
       <table class="data-table">
         <thead>
@@ -206,7 +210,12 @@
           </tr>
         </thead>
         <tbody>
-          @for (cliente of clientesFiltrados; track cliente.clienteId) {
+          @for (cliente of clientesParaTabela; track cliente.clienteId; let i = $index) {
+            @if (exibirCabecalhoGrupoCliente(i)) {
+              <tr class="grupo-grid-row">
+                <td [attr.colspan]="12"><strong>{{ getAgruparPorLabel() }}: {{ getValorGrupoCliente(cliente) }}</strong></td>
+              </tr>
+            }
             <tr>
               <td>{{ cliente.codigo }}</td>
               <td>{{ cliente.fantasia }}</td>

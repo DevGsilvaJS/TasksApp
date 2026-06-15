@@ -80,6 +80,10 @@
       <p>Nenhum usuário cadastrado</p>
     </div>
   } @else {
+    <app-seletor-agrupamento-grid
+      [agruparPor]="agruparPor"
+      (agruparPorChange)="agruparPor = $event"
+      [opcoes]="agruparPorOpcoes" />
     <div class="table-container">
       <table>
         <thead>
@@ -94,7 +98,12 @@
           </tr>
         </thead>
         <tbody>
-          @for (usuario of usuarios; track usuario.usuarioId) {
+          @for (usuario of usuariosParaTabela; track usuario.usuarioId; let i = $index) {
+            @if (exibirCabecalhoGrupoUsuario(i)) {
+              <tr class="grupo-grid-row">
+                <td [attr.colspan]="7"><strong>{{ getAgruparPorLabel() }}: {{ getValorGrupoUsuario(usuario) }}</strong></td>
+              </tr>
+            }
             <tr>
               <td>{{ usuario.usuarioId }}</td>
               <td>{{ usuario.nome }}</td>

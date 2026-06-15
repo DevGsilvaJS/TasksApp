@@ -31,6 +31,10 @@
             <i class="pi pi-plus"></i> Novo
           </button>
         </div>
+        <app-seletor-agrupamento-grid
+          [agruparPor]="agruparPor.status"
+          (agruparPorChange)="agruparPor.status = $event"
+          [opcoes]="agruparPorOpcoesCadastro" />
         <div class="table-wrap">
           <table class="cadastro-table">
             <thead>
@@ -42,7 +46,12 @@
               </tr>
             </thead>
             <tbody>
-              @for (item of statusList; track item.id) {
+              @for (item of getListaCadastroParaTabela(statusList, 'status'); track item.id; let i = $index) {
+                @if (exibirCabecalhoGrupoCadastro(statusList, i, 'status')) {
+                  <tr class="grupo-grid-row">
+                    <td [attr.colspan]="4"><strong>{{ getAgruparPorLabelCadastro('status') }}: {{ getValorGrupoCadastro(item, agruparPor.status) }}</strong></td>
+                  </tr>
+                }
                 <tr [class.inativo]="!item.ativo">
                   <td>{{ item.id }}</td>
                   <td>{{ item.descricao }}</td>
@@ -74,6 +83,10 @@
             <i class="pi pi-plus"></i> Novo
           </button>
         </div>
+        <app-seletor-agrupamento-grid
+          [agruparPor]="agruparPor.tipoAtendimento"
+          (agruparPorChange)="agruparPor.tipoAtendimento = $event"
+          [opcoes]="agruparPorOpcoesCadastro" />
         <div class="table-wrap">
           <table class="cadastro-table">
             <thead>
@@ -85,7 +98,12 @@
               </tr>
             </thead>
             <tbody>
-              @for (item of tipoAtendimentoList; track item.id) {
+              @for (item of getListaCadastroParaTabela(tipoAtendimentoList, 'tipoAtendimento'); track item.id; let i = $index) {
+                @if (exibirCabecalhoGrupoCadastro(tipoAtendimentoList, i, 'tipoAtendimento')) {
+                  <tr class="grupo-grid-row">
+                    <td [attr.colspan]="4"><strong>{{ getAgruparPorLabelCadastro('tipoAtendimento') }}: {{ getValorGrupoCadastro(item, agruparPor.tipoAtendimento) }}</strong></td>
+                  </tr>
+                }
                 <tr [class.inativo]="!item.ativo">
                   <td>{{ item.id }}</td>
                   <td>{{ item.descricao }}</td>
@@ -117,6 +135,10 @@
             <i class="pi pi-plus"></i> Novo
           </button>
         </div>
+        <app-seletor-agrupamento-grid
+          [agruparPor]="agruparPor.tipoContato"
+          (agruparPorChange)="agruparPor.tipoContato = $event"
+          [opcoes]="agruparPorOpcoesCadastro" />
         <div class="table-wrap">
           <table class="cadastro-table">
             <thead>
@@ -128,7 +150,12 @@
               </tr>
             </thead>
             <tbody>
-              @for (item of tipoContatoList; track item.id) {
+              @for (item of getListaCadastroParaTabela(tipoContatoList, 'tipoContato'); track item.id; let i = $index) {
+                @if (exibirCabecalhoGrupoCadastro(tipoContatoList, i, 'tipoContato')) {
+                  <tr class="grupo-grid-row">
+                    <td [attr.colspan]="4"><strong>{{ getAgruparPorLabelCadastro('tipoContato') }}: {{ getValorGrupoCadastro(item, agruparPor.tipoContato) }}</strong></td>
+                  </tr>
+                }
                 <tr [class.inativo]="!item.ativo">
                   <td>{{ item.id }}</td>
                   <td>{{ item.descricao }}</td>
@@ -160,6 +187,10 @@
             <i class="pi pi-plus"></i> Novo
           </button>
         </div>
+        <app-seletor-agrupamento-grid
+          [agruparPor]="agruparPor.andamento"
+          (agruparPorChange)="agruparPor.andamento = $event"
+          [opcoes]="agruparPorOpcoesCadastro" />
         <div class="table-wrap">
           <table class="cadastro-table">
             <thead>
@@ -171,7 +202,12 @@
               </tr>
             </thead>
             <tbody>
-              @for (item of andamentoList; track item.id) {
+              @for (item of getListaCadastroParaTabela(andamentoList, 'andamento'); track item.id; let i = $index) {
+                @if (exibirCabecalhoGrupoCadastro(andamentoList, i, 'andamento')) {
+                  <tr class="grupo-grid-row">
+                    <td [attr.colspan]="4"><strong>{{ getAgruparPorLabelCadastro('andamento') }}: {{ getValorGrupoCadastro(item, agruparPor.andamento) }}</strong></td>
+                  </tr>
+                }
                 <tr [class.inativo]="!item.ativo">
                   <td>{{ item.id }}</td>
                   <td>{{ item.descricao }}</td>

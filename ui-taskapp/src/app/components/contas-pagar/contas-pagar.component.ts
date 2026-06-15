@@ -5,11 +5,19 @@ import { DuplicataService, DuplicataResponseDto, CadastroDuplicataDto, ParcelaRe
 import { EmpresaService, EmpresaResponseDto } from '../../services/empresa.service';
 import { PlanoContasService, PlanoContasResponseDto } from '../../services/plano-contas.service';
 import { NotificacaoService } from '../../services/notificacao.service';
+import {
+  criarOpcoesAgrupamento,
+  deveExibirCabecalhoGrupo,
+  obterRotuloAgrupamento,
+  obterValorCabecalhoGrupo,
+  ordenarItensParaAgrupamento
+} from '../../shared/utils/grid-agrupamento.util';
+import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
 
 @Component({
   selector: 'app-contas-pagar',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SeletorAgrupamentoGridComponent],
   templateUrl: './contas-pagar.component.html',
   styleUrl: './contas-pagar.component.css'
 })
@@ -30,6 +38,13 @@ export class ContasPagarComponent implements OnInit {
   parcelasManuais: CadastroParcelaDto[] = [];
   empresas: EmpresaResponseDto[] = [];
   planosContas: PlanoContasResponseDto[] = [];
+
+  agruparPor = '';
+  agruparPorOpcoes = criarOpcoesAgrupamento([
+    { value: 'centroCustoDescricao', label: 'Centro de Custo' },
+    { value: 'descricaoDespesa', label: 'Descrição da Despesa' },
+    { value: 'dataEmissao', label: 'Data Emissão' }
+  ]);
 
   // Modal de confirmação
   showConfirmModal = false;
@@ -498,5 +513,30 @@ export class ContasPagarComponent implements OnInit {
       default:
         return '';
     }
+  }
+
+  get duplicatasParaTabela(): DuplicataResponseDto[] {
+    return ordenarItensParaAgrupamento(this.duplicatasFiltradas, this.agruparPor);
+  }
+
+  getAgruparPorLabel(): string {
+    return obterRotuloAgrupamento(this.agruparPorOpcoes, this.agruparPor);
+  }
+
+  getValorGrupoDuplicata(duplicata: DuplicataResponseDto): string {
+    if (this.agruparPor === 'dataEmissao') {
+      return this.formatarData(duplicata.dataEmissao);
+    }
+
+    return obterValorCabecalhoGrupo(duplicata as unknown as Record<string, unknown>, this.agruparPor);
+  }
+
+  exibirCabecalhoGrupoDuplicata(index: number): boolean {
+    return deveExibirCabecalhoGrupo(
+      this.duplicatasParaTabela,
+      index,
+      this.agruparPor,
+      (duplicata) => this.getValorGrupoDuplicata(duplicata)
+    );
   }
 }

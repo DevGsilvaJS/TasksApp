@@ -181,10 +181,6 @@
                 <a routerLink="/anotacoes" routerLinkActive="active" class="nav-item nav-item-sub">Anotações</a>
               }
               <a routerLink="/possiveis-clientes" routerLinkActive="active" class="nav-item nav-item-sub">Comercial</a>
-              @if (isAdmin) {
-                <a routerLink="/cadastro-atendimento" routerLinkActive="active" class="nav-item nav-item-sub">Parâmetros Atendimentos</a>
-                <a routerLink="/status-atendimento-comercial" routerLinkActive="active" class="nav-item nav-item-sub">Parâmetros Comercial</a>
-              }
             </div>
           }
         </div>
@@ -264,6 +260,8 @@
             @if (menuUtilitariosAberto) {
               <div class="nav-submenu">
                 <a routerLink="/usuarios" routerLinkActive="active" class="nav-item nav-item-sub">Usuários</a>
+                <a routerLink="/cadastro-atendimento" routerLinkActive="active" class="nav-item nav-item-sub">Parâmetros Atendimentos</a>
+                <a routerLink="/status-atendimento-comercial" routerLinkActive="active" class="nav-item nav-item-sub">Parâmetros Comercial</a>
               </div>
             }
           </div>

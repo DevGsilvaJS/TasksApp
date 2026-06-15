@@ -67,6 +67,10 @@
       @if (relatorio.itens.length === 0) {
         <p class="empty-state">Nenhum registro encontrado para os filtros informados.</p>
       } @else {
+        <app-seletor-agrupamento-grid
+          [agruparPor]="agruparPor"
+          (agruparPorChange)="agruparPor = $event"
+          [opcoes]="agruparPorOpcoes" />
         <div class="table-container">
           <table class="data-table">
             <thead>
@@ -90,7 +94,12 @@
               </tr>
             </thead>
             <tbody>
-              @for (item of relatorio.itens; track item.parcelaId) {
+              @for (item of itensRelatorioParaTabela; track item.parcelaId; let i = $index) {
+                @if (exibirCabecalhoGrupoRelatorio(i)) {
+                  <tr class="grupo-grid-row">
+                    <td [attr.colspan]="colSpanRelatorio"><strong>{{ getAgruparPorLabel() }}: {{ getValorGrupoRelatorio(item) }}</strong></td>
+                  </tr>
+                }
                 <tr>
                   <td>{{ item.numeroDuplicata }}</td>
                   <td>{{ item.numeroParcela }}</td>

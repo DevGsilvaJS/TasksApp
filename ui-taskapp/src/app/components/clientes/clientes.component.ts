@@ -6,11 +6,19 @@ import { UsuarioService, UsuarioResponseDto } from '../../services/usuario.servi
 import { MascaraMoedaBrDirective } from '../../directives/mascara-moeda-br.directive';
 import { NotificacaoService } from '../../services/notificacao.service';
 import { extrairMensagemErroApi } from '../../utils/erro-api.util';
+import {
+  criarOpcoesAgrupamento,
+  deveExibirCabecalhoGrupo,
+  obterRotuloAgrupamento,
+  obterValorCabecalhoGrupo,
+  ordenarItensParaAgrupamento
+} from '../../shared/utils/grid-agrupamento.util';
+import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
 
 @Component({
   selector: 'app-clientes',
   standalone: true,
-  imports: [CommonModule, FormsModule, MascaraMoedaBrDirective],
+  imports: [CommonModule, FormsModule, MascaraMoedaBrDirective, SeletorAgrupamentoGridComponent],
   templateUrl: './clientes.component.html',
   styleUrl: './clientes.component.css'
 })
@@ -45,6 +53,14 @@ export class ClientesComponent implements OnInit {
     { value: StatusCliente.Inativo, label: 'Inativo', icon: '✗' },
     { value: StatusCliente.Suspenso, label: 'Suspenso', icon: '⚠' }
   ];
+
+  agruparPor = '';
+  agruparPorOpcoes = criarOpcoesAgrupamento([
+    { value: 'codigo', label: 'Código' },
+    { value: 'fantasia', label: 'Fantasia' },
+    { value: 'usuarioNome', label: 'Usuário' },
+    { value: 'status', label: 'Status' }
+  ]);
 
   constructor(
     private clienteService: ClienteService,
@@ -384,5 +400,31 @@ export class ClientesComponent implements OnInit {
     }
 
     return null;
+  }
+
+  get clientesParaTabela(): ClienteResponseDto[] {
+    return ordenarItensParaAgrupamento(this.clientesFiltrados, this.agruparPor);
+  }
+
+  getAgruparPorLabel(): string {
+    return obterRotuloAgrupamento(this.agruparPorOpcoes, this.agruparPor);
+  }
+
+  getValorGrupoCliente(cliente: ClienteResponseDto): string {
+    if (this.agruparPor === 'status') {
+      const status = this.statusOptions.find(s => s.value === cliente.status);
+      return status?.label ?? '—';
+    }
+
+    return obterValorCabecalhoGrupo(cliente as unknown as Record<string, unknown>, this.agruparPor);
+  }
+
+  exibirCabecalhoGrupoCliente(index: number): boolean {
+    return deveExibirCabecalhoGrupo(
+      this.clientesParaTabela,
+      index,
+      this.agruparPor,
+      (cliente) => this.getValorGrupoCliente(cliente)
+    );
   }
 }

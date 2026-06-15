@@ -25,6 +25,10 @@
         </div>
         <button type="button" class="btn-primary" (click)="abrirNovo()">Incluir</button>
       </div>
+      <app-seletor-agrupamento-grid
+        [agruparPor]="agruparPor"
+        (agruparPorChange)="agruparPor = $event"
+        [opcoes]="agruparPorOpcoes" />
       <div class="table-wrap">
         <table class="cadastro-table">
           <thead>
@@ -37,7 +41,12 @@
             </tr>
           </thead>
           <tbody>
-            @for (item of empresasFiltradas; track item.empresaId) {
+            @for (item of empresasParaTabela; track item.empresaId; let i = $index) {
+              @if (exibirCabecalhoGrupoEmpresa(i)) {
+                <tr class="grupo-grid-row">
+                  <td [attr.colspan]="5"><strong>{{ getAgruparPorLabel() }}: {{ getValorGrupoEmpresa(item) }}</strong></td>
+                </tr>
+              }
               <tr>
                 <td>{{ item.empresaId }}</td>
                 <td>{{ formatarCnpjParaExibicao(item.cnpj) }}</td>

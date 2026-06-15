@@ -3,11 +3,19 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UsuarioService, UsuarioResponseDto, CadastroUsuarioDto, AtualizarUsuarioDto, PERFIS_OPCOES, PERFIL_COMERCIAL } from '../../services/usuario.service';
 import { NotificacaoService } from '../../services/notificacao.service';
+import {
+  criarOpcoesAgrupamento,
+  deveExibirCabecalhoGrupo,
+  obterRotuloAgrupamento,
+  obterValorCabecalhoGrupo,
+  ordenarItensParaAgrupamento
+} from '../../shared/utils/grid-agrupamento.util';
+import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
 
 @Component({
   selector: 'app-usuarios',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SeletorAgrupamentoGridComponent],
   templateUrl: './usuarios.component.html',
   styleUrl: './usuarios.component.css'
 })
@@ -20,6 +28,12 @@ export class UsuariosComponent implements OnInit {
   error: string | null = null;
 
   readonly perfisOpcoes = PERFIS_OPCOES;
+
+  agruparPor = '';
+  agruparPorOpcoes = criarOpcoesAgrupamento([
+    { value: 'perfil', label: 'Perfil' },
+    { value: 'nome', label: 'Nome' }
+  ]);
 
   novoUsuario: CadastroUsuarioDto = {
     nome: '',
@@ -156,5 +170,31 @@ export class UsuariosComponent implements OnInit {
         }
       });
     }
+  }
+
+  get usuariosParaTabela(): UsuarioResponseDto[] {
+    return ordenarItensParaAgrupamento(this.usuarios, this.agruparPor);
+  }
+
+  getAgruparPorLabel(): string {
+    return obterRotuloAgrupamento(this.agruparPorOpcoes, this.agruparPor);
+  }
+
+  getValorGrupoUsuario(usuario: UsuarioResponseDto): string {
+    if (this.agruparPor === 'perfil') {
+      const perfil = this.perfisOpcoes.find(p => p.value === usuario.perfil);
+      return perfil?.label ?? '—';
+    }
+
+    return obterValorCabecalhoGrupo(usuario as unknown as Record<string, unknown>, this.agruparPor);
+  }
+
+  exibirCabecalhoGrupoUsuario(index: number): boolean {
+    return deveExibirCabecalhoGrupo(
+      this.usuariosParaTabela,
+      index,
+      this.agruparPor,
+      (usuario) => this.getValorGrupoUsuario(usuario)
+    );
   }
 }

@@ -21,6 +21,10 @@
       @if (empresas.length === 0) {
         <p class="aviso-cadastro">Cadastre ao menos uma empresa antes de incluir centros de custo.</p>
       }
+      <app-seletor-agrupamento-grid
+        [agruparPor]="agruparPor"
+        (agruparPorChange)="agruparPor = $event"
+        [opcoes]="agruparPorOpcoes" />
       <div class="table-wrap">
         <table class="cadastro-table">
           <thead>
@@ -32,7 +36,12 @@
             </tr>
           </thead>
           <tbody>
-            @for (item of centros; track item.centroCustoId) {
+            @for (item of centrosParaTabela; track item.centroCustoId; let i = $index) {
+              @if (exibirCabecalhoGrupoCentro(i)) {
+                <tr class="grupo-grid-row">
+                  <td [attr.colspan]="4"><strong>{{ getAgruparPorLabel() }}: {{ getValorGrupoCentro(item) }}</strong></td>
+                </tr>
+              }
               <tr>
                 <td>{{ item.centroCustoId }}</td>
                 <td>{{ item.empresaFantasia || '-' }}</td>

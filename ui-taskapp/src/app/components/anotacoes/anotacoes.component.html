@@ -70,6 +70,10 @@
       <p>{{ termoBusca ? 'Nenhuma anotação encontrada' : 'Nenhuma anotação cadastrada' }}</p>
     </div>
   } @else {
+    <app-seletor-agrupamento-grid
+      [agruparPor]="agruparPor"
+      (agruparPorChange)="agruparPor = $event"
+      [opcoes]="agruparPorOpcoes" />
     <div class="table-container">
       <table class="data-table">
         <thead>
@@ -81,7 +85,12 @@
           </tr>
         </thead>
         <tbody>
-          @for (anotacao of anotacoesFiltradas; track anotacao.anotacaoId) {
+          @for (anotacao of anotacoesParaTabela; track anotacao.anotacaoId; let i = $index) {
+            @if (exibirCabecalhoGrupoAnotacao(i)) {
+              <tr class="grupo-grid-row">
+                <td [attr.colspan]="4"><strong>{{ getAgruparPorLabel() }}: {{ getValorGrupoAnotacao(anotacao) }}</strong></td>
+              </tr>
+            }
             <tr>
               <td>{{ anotacao.descricao }}</td>
               <td>

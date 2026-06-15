@@ -7,11 +7,19 @@ import {
   CadastroEmpresaDto
 } from '../../services/empresa.service';
 import { NotificacaoService } from '../../services/notificacao.service';
+import {
+  criarOpcoesAgrupamento,
+  deveExibirCabecalhoGrupo,
+  obterRotuloAgrupamento,
+  obterValorCabecalhoGrupo,
+  ordenarItensParaAgrupamento
+} from '../../shared/utils/grid-agrupamento.util';
+import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
 
 @Component({
   selector: 'app-empresas',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SeletorAgrupamentoGridComponent],
   templateUrl: './empresas.component.html',
   styleUrl: './empresas.component.css'
 })
@@ -33,6 +41,12 @@ export class EmpresasComponent implements OnInit {
     razaoSocial: '',
     fantasia: ''
   };
+
+  agruparPor = '';
+  agruparPorOpcoes = criarOpcoesAgrupamento([
+    { value: 'fantasia', label: 'Fantasia' },
+    { value: 'razaoSocial', label: 'Razão Social' }
+  ]);
 
   constructor(
     private empresaService: EmpresaService,
@@ -186,5 +200,26 @@ export class EmpresasComponent implements OnInit {
     valor = valor.replace(/\.(\d{3})(\d)/, '.$1/$2');
     valor = valor.replace(/(\d{4})(\d)/, '$1-$2');
     return valor;
+  }
+
+  get empresasParaTabela(): EmpresaResponseDto[] {
+    return ordenarItensParaAgrupamento(this.empresasFiltradas, this.agruparPor);
+  }
+
+  getAgruparPorLabel(): string {
+    return obterRotuloAgrupamento(this.agruparPorOpcoes, this.agruparPor);
+  }
+
+  getValorGrupoEmpresa(empresa: EmpresaResponseDto): string {
+    return obterValorCabecalhoGrupo(empresa as unknown as Record<string, unknown>, this.agruparPor);
+  }
+
+  exibirCabecalhoGrupoEmpresa(index: number): boolean {
+    return deveExibirCabecalhoGrupo(
+      this.empresasParaTabela,
+      index,
+      this.agruparPor,
+      (empresa) => this.getValorGrupoEmpresa(empresa)
+    );
   }
 }

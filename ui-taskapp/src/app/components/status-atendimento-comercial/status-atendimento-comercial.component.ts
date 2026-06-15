@@ -6,11 +6,19 @@ import {
   StatusAtendimentoComercialDto,
   StatusAtendimentoComercialRequestDto
 } from '../../services/cadastro-atendimento.service';
+import {
+  criarOpcoesAgrupamento,
+  deveExibirCabecalhoGrupo,
+  obterRotuloAgrupamento,
+  obterValorCabecalhoGrupo,
+  ordenarItensParaAgrupamento
+} from '../../shared/utils/grid-agrupamento.util';
+import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
 
 @Component({
   selector: 'app-status-atendimento-comercial',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SeletorAgrupamentoGridComponent],
   templateUrl: './status-atendimento-comercial.component.html',
   styleUrl: './status-atendimento-comercial.component.css'
 })
@@ -23,6 +31,12 @@ export class StatusAtendimentoComercialComponent implements OnInit {
   showModal = false;
   editandoId: number | null = null;
   form: StatusAtendimentoComercialRequestDto = { descricao: '', ativo: true };
+
+  agruparPor = '';
+  agruparPorOpcoes = criarOpcoesAgrupamento([
+    { value: 'descricao', label: 'Descrição' },
+    { value: 'ativo', label: 'Ativo' }
+  ]);
 
   showModalExcluir = false;
   itemParaExcluir: StatusAtendimentoComercialDto | null = null;
@@ -133,5 +147,30 @@ export class StatusAtendimentoComercialComponent implements OnInit {
         this.excluindo = false;
       }
     });
+  }
+
+  get listaParaTabela(): StatusAtendimentoComercialDto[] {
+    return ordenarItensParaAgrupamento(this.lista, this.agruparPor);
+  }
+
+  getAgruparPorLabel(): string {
+    return obterRotuloAgrupamento(this.agruparPorOpcoes, this.agruparPor);
+  }
+
+  getValorGrupo(item: StatusAtendimentoComercialDto): string {
+    if (this.agruparPor === 'ativo') {
+      return item.ativo ? 'Sim' : 'Não';
+    }
+
+    return obterValorCabecalhoGrupo(item as unknown as Record<string, unknown>, this.agruparPor);
+  }
+
+  exibirCabecalhoGrupo(index: number): boolean {
+    return deveExibirCabecalhoGrupo(
+      this.listaParaTabela,
+      index,
+      this.agruparPor,
+      (item) => this.getValorGrupo(item)
+    );
   }
 }

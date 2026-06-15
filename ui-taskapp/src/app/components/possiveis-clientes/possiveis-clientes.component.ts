@@ -16,11 +16,18 @@ export interface ClienteGrupo {
 }
 import { AuthService } from '../../services/auth.service';
 import { CadastroAtendimentoService } from '../../services/cadastro-atendimento.service';
+import {
+  criarOpcoesAgrupamento,
+  obterRotuloAgrupamento,
+  obterValorCabecalhoGrupo,
+  ordenarItensParaAgrupamento
+} from '../../shared/utils/grid-agrupamento.util';
+import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
 
 @Component({
   selector: 'app-possiveis-clientes',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableModule, OverlayPanelModule],
+  imports: [CommonModule, FormsModule, TableModule, OverlayPanelModule, SeletorAgrupamentoGridComponent],
   templateUrl: './possiveis-clientes.component.html',
   styleUrl: './possiveis-clientes.component.css'
 })
@@ -35,6 +42,12 @@ export class PossiveisClientesComponent implements OnInit {
   apenasComTelefone = false;
   /** true = uma linha por cliente (agrupado por código); false = todas as lojas */
   agruparPorCliente = true;
+  agruparPorColuna = '';
+  agruparPorColunaOpcoes = criarOpcoesAgrupamento([
+    { value: 'pocCodigo', label: 'Código' },
+    { value: 'pocFantasia', label: 'Cliente / Fantasia' },
+    { value: 'pocStatusAtendimento', label: 'Status' }
+  ]);
   /** 'tabela' ou 'cards' */
   viewLayout: 'tabela' | 'cards' = 'tabela';
   /** Códigos expandidos na tabela (quando agruparPorCliente) */
@@ -572,5 +585,27 @@ export class PossiveisClientesComponent implements OnInit {
       return `(${ddd2}) ${celRaw.slice(0, 4)}-${celRaw.slice(4, 8)}`;
     }
     return `(${ddd2}) ${celRaw}`.trim() || '-';
+  }
+
+  get listaParaTabelaFlat(): PossivelClienteResponseDto[] {
+    return ordenarItensParaAgrupamento(this.listaOrdenada, this.agruparPorColuna);
+  }
+
+  getAgruparPorColunaLabel(): string {
+    return obterRotuloAgrupamento(this.agruparPorColunaOpcoes, this.agruparPorColuna);
+  }
+
+  getValorGrupoComercial(item: PossivelClienteResponseDto): string {
+    if (this.agruparPorColuna === 'pocStatusAtendimento') {
+      return this.labelStatusAtendimento(item);
+    }
+
+    return obterValorCabecalhoGrupo(item as unknown as Record<string, unknown>, this.agruparPorColuna);
+  }
+
+  getGroupHeaderValueComercial(rowData: PossivelClienteResponseDto | string): string {
+    if (rowData == null) return '';
+    if (typeof rowData === 'string') return rowData;
+    return this.getValorGrupoComercial(rowData);
   }
 }

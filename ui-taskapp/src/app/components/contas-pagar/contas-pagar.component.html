@@ -256,12 +256,17 @@
       <p>{{ termoBusca ? 'Nenhuma duplicata encontrada' : 'Nenhuma duplicata cadastrada' }}</p>
     </div>
   } @else {
+    <app-seletor-agrupamento-grid
+      [agruparPor]="agruparPor"
+      (agruparPorChange)="agruparPor = $event"
+      [opcoes]="agruparPorOpcoes" />
     <div class="table-container">
       <table class="data-table">
         <thead>
           <tr>
             <th>Número</th>
             <th>Data Emissão</th>
+            <th>Centro de Custo</th>
             <th>Descrição da Despesa</th>
             <th>Parcelas</th>
             <th>Valor da Parcela</th>
@@ -272,11 +277,17 @@
           </tr>
         </thead>
         <tbody>
-          @for (duplicata of duplicatasFiltradas; track duplicata.duplicataId) {
+          @for (duplicata of duplicatasParaTabela; track duplicata.duplicataId; let i = $index) {
+            @if (exibirCabecalhoGrupoDuplicata(i)) {
+              <tr class="grupo-grid-row">
+                <td [attr.colspan]="10"><strong>{{ getAgruparPorLabel() }}: {{ getValorGrupoDuplicata(duplicata) }}</strong></td>
+              </tr>
+            }
             <tr>
               <td>{{ duplicata.numero }}</td>
               <td>{{ formatarData(duplicata.dataEmissao) }}</td>
-              <td>{{ duplicata.descricaoDespesa || '-' }}</td>
+              <td [title]="duplicata.centroCustoDescricao || '-'">{{ duplicata.centroCustoDescricao || '-' }}</td>
+              <td [title]="duplicata.descricaoDespesa || '-'">{{ duplicata.descricaoDespesa || '-' }}</td>
               <td>{{ duplicata.numeroParcelas }}</td>
               <td>{{ formatarMoeda(obterValorParcela(duplicata)) }}</td>
               <td>{{ formatarMoeda(duplicata.valorTotal) }}</td>

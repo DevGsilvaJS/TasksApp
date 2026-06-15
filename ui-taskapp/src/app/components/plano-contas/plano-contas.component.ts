@@ -7,11 +7,19 @@ import {
   CadastroPlanoContasDto
 } from '../../services/plano-contas.service';
 import { NotificacaoService } from '../../services/notificacao.service';
+import {
+  criarOpcoesAgrupamento,
+  deveExibirCabecalhoGrupo,
+  obterRotuloAgrupamento,
+  obterValorCabecalhoGrupo,
+  ordenarItensParaAgrupamento
+} from '../../shared/utils/grid-agrupamento.util';
+import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
 
 @Component({
   selector: 'app-plano-contas',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SeletorAgrupamentoGridComponent],
   templateUrl: './plano-contas.component.html',
   styleUrl: './plano-contas.component.css'
 })
@@ -29,6 +37,11 @@ export class PlanoContasComponent implements OnInit {
   excluindo = false;
 
   form: CadastroPlanoContasDto = { descricao: '' };
+
+  agruparPor = '';
+  agruparPorOpcoes = criarOpcoesAgrupamento([
+    { value: 'descricao', label: 'Descrição' }
+  ]);
 
   constructor(
     private planoContasService: PlanoContasService,
@@ -145,5 +158,26 @@ export class PlanoContasComponent implements OnInit {
         this.excluindo = false;
       }
     });
+  }
+
+  get planosParaTabela(): PlanoContasResponseDto[] {
+    return ordenarItensParaAgrupamento(this.planosFiltrados, this.agruparPor);
+  }
+
+  getAgruparPorLabel(): string {
+    return obterRotuloAgrupamento(this.agruparPorOpcoes, this.agruparPor);
+  }
+
+  getValorGrupoPlano(item: PlanoContasResponseDto): string {
+    return obterValorCabecalhoGrupo(item as unknown as Record<string, unknown>, this.agruparPor);
+  }
+
+  exibirCabecalhoGrupoPlano(index: number): boolean {
+    return deveExibirCabecalhoGrupo(
+      this.planosParaTabela,
+      index,
+      this.agruparPor,
+      (item) => this.getValorGrupoPlano(item)
+    );
   }
 }

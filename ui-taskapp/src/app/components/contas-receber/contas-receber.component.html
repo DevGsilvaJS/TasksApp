@@ -269,6 +269,10 @@
       <p>{{ termoBusca ? 'Nenhuma duplicata encontrada' : 'Nenhuma duplicata cadastrada' }}</p>
     </div>
   } @else {
+    <app-seletor-agrupamento-grid
+      [agruparPor]="agruparPor"
+      (agruparPorChange)="agruparPor = $event"
+      [opcoes]="agruparPorOpcoes" />
     <div class="table-container">
       <table class="data-table">
         <thead>
@@ -287,7 +291,12 @@
           </tr>
         </thead>
         <tbody>
-          @for (duplicata of duplicatasFiltradas; track duplicata.duplicataId) {
+          @for (duplicata of duplicatasParaTabela; track duplicata.duplicataId; let i = $index) {
+            @if (exibirCabecalhoGrupoDuplicata(i)) {
+              <tr class="grupo-grid-row">
+                <td [attr.colspan]="12"><strong>{{ getAgruparPorLabel() }}: {{ getValorGrupoDuplicata(duplicata) }}</strong></td>
+              </tr>
+            }
             <tr>
               <td>{{ duplicata.numero }}</td>
               <td>{{ formatarData(duplicata.dataEmissao) }}</td>

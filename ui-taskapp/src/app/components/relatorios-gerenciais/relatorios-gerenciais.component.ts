@@ -8,11 +8,20 @@ import {
   TipoRelatorioGerencial
 } from '../../services/relatorio-gerencial.service';
 import { extrairMensagemErroApi } from '../../utils/erro-api.util';
+import {
+  criarOpcoesAgrupamento,
+  deveExibirCabecalhoGrupo,
+  obterRotuloAgrupamento,
+  obterValorCabecalhoGrupo,
+  ordenarItensParaAgrupamento
+} from '../../shared/utils/grid-agrupamento.util';
+import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
+import { RelatorioGerencialLinhaDto } from '../../services/relatorio-gerencial.service';
 
 @Component({
   selector: 'app-relatorios-gerenciais',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SeletorAgrupamentoGridComponent],
   templateUrl: './relatorios-gerenciais.component.html',
   styleUrl: './relatorios-gerenciais.component.css'
 })
@@ -25,6 +34,14 @@ export class RelatoriosGerenciaisComponent {
   loading = false;
   error: string | null = null;
   relatorio: RelatorioGerencialResponseDto | null = null;
+
+  agruparPor = '';
+  agruparPorOpcoes = criarOpcoesAgrupamento([
+    { value: 'clienteNome', label: 'Cliente' },
+    { value: 'status', label: 'Status' },
+    { value: 'descricaoDespesa', label: 'Descrição' },
+    { value: 'numeroDuplicata', label: 'Duplicata' }
+  ]);
 
   constructor(private relatorioService: RelatorioGerencialService) { }
 
@@ -65,6 +82,35 @@ export class RelatoriosGerenciaisComponent {
 
   get exibirColunaDataPagamento(): boolean {
     return this.tipoRelatorio === 'contas-pagas' || this.tipoRelatorio === 'contas-recebidas';
+  }
+
+  get colSpanRelatorio(): number {
+    let colunas = 9;
+    if (this.exibirColunaCliente) colunas++;
+    if (this.exibirColunaDataPagamento) colunas++;
+    return colunas;
+  }
+
+  get itensRelatorioParaTabela(): RelatorioGerencialLinhaDto[] {
+    if (!this.relatorio?.itens) return [];
+    return ordenarItensParaAgrupamento(this.relatorio.itens, this.agruparPor);
+  }
+
+  getAgruparPorLabel(): string {
+    return obterRotuloAgrupamento(this.agruparPorOpcoes, this.agruparPor);
+  }
+
+  getValorGrupoRelatorio(item: RelatorioGerencialLinhaDto): string {
+    return obterValorCabecalhoGrupo(item as unknown as Record<string, unknown>, this.agruparPor);
+  }
+
+  exibirCabecalhoGrupoRelatorio(index: number): boolean {
+    return deveExibirCabecalhoGrupo(
+      this.itensRelatorioParaTabela,
+      index,
+      this.agruparPor,
+      (item) => this.getValorGrupoRelatorio(item)
+    );
   }
 
   formatarMoeda(valor: number): string {

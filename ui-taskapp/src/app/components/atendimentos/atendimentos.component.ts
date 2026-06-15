@@ -11,11 +11,12 @@ import { AuthService } from '../../services/auth.service';
 import { CadastroAtendimentoService } from '../../services/cadastro-atendimento.service';
 import { forkJoin } from 'rxjs';
 import { NotificacaoService } from '../../services/notificacao.service';
+import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
 
 @Component({
   selector: 'app-atendimentos',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableModule, OverlayPanelModule],
+  imports: [CommonModule, FormsModule, TableModule, OverlayPanelModule, SeletorAgrupamentoGridComponent],
   templateUrl: './atendimentos.component.html',
   styleUrl: './atendimentos.component.css'
 })
@@ -102,7 +103,7 @@ export class AtendimentosComponent implements OnInit {
     { value: 'usuarioNome', label: 'Usuário' },
     { value: 'tipoAtendimentoDescricao', label: 'Tipo' }
   ];
-  agruparPor = 'clienteNome';
+  agruparPor = '';
 
   /** Colunas que têm filtro multi-select (ícone funil). */
   readonly colunasFiltravelis: { campo: string; label: string }[] = [
@@ -383,7 +384,9 @@ export class AtendimentosComponent implements OnInit {
   carregarClientes() {
     this.clienteService.listarTodosClientes().subscribe({
       next: (data) => {
-        this.clientes = data;
+        this.clientes = [...data].sort((a, b) =>
+          a.codigo.localeCompare(b.codigo, 'pt-BR', { numeric: true })
+        );
         console.log('Clientes carregados:', this.clientes);
         if (this.clientes.length === 0 && !this.error) {
           this.error = 'Nenhum cliente cadastrado. Cadastre um cliente primeiro.';

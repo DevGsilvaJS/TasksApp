@@ -6,13 +6,21 @@ import {
   CadastroItemDto,
   CadastroItemRequestDto
 } from '../../services/cadastro-atendimento.service';
+import {
+  criarOpcoesAgrupamento,
+  deveExibirCabecalhoGrupo,
+  obterRotuloAgrupamento,
+  obterValorCabecalhoGrupo,
+  ordenarItensParaAgrupamento
+} from '../../shared/utils/grid-agrupamento.util';
+import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
 
 type TipoCadastro = 'status' | 'tipoAtendimento' | 'tipoContato' | 'andamento';
 
 @Component({
   selector: 'app-cadastro-atendimento',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SeletorAgrupamentoGridComponent],
   templateUrl: './cadastro-atendimento.component.html',
   styleUrl: './cadastro-atendimento.component.css'
 })
@@ -30,6 +38,18 @@ export class CadastroAtendimentoComponent implements OnInit {
   modalTipo: TipoCadastro | null = null;
   editandoId: number | null = null;
   form: CadastroItemRequestDto = { descricao: '', ativo: true };
+
+  agruparPor: Record<TipoCadastro, string> = {
+    status: '',
+    tipoAtendimento: '',
+    tipoContato: '',
+    andamento: ''
+  };
+
+  agruparPorOpcoesCadastro = criarOpcoesAgrupamento([
+    { value: 'descricao', label: 'Descrição' },
+    { value: 'ativo', label: 'Ativo' }
+  ]);
 
   constructor(private service: CadastroAtendimentoService) {}
 
@@ -162,5 +182,27 @@ export class CadastroAtendimentoComponent implements OnInit {
     };
     const nome = nomes[this.modalTipo];
     return this.editandoId != null ? `Editar ${nome}` : `Novo ${nome}`;
+  }
+
+  getListaCadastroParaTabela(lista: CadastroItemDto[], tipo: TipoCadastro): CadastroItemDto[] {
+    return ordenarItensParaAgrupamento(lista, this.agruparPor[tipo]);
+  }
+
+  getAgruparPorLabelCadastro(tipo: TipoCadastro): string {
+    return obterRotuloAgrupamento(this.agruparPorOpcoesCadastro, this.agruparPor[tipo]);
+  }
+
+  getValorGrupoCadastro(item: CadastroItemDto, campo: string): string {
+    if (campo === 'ativo') {
+      return item.ativo ? 'Sim' : 'Não';
+    }
+
+    return obterValorCabecalhoGrupo(item as unknown as Record<string, unknown>, campo);
+  }
+
+  exibirCabecalhoGrupoCadastro(lista: CadastroItemDto[], index: number, tipo: TipoCadastro): boolean {
+    const campo = this.agruparPor[tipo];
+    const itens = this.getListaCadastroParaTabela(lista, tipo);
+    return deveExibirCabecalhoGrupo(itens, index, campo, (item) => this.getValorGrupoCadastro(item, campo));
   }
 }

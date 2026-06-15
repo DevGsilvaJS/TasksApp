@@ -204,8 +204,16 @@
           </tbody>
         </table>
       } @else {
+        <app-seletor-agrupamento-grid
+          [agruparPor]="agruparPorColuna"
+          (agruparPorChange)="agruparPorColuna = $event"
+          [opcoes]="agruparPorColunaOpcoes" />
         <p-table
-          [value]="listaOrdenada"
+          [value]="listaParaTabelaFlat"
+          [groupRowsBy]="agruparPorColuna || null"
+          rowGroupMode="subheader"
+          [sortField]="agruparPorColuna || 'pocCodigo'"
+          [sortOrder]="1"
           dataKey="pocId"
           styleClass="p-datatable-sm p-datatable-striped"
           [paginator]="true"
@@ -216,6 +224,15 @@
           [scrollable]="true"
           scrollHeight="flex"
           [tableStyle]="{ 'min-width': '52rem' }">
+          <ng-template pTemplate="groupheader" let-rowData>
+            <tr class="p-row-group-header">
+              <td [attr.colspan]="5">
+                @if (agruparPorColuna) {
+                  <strong>{{ getAgruparPorColunaLabel() }}: {{ getGroupHeaderValueComercial(rowData) }}</strong>
+                }
+              </td>
+            </tr>
+          </ng-template>
           <ng-template pTemplate="header">
             <tr>
               <th>Código</th>

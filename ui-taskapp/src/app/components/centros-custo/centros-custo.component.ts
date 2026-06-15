@@ -8,11 +8,19 @@ import {
 } from '../../services/centro-custo.service';
 import { EmpresaService, EmpresaResponseDto } from '../../services/empresa.service';
 import { NotificacaoService } from '../../services/notificacao.service';
+import {
+  criarOpcoesAgrupamento,
+  deveExibirCabecalhoGrupo,
+  obterRotuloAgrupamento,
+  obterValorCabecalhoGrupo,
+  ordenarItensParaAgrupamento
+} from '../../shared/utils/grid-agrupamento.util';
+import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
 
 @Component({
   selector: 'app-centros-custo',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SeletorAgrupamentoGridComponent],
   templateUrl: './centros-custo.component.html',
   styleUrl: './centros-custo.component.css'
 })
@@ -29,6 +37,11 @@ export class CentrosCustoComponent implements OnInit {
   excluindo = false;
 
   form: CadastroCentroCustoDto = { empresaId: 0 };
+
+  agruparPor = '';
+  agruparPorOpcoes = criarOpcoesAgrupamento([
+    { value: 'empresaFantasia', label: 'Empresa' }
+  ]);
 
   constructor(
     private centroCustoService: CentroCustoService,
@@ -147,5 +160,26 @@ export class CentrosCustoComponent implements OnInit {
     valor = valor.replace(/\.(\d{3})(\d)/, '.$1/$2');
     valor = valor.replace(/(\d{4})(\d)/, '$1-$2');
     return valor;
+  }
+
+  get centrosParaTabela(): CentroCustoResponseDto[] {
+    return ordenarItensParaAgrupamento(this.centros, this.agruparPor);
+  }
+
+  getAgruparPorLabel(): string {
+    return obterRotuloAgrupamento(this.agruparPorOpcoes, this.agruparPor);
+  }
+
+  getValorGrupoCentro(item: CentroCustoResponseDto): string {
+    return obterValorCabecalhoGrupo(item as unknown as Record<string, unknown>, this.agruparPor);
+  }
+
+  exibirCabecalhoGrupoCentro(index: number): boolean {
+    return deveExibirCabecalhoGrupo(
+      this.centrosParaTabela,
+      index,
+      this.agruparPor,
+      (item) => this.getValorGrupoCentro(item)
+    );
   }
 }

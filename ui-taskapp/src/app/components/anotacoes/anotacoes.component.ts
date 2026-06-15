@@ -3,11 +3,19 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AnotacaoGeralService, AnotacaoGeralResponseDto, CadastroAnotacaoGeralDto } from '../../services/anotacao-geral.service';
 import { NotificacaoService } from '../../services/notificacao.service';
+import {
+  criarOpcoesAgrupamento,
+  deveExibirCabecalhoGrupo,
+  obterRotuloAgrupamento,
+  obterValorCabecalhoGrupo,
+  ordenarItensParaAgrupamento
+} from '../../shared/utils/grid-agrupamento.util';
+import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
 
 @Component({
   selector: 'app-anotacoes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SeletorAgrupamentoGridComponent],
   templateUrl: './anotacoes.component.html',
   styleUrl: './anotacoes.component.css'
 })
@@ -20,6 +28,11 @@ export class AnotacoesComponent implements OnInit {
   editando = false;
   anotacaoEditando: AnotacaoGeralResponseDto | null = null;
   termoBusca = '';
+
+  agruparPor = '';
+  agruparPorOpcoes = criarOpcoesAgrupamento([
+    { value: 'dataCadastro', label: 'Data Cadastro' }
+  ]);
 
   novaAnotacao: CadastroAnotacaoGeralDto = {
     descricao: '',
@@ -196,5 +209,30 @@ export class AnotacoesComponent implements OnInit {
   fecharSuccessModal() {
     this.showSuccessModal = false;
     this.successMessage = '';
+  }
+
+  get anotacoesParaTabela(): AnotacaoGeralResponseDto[] {
+    return ordenarItensParaAgrupamento(this.anotacoesFiltradas, this.agruparPor);
+  }
+
+  getAgruparPorLabel(): string {
+    return obterRotuloAgrupamento(this.agruparPorOpcoes, this.agruparPor);
+  }
+
+  getValorGrupoAnotacao(anotacao: AnotacaoGeralResponseDto): string {
+    if (this.agruparPor === 'dataCadastro') {
+      return this.formatarData(anotacao.dataCadastro);
+    }
+
+    return obterValorCabecalhoGrupo(anotacao as unknown as Record<string, unknown>, this.agruparPor);
+  }
+
+  exibirCabecalhoGrupoAnotacao(index: number): boolean {
+    return deveExibirCabecalhoGrupo(
+      this.anotacoesParaTabela,
+      index,
+      this.agruparPor,
+      (anotacao) => this.getValorGrupoAnotacao(anotacao)
+    );
   }
 }

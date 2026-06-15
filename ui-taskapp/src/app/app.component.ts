@@ -43,13 +43,15 @@ export class AppComponent implements OnInit {
     '/clientes',
     '/atendimentos',
     '/anotacoes',
-    '/possiveis-clientes',
-    '/cadastro-atendimento',
-    '/status-atendimento-comercial'
+    '/possiveis-clientes'
   ];
   private readonly rotasFinanceiro = ['/contas-pagar', '/contas-receber', '/relatorios-gerenciais'];
   private readonly rotasFiscal = ['/empresas', '/plano-contas', '/fluxo-caixa'];
-  private readonly rotasUtilitarios = ['/usuarios'];
+  private readonly rotasUtilitarios = [
+    '/usuarios',
+    '/cadastro-atendimento',
+    '/status-atendimento-comercial'
+  ];
   private readonly CHAVE_CIENCIA_ALERTAS = 'alertas_ciencia';
   private readonly CHAVE_CIENCIA_CONTRATOS_LEGADO = 'contratos_vencendo_ciencia';
 

@@ -73,3 +73,38 @@ textarea::placeholder {
   height: min(70vh, calc(100vh - 14rem));
   overflow: hidden;
 }
+
+/* Agrupamento de grids */
+.grid-group-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.grid-group-select {
+  min-width: 11rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.grid-group-select:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+  box-shadow: var(--theme-shadow);
+}
+
+.grupo-grid-row td,
+.p-row-group-header td {
+  background: #f1f5f9 !important;
+  color: #334155;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem !important;
+  border-top: 2px solid #e2e8f0;
+}
+

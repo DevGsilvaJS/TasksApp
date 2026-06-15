@@ -30,6 +30,10 @@
           <i class="pi pi-plus"></i> Incluir
         </button>
       </div>
+      <app-seletor-agrupamento-grid
+        [agruparPor]="agruparPor"
+        (agruparPorChange)="agruparPor = $event"
+        [opcoes]="agruparPorOpcoes" />
       <div class="table-wrap">
         <table class="cadastro-table">
           <thead>
@@ -41,7 +45,12 @@
             </tr>
           </thead>
           <tbody>
-            @for (item of lista; track item.id) {
+            @for (item of listaParaTabela; track item.id; let i = $index) {
+              @if (exibirCabecalhoGrupo(i)) {
+                <tr class="grupo-grid-row">
+                  <td [attr.colspan]="4"><strong>{{ getAgruparPorLabel() }}: {{ getValorGrupo(item) }}</strong></td>
+                </tr>
+              }
               <tr [class.inativo]="!item.ativo">
                 <td>{{ item.numero }}</td>
                 <td>{{ item.descricao }}</td>

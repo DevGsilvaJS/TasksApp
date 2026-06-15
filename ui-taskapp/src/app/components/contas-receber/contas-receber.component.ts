@@ -6,11 +6,19 @@ import { ClienteService, ClienteResponseDto } from '../../services/cliente.servi
 import { EmpresaService, EmpresaResponseDto } from '../../services/empresa.service';
 import { PlanoContasService, PlanoContasResponseDto } from '../../services/plano-contas.service';
 import { NotificacaoService } from '../../services/notificacao.service';
+import {
+  criarOpcoesAgrupamento,
+  deveExibirCabecalhoGrupo,
+  obterRotuloAgrupamento,
+  obterValorCabecalhoGrupo,
+  ordenarItensParaAgrupamento
+} from '../../shared/utils/grid-agrupamento.util';
+import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
 
 @Component({
   selector: 'app-contas-receber',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SeletorAgrupamentoGridComponent],
   templateUrl: './contas-receber.component.html',
   styleUrl: './contas-receber.component.css'
 })
@@ -32,6 +40,14 @@ export class ContasReceberComponent implements OnInit {
   parcelasManuais: CadastroParcelaDto[] = [];
   empresas: EmpresaResponseDto[] = [];
   planosContas: PlanoContasResponseDto[] = [];
+
+  agruparPor = '';
+  agruparPorOpcoes = criarOpcoesAgrupamento([
+    { value: 'clienteNome', label: 'Cliente' },
+    { value: 'centroCustoDescricao', label: 'Centro de Custo' },
+    { value: 'descricaoDespesa', label: 'Descrição da Despesa' },
+    { value: 'dataEmissao', label: 'Data Emissão' }
+  ]);
   readonly planoPadraoDescricao = 'RECEITA DE CONSULTORIA';
   planoContasPadraoId?: number;
 
@@ -547,5 +563,30 @@ export class ContasReceberComponent implements OnInit {
       default:
         return '';
     }
+  }
+
+  get duplicatasParaTabela(): DuplicataResponseDto[] {
+    return ordenarItensParaAgrupamento(this.duplicatasFiltradas, this.agruparPor);
+  }
+
+  getAgruparPorLabel(): string {
+    return obterRotuloAgrupamento(this.agruparPorOpcoes, this.agruparPor);
+  }
+
+  getValorGrupoDuplicata(duplicata: DuplicataResponseDto): string {
+    if (this.agruparPor === 'dataEmissao') {
+      return this.formatarData(duplicata.dataEmissao);
+    }
+
+    return obterValorCabecalhoGrupo(duplicata as unknown as Record<string, unknown>, this.agruparPor);
+  }
+
+  exibirCabecalhoGrupoDuplicata(index: number): boolean {
+    return deveExibirCabecalhoGrupo(
+      this.duplicatasParaTabela,
+      index,
+      this.agruparPor,
+      (duplicata) => this.getValorGrupoDuplicata(duplicata)
+    );
   }
 }

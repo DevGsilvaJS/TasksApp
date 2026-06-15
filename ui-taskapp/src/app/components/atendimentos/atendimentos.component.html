@@ -212,20 +212,14 @@
       <p>{{ termoBusca ? 'Nenhuma tarefa encontrada' : 'Nenhuma tarefa cadastrada' }}</p>
     </div>
   } @else {
-    <div class="grid-group-row">
-      <select
-        [ngModel]="agruparPor"
-        (ngModelChange)="agruparPor = $event"
-        class="grid-group-select"
-        title="Agrupar por coluna">
-        @for (opt of agruparPorOpcoes; track opt.value) {
-          <option [value]="opt.value">{{ opt.label }}</option>
-        }
-      </select>
+    <app-seletor-agrupamento-grid
+      [agruparPor]="agruparPor"
+      (agruparPorChange)="agruparPor = $event"
+      [opcoes]="agruparPorOpcoes">
       @if (hasFiltrosColuna) {
         <button type="button" class="filter-clear-all-btn" (click)="limparFiltrosColuna()" title="Limpar filtros das colunas">Limpar filtros</button>
       }
-    </div>
+    </app-seletor-agrupamento-grid>
     <div class="table-container p-table-wrapper">
       <p-table
         [value]="tarefasParaTabela"

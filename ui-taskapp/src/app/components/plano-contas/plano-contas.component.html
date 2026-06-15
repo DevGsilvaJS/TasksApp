@@ -25,6 +25,10 @@
         </div>
         <button type="button" class="btn-primary" (click)="abrirNovo()">Incluir</button>
       </div>
+      <app-seletor-agrupamento-grid
+        [agruparPor]="agruparPor"
+        (agruparPorChange)="agruparPor = $event"
+        [opcoes]="agruparPorOpcoes" />
       <div class="table-wrap">
         <table class="cadastro-table">
           <thead>
@@ -35,7 +39,12 @@
             </tr>
           </thead>
           <tbody>
-            @for (item of planosFiltrados; track item.planoContasId) {
+            @for (item of planosParaTabela; track item.planoContasId; let i = $index) {
+              @if (exibirCabecalhoGrupoPlano(i)) {
+                <tr class="grupo-grid-row">
+                  <td [attr.colspan]="3"><strong>{{ getAgruparPorLabel() }}: {{ getValorGrupoPlano(item) }}</strong></td>
+                </tr>
+              }
               <tr>
                 <td>{{ item.planoContasId }}</td>
                 <td>{{ item.descricao }}</td>
