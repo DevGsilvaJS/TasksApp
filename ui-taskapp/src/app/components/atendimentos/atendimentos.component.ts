@@ -298,6 +298,7 @@ export class AtendimentosComponent implements OnInit {
         this.tipoAtendimentoOptions = res.tipoAtendimento.map(x => ({ value: x.id, label: x.descricao }));
         this.tipoContatoOptions = res.tipoContato.map(x => ({ value: x.id, label: x.descricao }));
         this.andamentoOptions = res.andamento.map(x => ({ value: x.id, label: x.descricao }));
+        this.sincronizarValoresPadraoFormulario();
       },
       error: (err) => {
         console.error('Erro ao carregar cadastros de atendimento (status/tipo/contato):', err);
@@ -453,13 +454,13 @@ export class AtendimentosComponent implements OnInit {
     this.novoTarefa = {
       clienteId: 0,
       usuarioId: 0,
-      status: StatusTarefa.EmAberto,
+      status: this.obterStatusPadrao(),
       dataConclusao: undefined,
       descricao: undefined,
       titulo: '',
       protocolo: '',
       solicitante: '',
-      andamento: AndamentoTarefa.AFazer,
+      andamento: this.obterAndamentoPadrao(),
       tipoAtendimento: TipoAtendimento.Suporte,
       prioridade: PrioridadeTarefa.Baixa,
       tipoContato: TipoContato.WhatsApp,
@@ -469,6 +470,7 @@ export class AtendimentosComponent implements OnInit {
     this.previewImagens = [];
     this.novaAnotacao = '';
     this.error = null;
+    this.sincronizarValoresPadraoFormulario();
 
     // Scroll para o topo do modal após um pequeno delay para garantir que o DOM foi renderizado
     setTimeout(() => {
@@ -502,6 +504,7 @@ export class AtendimentosComponent implements OnInit {
     this.previewImagens = [];
     this.novaAnotacao = '';
     this.error = null;
+    this.sincronizarValoresPadraoFormulario();
 
     // Carregar anotações da tarefa
     this.anotacaoService.obterAnotacoesPorTarefa(tarefa.tarefaId).subscribe({
@@ -619,17 +622,43 @@ export class AtendimentosComponent implements OnInit {
     this.error = null;
   }
 
-  onStatusChange(event: Event) {
-    const novoStatus = Number((event.target as HTMLSelectElement).value);
-    this.novoTarefa.status = novoStatus;
+  onStatusChange(novoStatus: number): void {
+    const statusNormalizado = this.normalizarCampoNumerico(novoStatus, this.obterStatusPadrao());
+    this.novoTarefa.status = statusNormalizado;
 
-    // Se o status for alterado para "Concluída", preencher a data de conclusão com a data atual
-    if (novoStatus === StatusTarefa.Concluida && !this.novoTarefa.dataConclusao) {
-      const hoje = new Date();
-      this.novoTarefa.dataConclusao = hoje.toISOString().split('T')[0];
-    } else if (novoStatus !== StatusTarefa.Concluida) {
-      // Se mudar para outro status que não seja "Concluída", limpar a data de conclusão
+    if (statusNormalizado === StatusTarefa.Concluida && !this.novoTarefa.dataConclusao) {
+      this.novoTarefa.dataConclusao = new Date().toISOString().split('T')[0];
+    } else if (statusNormalizado !== StatusTarefa.Concluida) {
       this.novoTarefa.dataConclusao = undefined;
+    }
+  }
+
+  private obterStatusPadrao(): number {
+    const emAberto = this.statusOptions.find(s => s.label.toUpperCase().includes('ABERTO'));
+    return emAberto?.value ?? StatusTarefa.EmAberto;
+  }
+
+  private obterAndamentoPadrao(): number {
+    const aFazer = this.andamentoOptions.find(a => a.label.toUpperCase().includes('FAZER'));
+    return aFazer?.value ?? AndamentoTarefa.AFazer;
+  }
+
+  private normalizarCampoNumerico(valor: unknown, padrao: number): number {
+    const numero = Number(valor);
+    return Number.isFinite(numero) ? numero : padrao;
+  }
+
+  private sincronizarValoresPadraoFormulario(): void {
+    if (!this.showForm) return;
+
+    const statusAtual = this.normalizarCampoNumerico(this.novoTarefa.status, NaN);
+    if (!Number.isFinite(statusAtual) || !this.statusOptions.some(s => s.value === statusAtual)) {
+      this.novoTarefa.status = this.obterStatusPadrao();
+    }
+
+    const andamentoAtual = this.normalizarCampoNumerico(this.novoTarefa.andamento, NaN);
+    if (!Number.isFinite(andamentoAtual) || !this.andamentoOptions.some(a => a.value === andamentoAtual)) {
+      this.novoTarefa.andamento = this.obterAndamentoPadrao();
     }
   }
 
@@ -653,10 +682,11 @@ export class AtendimentosComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
-    // Se o status for "Concluída" e não tiver data de conclusão, preencher com a data atual
-    if (this.novoTarefa.status === StatusTarefa.Concluida && !this.novoTarefa.dataConclusao) {
-      const hoje = new Date();
-      this.novoTarefa.dataConclusao = hoje.toISOString().split('T')[0];
+    const statusEnvio = this.normalizarCampoNumerico(this.novoTarefa.status, this.obterStatusPadrao());
+    const andamentoEnvio = this.normalizarCampoNumerico(this.novoTarefa.andamento, this.obterAndamentoPadrao());
+
+    if (statusEnvio === StatusTarefa.Concluida && !this.novoTarefa.dataConclusao) {
+      this.novoTarefa.dataConclusao = new Date().toISOString().split('T')[0];
     }
 
     // Na edição, usar o usuarioId original; na criação, usar o usuário logado (já validado acima)
@@ -668,15 +698,15 @@ export class AtendimentosComponent implements OnInit {
     const dadosEnvio: CadastroTarefaDto = {
       clienteId: clienteId,
       usuarioId: usuarioIdFinal,
-      status: Number(this.novoTarefa.status),
-      dataConclusao: this.novoTarefa.status === StatusTarefa.Concluida
+      status: statusEnvio,
+      dataConclusao: statusEnvio === StatusTarefa.Concluida
         ? (this.novoTarefa.dataConclusao || new Date().toISOString().split('T')[0])
         : undefined,
       descricao: this.novoTarefa.descricao ?? undefined,
       titulo: this.novoTarefa.titulo ? this.novoTarefa.titulo.toUpperCase() : undefined,
       protocolo: this.novoTarefa.protocolo ? this.novoTarefa.protocolo.toUpperCase() : undefined,
       solicitante: this.novoTarefa.solicitante ? this.novoTarefa.solicitante.toUpperCase() : undefined,
-      andamento: Number(this.novoTarefa.andamento ?? AndamentoTarefa.AFazer),
+      andamento: andamentoEnvio,
       tipoAtendimento: this.novoTarefa.tipoAtendimento,
       prioridade: this.novoTarefa.prioridade || PrioridadeTarefa.Media,
       tipoContato: this.novoTarefa.tipoContato,
