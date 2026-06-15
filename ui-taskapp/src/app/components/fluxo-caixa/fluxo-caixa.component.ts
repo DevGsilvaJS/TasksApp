@@ -22,6 +22,7 @@ export class FluxoCaixaComponent implements OnInit {
   dados: FluxoCaixaResponseDto | null = null;
   loading = false;
   error: string | null = null;
+  empresaIdFiltro: number | null = null;
 
   readonly mesesCabecalho = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -39,6 +40,12 @@ export class FluxoCaixaComponent implements OnInit {
     this.fluxoCaixaService.obterFluxoCaixa(this.ano).subscribe({
       next: (data) => {
         this.dados = data;
+        if (
+          this.empresaIdFiltro != null &&
+          !data.centros.some(c => c.empresaId === this.empresaIdFiltro)
+        ) {
+          this.empresaIdFiltro = null;
+        }
         this.loading = false;
       },
       error: (err) => {
@@ -52,6 +59,69 @@ export class FluxoCaixaComponent implements OnInit {
     this.carregar();
   }
 
+  get empresasDisponiveis(): { empresaId: number; empresaFantasia: string }[] {
+    if (!this.dados?.centros.length) {
+      return [];
+    }
+
+    return [...this.dados.centros]
+      .sort((a, b) => a.empresaFantasia.localeCompare(b.empresaFantasia, 'pt-BR', { numeric: true }));
+  }
+
+  get centrosExibicao(): FluxoCaixaCentroCustoDto[] {
+    if (!this.dados) {
+      return [];
+    }
+
+    if (this.empresaIdFiltro == null) {
+      return this.dados.centros;
+    }
+
+    return this.dados.centros.filter(c => c.empresaId === this.empresaIdFiltro);
+  }
+
+  get totalReceitasExibicao(): number {
+    return this.centrosExibicao.reduce((total, centro) => total + centro.totalReceitas, 0);
+  }
+
+  get totalDespesasExibicao(): number {
+    return this.centrosExibicao.reduce((total, centro) => total + centro.totalDespesas, 0);
+  }
+
+  get saldoAnoExibicao(): number {
+    return this.totalReceitasExibicao - this.totalDespesasExibicao;
+  }
+
+  get totaisMensaisExibicao(): FluxoCaixaMesDto[] {
+    if (!this.dados) {
+      return [];
+    }
+
+    if (this.empresaIdFiltro == null) {
+      return this.dados.totaisMensais;
+    }
+
+    return this.mesesCabecalho.map((nomeMes, index) => {
+      const mes = index + 1;
+      let receitas = 0;
+      let despesas = 0;
+
+      for (const centro of this.centrosExibicao) {
+        const dadosMes = centro.meses[index];
+        receitas += dadosMes?.receitas ?? 0;
+        despesas += dadosMes?.despesas ?? 0;
+      }
+
+      return {
+        mes,
+        nomeMes,
+        receitas,
+        despesas,
+        saldo: receitas - despesas
+      };
+    });
+  }
+
   obterMes(centro: FluxoCaixaCentroCustoDto, mes: number): FluxoCaixaMesDto {
     return centro.meses[mes - 1];
   }
@@ -61,7 +131,7 @@ export class FluxoCaixaComponent implements OnInit {
   }
 
   obterTotalMes(mes: number): FluxoCaixaMesDto | undefined {
-    return this.dados?.totaisMensais.find(m => m.mes === mes);
+    return this.totaisMensaisExibicao.find(m => m.mes === mes);
   }
 
   formatarMoeda(valor: number): string {

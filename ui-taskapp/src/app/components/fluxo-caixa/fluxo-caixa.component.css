@@ -28,21 +28,35 @@
 
 .header-filtros {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filtro-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .header-filtros label {
   font-weight: 500;
   color: #475569;
+  font-size: 0.875rem;
 }
 
-.select-ano {
+.select-ano,
+.select-empresa {
   width: auto;
   min-width: 6rem;
   padding: 0.5rem 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
+}
+
+.select-empresa {
+  min-width: 14rem;
+  max-width: 22rem;
 }
 
 .legenda {

@@ -3,7 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DuplicataService, DuplicataResponseDto, CadastroDuplicataDto, ParcelaResponseDto, CadastroParcelaDto } from '../../services/duplicata.service';
 import { EmpresaService, EmpresaResponseDto } from '../../services/empresa.service';
-import { PlanoContasService, PlanoContasResponseDto } from '../../services/plano-contas.service';
+import {
+  PlanoContasService,
+  PlanoContasResponseDto,
+  filtrarPlanosParaContasPagar,
+  planoContasIdPermitidoEmContasPagar
+} from '../../services/plano-contas.service';
 import { NotificacaoService } from '../../services/notificacao.service';
 import {
   criarOpcoesAgrupamento,
@@ -82,7 +87,7 @@ export class ContasPagarComponent implements OnInit {
       error: () => {}
     });
     this.planoContasService.listarTodosPlanosContas().subscribe({
-      next: (data) => this.planosContas = data,
+      next: (data) => this.planosContas = filtrarPlanosParaContasPagar(data),
       error: () => {}
     });
   }
@@ -154,7 +159,7 @@ export class ContasPagarComponent implements OnInit {
       descricaoDespesa: duplicata.descricaoDespesa,
       tipo: duplicata.tipo || 'CP',
       empresaId: duplicata.empresaId,
-      planoContasId: duplicata.planoContasId,
+      planoContasId: planoContasIdPermitidoEmContasPagar(duplicata.planoContasId, this.planosContas),
       dataPrimeiroVencimento: duplicata.parcelas[0]?.vencimento.split('T')[0] || new Date().toISOString().split('T')[0]
     };
     this.showForm = true;

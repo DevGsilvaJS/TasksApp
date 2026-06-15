@@ -295,6 +295,10 @@ public class DuplicataService : IDuplicataService
             if (!planoId.HasValue || planoId.Value <= 0)
                 planoId = await ObterPlanoReceitaConsultoriaIdAsync();
         }
+        else if (planoId is > 0)
+        {
+            await ValidarPlanoProibidoEmContasPagarAsync(planoId.Value);
+        }
 
         parcela.PlcId = planoId is > 0 ? planoId : null;
         parcela.ParStatus = "Paga";
@@ -355,9 +359,16 @@ public class DuplicataService : IDuplicataService
 
         if (planoId is > 0)
         {
-            var plano = await _planoContasRepository.GetByIdAsync(planoId.Value);
-            if (plano == null)
-                throw new InvalidOperationException("Plano de contas informado não existe.");
+            if (isContasReceber)
+            {
+                var plano = await _planoContasRepository.GetByIdAsync(planoId.Value);
+                if (plano == null)
+                    throw new InvalidOperationException("Plano de contas informado não existe.");
+            }
+            else
+            {
+                await ValidarPlanoProibidoEmContasPagarAsync(planoId.Value);
+            }
         }
 
         duplicata.EmpId = dto.EmpresaId;
@@ -530,10 +541,21 @@ public class DuplicataService : IDuplicataService
         }
         else if (dto.PlanoContasId is > 0)
         {
-            var planoCp = await _planoContasRepository.GetByIdAsync(dto.PlanoContasId.Value);
-            if (planoCp == null)
-                throw new InvalidOperationException("Plano de contas informado não existe.");
+            await ValidarPlanoProibidoEmContasPagarAsync(dto.PlanoContasId.Value);
         }
+    }
+
+    private static bool EhPlanoReceitaConsultoria(PlanoContas plano) =>
+        string.Equals(plano.PlcDescricao.Trim(), PlanoReceitaConsultoria, StringComparison.OrdinalIgnoreCase);
+
+    private async Task ValidarPlanoProibidoEmContasPagarAsync(int planoId)
+    {
+        var plano = await _planoContasRepository.GetByIdAsync(planoId);
+        if (plano == null)
+            throw new InvalidOperationException("Plano de contas informado não existe.");
+
+        if (EhPlanoReceitaConsultoria(plano))
+            throw new InvalidOperationException("O plano de contas RECEITA DE CONSULTORIA só pode ser utilizado em contas a receber.");
     }
 
     private static int? ResolverPlanoContasIdCadastro(CadastroDuplicataDto dto) =>

@@ -4,7 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { DuplicataService, DuplicataResponseDto, CadastroDuplicataDto, ParcelaResponseDto, CadastroParcelaDto } from '../../services/duplicata.service';
 import { ClienteService, ClienteResponseDto } from '../../services/cliente.service';
 import { EmpresaService, EmpresaResponseDto } from '../../services/empresa.service';
-import { PlanoContasService, PlanoContasResponseDto } from '../../services/plano-contas.service';
+import {
+  PlanoContasService,
+  PlanoContasResponseDto,
+  PLANO_RECEITA_CONSULTORIA,
+  ehPlanoReceitaConsultoria
+} from '../../services/plano-contas.service';
 import { NotificacaoService } from '../../services/notificacao.service';
 import {
   criarOpcoesAgrupamento,
@@ -48,7 +53,7 @@ export class ContasReceberComponent implements OnInit {
     { value: 'descricaoDespesa', label: 'Descrição da Despesa' },
     { value: 'dataEmissao', label: 'Data Emissão' }
   ]);
-  readonly planoPadraoDescricao = 'RECEITA DE CONSULTORIA';
+  readonly planoPadraoDescricao = PLANO_RECEITA_CONSULTORIA;
   planoContasPadraoId?: number;
 
   // Modal de confirmação
@@ -102,8 +107,7 @@ export class ContasReceberComponent implements OnInit {
   }
 
   private aplicarPlanoContasPadrao(): void {
-    const plano = this.planosContas.find(p =>
-      p.descricao?.trim().toUpperCase() === this.planoPadraoDescricao);
+    const plano = this.planosContas.find(p => ehPlanoReceitaConsultoria(p));
     this.planoContasPadraoId = plano?.planoContasId;
   }
 

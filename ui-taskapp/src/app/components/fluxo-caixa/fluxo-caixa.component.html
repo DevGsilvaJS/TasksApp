@@ -5,12 +5,23 @@
       <p class="page-subtitle">Receitas e despesas por centro de custo e plano de contas — mês a mês</p>
     </div>
     <div class="header-filtros">
-      <label for="ano">Ano</label>
-      <select id="ano" class="form-input select-ano" [(ngModel)]="ano" (ngModelChange)="onAnoChange()">
-        @for (a of anosDisponiveis; track a) {
-          <option [ngValue]="a">{{ a }}</option>
-        }
-      </select>
+      <div class="filtro-item">
+        <label for="empresa">Empresa</label>
+        <select id="empresa" class="form-input select-empresa" [(ngModel)]="empresaIdFiltro">
+          <option [ngValue]="null">Todas</option>
+          @for (empresa of empresasDisponiveis; track empresa.empresaId) {
+            <option [ngValue]="empresa.empresaId">{{ empresa.empresaFantasia }}</option>
+          }
+        </select>
+      </div>
+      <div class="filtro-item">
+        <label for="ano">Ano</label>
+        <select id="ano" class="form-input select-ano" [(ngModel)]="ano" (ngModelChange)="onAnoChange()">
+          @for (a of anosDisponiveis; track a) {
+            <option [ngValue]="a">{{ a }}</option>
+          }
+        </select>
+      </div>
     </div>
   </div>
 
@@ -30,20 +41,26 @@
     <section class="resumo-cards">
       <div class="card resumo-receita">
         <span class="card-label">Total recebido no ano</span>
-        <span class="card-valor">{{ formatarMoeda(dados.totalReceitasAno) }}</span>
+        <span class="card-valor">{{ formatarMoeda(totalReceitasExibicao) }}</span>
       </div>
       <div class="card resumo-despesa">
         <span class="card-label">Total pago no ano</span>
-        <span class="card-valor">{{ formatarMoeda(dados.totalDespesasAno) }}</span>
+        <span class="card-valor">{{ formatarMoeda(totalDespesasExibicao) }}</span>
       </div>
-      <div class="card" [class.resumo-positivo]="dados.saldoAno >= 0" [class.resumo-negativo]="dados.saldoAno < 0">
+      <div class="card" [class.resumo-positivo]="saldoAnoExibicao >= 0" [class.resumo-negativo]="saldoAnoExibicao < 0">
         <span class="card-label">Saldo do ano</span>
-        <span class="card-valor">{{ formatarMoeda(dados.saldoAno) }}</span>
+        <span class="card-valor">{{ formatarMoeda(saldoAnoExibicao) }}</span>
       </div>
     </section>
 
-    @if (dados.centros.length === 0) {
-      <p class="empty-msg">Nenhum centro de custo com movimentação classificada. Cadastre empresas e classifique as parcelas para visualizar o balanço.</p>
+    @if (centrosExibicao.length === 0) {
+      <p class="empty-msg">
+        @if (empresaIdFiltro != null) {
+          Nenhuma movimentação para a empresa selecionada no ano {{ ano }}.
+        } @else {
+          Nenhum centro de custo com movimentação classificada. Cadastre empresas e classifique as parcelas para visualizar o balanço.
+        }
+      </p>
     } @else {
       <div class="table-wrap">
         <table class="fluxo-table">
@@ -60,7 +77,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (centro of dados.centros; track centro.empresaId) {
+            @for (centro of centrosExibicao; track centro.empresaId) {
               <tr class="linha-centro">
                 <td class="col-centro sticky-col" [attr.rowspan]="(centro.planosContas?.length ?? 0) + 1">
                   <strong>{{ centro.empresaFantasia }}</strong>
@@ -115,7 +132,9 @@
           </tbody>
           <tfoot>
             <tr class="linha-totais">
-              <td class="col-centro sticky-col" colspan="2"><strong>Total geral</strong></td>
+              <td class="col-centro sticky-col" colspan="2">
+                <strong>{{ empresaIdFiltro != null ? 'Total da empresa' : 'Total geral' }}</strong>
+              </td>
               @for (m of [1,2,3,4,5,6,7,8,9,10,11,12]; track m) {
                 <td class="col-mes celula-mes">
                   @if (obterTotalMes(m); as total) {
@@ -131,10 +150,10 @@
                   }
                 </td>
               }
-              <td class="col-total receita">{{ formatarMoeda(dados.totalReceitasAno) }}</td>
-              <td class="col-total despesa">{{ formatarMoeda(dados.totalDespesasAno) }}</td>
-              <td class="col-total" [class.saldo-positivo]="dados.saldoAno >= 0" [class.saldo-negativo]="dados.saldoAno < 0">
-                {{ formatarMoeda(dados.saldoAno) }}
+              <td class="col-total receita">{{ formatarMoeda(totalReceitasExibicao) }}</td>
+              <td class="col-total despesa">{{ formatarMoeda(totalDespesasExibicao) }}</td>
+              <td class="col-total" [class.saldo-positivo]="saldoAnoExibicao >= 0" [class.saldo-negativo]="saldoAnoExibicao < 0">
+                {{ formatarMoeda(saldoAnoExibicao) }}
               </td>
             </tr>
           </tfoot>
