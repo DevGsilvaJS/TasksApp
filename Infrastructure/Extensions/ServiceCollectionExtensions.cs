@@ -62,6 +62,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICentroCustoService, CentroCustoService>();
         services.AddScoped<IPlanoContasService, PlanoContasService>();
         services.AddScoped<IFluxoCaixaService, FluxoCaixaService>();
+        services.AddSingleton<IEmailCampanhaMemoriaStore, EmailCampanhaMemoriaStore>();
+        services.AddScoped<IEmailEnvioService, EmailEnvioService>();
+        services.AddScoped<IEmailEnvioCampanhaService, EmailEnvioCampanhaService>();
+        services.AddScoped<IEmailEnvioSmtpSender, EmailEnvioSmtpSender>();
+        services.AddScoped<IEmailEnvioProcessor, EmailEnvioProcessor>();
 
         return services;
     }

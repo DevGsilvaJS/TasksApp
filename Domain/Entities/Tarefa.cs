@@ -42,9 +42,6 @@ public class Tarefa
     [MaxLength(20)]
     public string? TarCelularSolicitante { get; set; }
 
-    [Column("TARANDAMENTO")]
-    public int TarAndamento { get; set; } = (int)AndamentoTarefa.AFazer;
-
     [Column("TARTIPOATENDIMENTO")]
     public TipoAtendimento? TarTipoAtendimento { get; set; }
 

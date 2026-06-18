@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ApiService } from './api.service';
+import { ordenarClientesPorCodigo } from '../utils/cliente-ordenacao.util';
 
 export enum StatusCliente {
   Ativo = 1,
@@ -76,7 +78,9 @@ export class ClienteService {
   }
 
   listarTodosClientes(): Observable<ClienteResponseDto[]> {
-    return this.api.get<ClienteResponseDto[]>('cliente');
+    return this.api.get<ClienteResponseDto[]>('cliente').pipe(
+      map(ordenarClientesPorCodigo)
+    );
   }
 
   atualizarCliente(id: number, dto: CadastroClienteDto): Observable<ClienteResponseDto> {

@@ -8,6 +8,8 @@ type JsonLike =
   | JsonLike[]
   | { [key: string]: JsonLike };
 
+const CAMPOS_SEM_MAIUSCULO = new Set(['assunto', 'corpoHtml']);
+
 function normalizarParaMaiusculo(valor: string): string {
   return valor.trim().toUpperCase();
 }
@@ -20,7 +22,9 @@ function transformarBody(body: unknown): unknown {
   if (body instanceof FormData) {
     const novo = new FormData();
     body.forEach((v: FormDataEntryValue, k: string) => {
-      if (typeof v === 'string') {
+      if (typeof v === 'string' && CAMPOS_SEM_MAIUSCULO.has(k)) {
+        novo.append(k, v);
+      } else if (typeof v === 'string') {
         novo.append(k, normalizarParaMaiusculo(v));
       } else {
         novo.append(k, v);
@@ -45,7 +49,29 @@ function transformarBody(body: unknown): unknown {
   return body;
 }
 
+function deveIgnorarMaiusculo(url: string, body: unknown): boolean {
+  if (/email-envio/i.test(url)) {
+    return true;
+  }
+
+  if (body instanceof FormData) {
+    let envioEmail = false;
+    body.forEach((_, chave) => {
+      if (chave === 'corpoHtml' || chave === 'assunto') {
+        envioEmail = true;
+      }
+    });
+    return envioEmail;
+  }
+
+  return false;
+}
+
 export const maiusculoInterceptor: HttpInterceptorFn = (req, next) => {
+  if (deveIgnorarMaiusculo(req.url, req.body)) {
+    return next(req);
+  }
+
   const bodyTransformado = transformarBody(req.body);
   if (bodyTransformado === req.body) return next(req);
   return next(req.clone({ body: bodyTransformado }));

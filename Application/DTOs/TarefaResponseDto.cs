@@ -17,8 +17,6 @@ public class TarefaResponseDto
     public string? Protocolo { get; set; }
     public string? Solicitante { get; set; }
     public string? CelularSolicitante { get; set; }
-    public int Andamento { get; set; }
-    public string AndamentoDescricao { get; set; } = string.Empty;
     public TipoAtendimento? TipoAtendimento { get; set; }
     public string TipoAtendimentoDescricao { get; set; } = string.Empty;
     public PrioridadeTarefa Prioridade { get; set; }

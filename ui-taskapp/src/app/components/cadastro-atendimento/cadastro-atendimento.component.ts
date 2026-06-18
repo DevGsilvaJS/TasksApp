@@ -15,7 +15,7 @@ import {
 } from '../../shared/utils/grid-agrupamento.util';
 import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
 
-type TipoCadastro = 'status' | 'tipoAtendimento' | 'tipoContato' | 'andamento';
+type TipoCadastro = 'status' | 'tipoAtendimento' | 'tipoContato';
 
 @Component({
   selector: 'app-cadastro-atendimento',
@@ -28,7 +28,6 @@ export class CadastroAtendimentoComponent implements OnInit {
   statusList: CadastroItemDto[] = [];
   tipoAtendimentoList: CadastroItemDto[] = [];
   tipoContatoList: CadastroItemDto[] = [];
-  andamentoList: CadastroItemDto[] = [];
 
   loading = false;
   error: string | null = null;
@@ -42,8 +41,7 @@ export class CadastroAtendimentoComponent implements OnInit {
   agruparPor: Record<TipoCadastro, string> = {
     status: '',
     tipoAtendimento: '',
-    tipoContato: '',
-    andamento: ''
+    tipoContato: ''
   };
 
   agruparPorOpcoesCadastro = criarOpcoesAgrupamento([
@@ -69,15 +67,11 @@ export class CadastroAtendimentoComponent implements OnInit {
       error: (err) => { this.trataErro(err, 'tipo atendimento'); }
     });
     this.service.listarTipoContato().subscribe({
-      next: (data) => { this.tipoContatoList = data; },
-      error: (err) => { this.trataErro(err, 'tipo contato'); }
-    });
-    this.service.listarAndamento().subscribe({
       next: (data) => {
-        this.andamentoList = data;
+        this.tipoContatoList = data;
         this.loading = false;
       },
-      error: (err) => { this.trataErro(err, 'andamento'); }
+      error: (err) => { this.trataErro(err, 'tipo contato'); }
     });
   }
 
@@ -144,14 +138,12 @@ export class CadastroAtendimentoComponent implements OnInit {
   private criar(tipo: TipoCadastro, dto: CadastroItemRequestDto) {
     if (tipo === 'status') return this.service.criarStatus(dto);
     if (tipo === 'tipoAtendimento') return this.service.criarTipoAtendimento(dto);
-    if (tipo === 'andamento') return this.service.criarAndamento(dto);
     return this.service.criarTipoContato(dto);
   }
 
   private atualizar(tipo: TipoCadastro, id: number, dto: CadastroItemRequestDto) {
     if (tipo === 'status') return this.service.atualizarStatus(id, dto);
     if (tipo === 'tipoAtendimento') return this.service.atualizarTipoAtendimento(id, dto);
-    if (tipo === 'andamento') return this.service.atualizarAndamento(id, dto);
     return this.service.atualizarTipoContato(id, dto);
   }
 
@@ -161,9 +153,7 @@ export class CadastroAtendimentoComponent implements OnInit {
       ? this.service.alterarAtivoStatus(item.id, novoAtivo)
       : tipo === 'tipoAtendimento'
         ? this.service.alterarAtivoTipoAtendimento(item.id, novoAtivo)
-        : tipo === 'andamento'
-          ? this.service.alterarAtivoAndamento(item.id, novoAtivo)
-          : this.service.alterarAtivoTipoContato(item.id, novoAtivo);
+        : this.service.alterarAtivoTipoContato(item.id, novoAtivo);
     obs.subscribe({
       next: () => this.carregarTudo(),
       error: (err) => {
@@ -177,8 +167,7 @@ export class CadastroAtendimentoComponent implements OnInit {
     const nomes: Record<TipoCadastro, string> = {
       status: 'Status',
       tipoAtendimento: 'Tipo de Atendimento',
-      tipoContato: 'Tipo de Contato',
-      andamento: 'Andamento'
+      tipoContato: 'Tipo de Contato'
     };
     const nome = nomes[this.modalTipo];
     return this.editandoId != null ? `Editar ${nome}` : `Novo ${nome}`;

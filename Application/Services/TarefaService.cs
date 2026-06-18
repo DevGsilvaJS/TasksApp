@@ -18,7 +18,6 @@ public class TarefaService : ITarefaService
     private readonly IRepository<CadastroStatusTarefa> _cadastroStatusTarefaRepository;
     private readonly IRepository<CadastroTipoAtendimento> _cadastroTipoAtendimentoRepository;
     private readonly IRepository<CadastroTipoContato> _cadastroTipoContatoRepository;
-    private readonly IRepository<CadastroAndamento> _cadastroAndamentoRepository;
 
     public TarefaService(
         IRepository<Tarefa> tarefaRepository,
@@ -29,8 +28,7 @@ public class TarefaService : ITarefaService
         IRepository<ImagemTarefa> imagemRepository,
         IRepository<CadastroStatusTarefa> cadastroStatusTarefaRepository,
         IRepository<CadastroTipoAtendimento> cadastroTipoAtendimentoRepository,
-        IRepository<CadastroTipoContato> cadastroTipoContatoRepository,
-        IRepository<CadastroAndamento> cadastroAndamentoRepository)
+        IRepository<CadastroTipoContato> cadastroTipoContatoRepository)
     {
         _tarefaRepository = tarefaRepository;
         _clienteRepository = clienteRepository;
@@ -41,7 +39,6 @@ public class TarefaService : ITarefaService
         _cadastroStatusTarefaRepository = cadastroStatusTarefaRepository;
         _cadastroTipoAtendimentoRepository = cadastroTipoAtendimentoRepository;
         _cadastroTipoContatoRepository = cadastroTipoContatoRepository;
-        _cadastroAndamentoRepository = cadastroAndamentoRepository;
     }
 
     public async Task<TarefaResponseDto> CadastrarTarefaAsync(CadastroTarefaDto dto)
@@ -81,7 +78,6 @@ public class TarefaService : ITarefaService
             TarProtocolo = dto.Protocolo?.ToUpper(),
             TarSolicitante = dto.Solicitante?.ToUpper(),
             TarCelularSolicitante = dto.CelularSolicitante,
-            TarAndamento = dto.Andamento,
             TarTipoAtendimento = dto.TipoAtendimento.HasValue ? (TipoAtendimento?)dto.TipoAtendimento.Value : null,
             TarPrioridade = dto.Prioridade,
             TarNumero = proximoNumero,
@@ -162,7 +158,6 @@ public class TarefaService : ITarefaService
         tarefa.TarProtocolo = dto.Protocolo?.ToUpper();
         tarefa.TarSolicitante = dto.Solicitante?.ToUpper();
         tarefa.TarCelularSolicitante = dto.CelularSolicitante;
-        tarefa.TarAndamento = dto.Andamento;
         tarefa.TarTipoAtendimento = dto.TipoAtendimento.HasValue ? (TipoAtendimento?)dto.TipoAtendimento.Value : null;
         tarefa.TarPrioridade = dto.Prioridade;
         tarefa.TarTipoContato = dto.TipoContato.HasValue ? (TipoContato?)dto.TipoContato.Value : null;
@@ -336,8 +331,6 @@ public class TarefaService : ITarefaService
             Protocolo = tarefa.TarProtocolo,
             Solicitante = tarefa.TarSolicitante,
             CelularSolicitante = tarefa.TarCelularSolicitante,
-            Andamento = tarefa.TarAndamento,
-            AndamentoDescricao = await ObterDescricaoAndamentoAsync(tarefa.TarAndamento),
             TipoAtendimento = tarefa.TarTipoAtendimento,
             TipoAtendimentoDescricao = await ObterDescricaoTipoAtendimentoAsync(tarefa.TarTipoAtendimento),
             Prioridade = tarefa.TarPrioridade,
@@ -398,24 +391,6 @@ public class TarefaService : ITarefaService
             PrioridadeTarefa.Alta => "Alta",
             _ => prioridade.ToString()
         };
-    }
-
-    private async Task<string> ObterDescricaoAndamentoAsync(int andamentoId)
-    {
-        if (Enum.IsDefined(typeof(AndamentoTarefa), andamentoId))
-        {
-            return ((AndamentoTarefa)andamentoId) switch
-            {
-                AndamentoTarefa.AFazer => "A FAZER",
-                AndamentoTarefa.EmAndamento => "EM ANDAMENTO",
-                AndamentoTarefa.Testar => "TESTAR",
-                AndamentoTarefa.Resolvido => "RESOLVIDO",
-                _ => andamentoId.ToString()
-            };
-        }
-
-        var cadastro = await _cadastroAndamentoRepository.GetByIdAsync(andamentoId);
-        return cadastro?.Descricao ?? andamentoId.ToString();
     }
 
     private async Task<string> ObterDescricaoTipoContatoAsync(TipoContato? tipo)

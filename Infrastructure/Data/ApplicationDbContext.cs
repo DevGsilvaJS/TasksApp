@@ -28,12 +28,12 @@ public class ApplicationDbContext : DbContext
     public DbSet<CadastroStatusTarefa> CadastroStatusTarefa { get; set; }
     public DbSet<CadastroTipoAtendimento> CadastroTipoAtendimento { get; set; }
     public DbSet<CadastroTipoContato> CadastroTipoContato { get; set; }
-    public DbSet<CadastroAndamento> CadastroAndamento { get; set; }
     public DbSet<CadastroStatusAtendimentoComercial> CadastroStatusAtendimentoComercial { get; set; }
     public DbSet<ClienteContratoValor> ClienteContratosValores { get; set; }
     public DbSet<Empresa> Empresas { get; set; }
     public DbSet<CentroCusto> CentrosCusto { get; set; }
     public DbSet<PlanoContas> PlanosContas { get; set; }
+    public DbSet<EmailEnvioComercial> EmailsEnvioComercial { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,10 +42,6 @@ public class ApplicationDbContext : DbContext
         // Configurar enum StatusTarefa como inteiro no banco
         modelBuilder.Entity<Tarefa>()
             .Property(t => t.TarStatus)
-            .HasConversion<int>();
-
-        modelBuilder.Entity<Tarefa>()
-            .Property(t => t.TarAndamento)
             .HasConversion<int>();
 
         // Configurar enum StatusDas como inteiro no banco
@@ -82,6 +78,10 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(p => p.PlcId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<EmailEnvioComercial>()
+            .HasIndex(e => e.EecEmail)
+            .IsUnique();
     }
 
     public override int SaveChanges()

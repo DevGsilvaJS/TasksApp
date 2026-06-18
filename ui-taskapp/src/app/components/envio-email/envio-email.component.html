@@ -1,0 +1,382 @@
+<div class="page-container">
+  <div class="page-header">
+    <h2>Envio de E-mail</h2>
+    <p class="page-subtitle">Pesquise destinatários, selecione na grade e componha a mensagem.</p>
+  </div>
+
+  <section class="cadastro-section secao-pesquisa">
+    <div class="cadastro-section-header">
+      <h3>Destinatários</h3>
+      @if (campanhaEmAndamento && campanhaStatus) {
+        <div class="campanha-progresso">
+          <span class="badge-campanha">
+            Campanha #{{ campanhaStatus.id }} — {{ campanhaStatus.status }}
+          </span>
+          <div class="barra-progresso">
+            <div class="barra-progresso-preenchimento" [style.width.%]="percentualCampanha"></div>
+          </div>
+          <span class="progresso-texto">
+            {{ campanhaStatus.enviados }} enviados · {{ campanhaStatus.erros }} erros ·
+            {{ campanhaStatus.pendentes }} pendentes ({{ percentualCampanha }}%)
+          </span>
+        </div>
+      }
+      @if (quantidadeSelecionados > 0) {
+        <span class="badge-selecionados">{{ quantidadeSelecionados }} selecionado(s)</span>
+      }
+    </div>
+
+    <div class="pesquisa-barra">
+      <input
+        type="text"
+        class="search-input texto-normal"
+        placeholder="Pesquisar por e-mail (vazio lista todos)..."
+        [(ngModel)]="termoPesquisa"
+        (keydown.enter)="pesquisar()"
+      />
+      <button type="button" class="btn-primary" (click)="pesquisar()" [disabled]="pesquisando">
+        <i class="pi pi-search"></i>
+        {{ pesquisando ? 'Pesquisando...' : 'Pesquisar' }}
+      </button>
+    </div>
+
+    @if (pesquisando && destinatarios.length === 0) {
+      <div class="loading">Carregando destinatários...</div>
+    } @else {
+      <div class="table-wrap">
+        <table class="cadastro-table">
+          <thead>
+            <tr>
+              <th class="col-checkbox">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="todosSelecionados"
+                  (change)="alternarSelecionarTodos()"
+                  [disabled]="destinatarios.length === 0"
+                  title="Selecionar todos elegíveis"
+                />
+              </th>
+              <th>E-mail</th>
+              <th class="col-nao-enviar">Não enviar</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (destinatarios.length === 0) {
+              <tr>
+                <td colspan="3" class="empty-state">
+                  Clique em Pesquisar para listar os destinatários cadastrados.
+                </td>
+              </tr>
+            } @else {
+              @for (item of destinatarios; track item.id) {
+                <tr
+                  [class.linha-selecionada]="item.selecionado"
+                  [class.linha-desativada]="item.naoEnviar"
+                >
+                  <td class="col-checkbox">
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="item.selecionado"
+                      (change)="aoAlterarSelecao(item)"
+                      [disabled]="!podeSelecionar(item)"
+                    />
+                  </td>
+                  <td>{{ item.email }}</td>
+                  <td class="col-nao-enviar">
+                    <label class="check-nao-enviar">
+                      <input
+                        type="checkbox"
+                        [(ngModel)]="item.naoEnviar"
+                        (change)="alternarNaoEnviar(item)"
+                      />
+                      <span>Bloquear envios</span>
+                    </label>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (totalPaginas > 0) {
+        <div class="paginacao-barra">
+          <span class="paginacao-info">
+            Exibindo {{ inicioRegistro }}–{{ fimRegistro }} de {{ totalRegistros }}
+          </span>
+          <div class="paginacao-acoes">
+            <button
+              type="button"
+              class="btn-pagina"
+              (click)="paginaAnterior()"
+              [disabled]="paginaAtual <= 1 || pesquisando"
+              title="Página anterior"
+            >
+              <i class="pi pi-chevron-left"></i>
+            </button>
+            <span class="paginacao-atual">Página {{ paginaAtual }} de {{ totalPaginas }}</span>
+            <button
+              type="button"
+              class="btn-pagina"
+              (click)="proximaPagina()"
+              [disabled]="paginaAtual >= totalPaginas || pesquisando"
+              title="Próxima página"
+            >
+              <i class="pi pi-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      }
+    }
+  </section>
+
+  <section class="cadastro-section secao-composicao">
+    <div class="cadastro-section-header">
+      <h3>Composição do e-mail</h3>
+    </div>
+
+    <div class="composicao-corpo">
+      <div class="form-group">
+        <label for="destinatarioManual">Destinatário manual</label>
+        <input
+          id="destinatarioManual"
+          type="text"
+          class="form-input texto-normal"
+          [(ngModel)]="destinatarioManual"
+          placeholder="ex.: contato@empresa.com ou vários separados por ;"
+        />
+        <p class="campo-ajuda">
+          @if (usandoDestinatarioManual) {
+            O envio usará o(s) e-mail(s) digitado(s) acima e ignorará a seleção da grade.
+          } @else {
+            Deixe em branco para enviar aos destinatários selecionados na grade.
+          }
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label for="assunto">Assunto *</label>
+        <input
+          id="assunto"
+          type="text"
+          class="form-input texto-normal"
+          [(ngModel)]="assunto"
+          placeholder="Assunto do e-mail"
+          maxlength="500"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Corpo do e-mail *</label>
+        <div class="editor-toolbar">
+          <button type="button" class="btn-toolbar" (click)="aplicarFormato('bold')" title="Negrito">
+            <i class="pi pi-bold"></i>
+          </button>
+          <button type="button" class="btn-toolbar" (click)="aplicarFormato('italic')" title="Itálico">
+            <i class="pi pi-italic"></i>
+          </button>
+          <button type="button" class="btn-toolbar" (click)="aplicarFormato('underline')" title="Sublinhado">
+            <i class="pi pi-underline"></i>
+          </button>
+          <span class="toolbar-divisor"></span>
+          <button type="button" class="btn-toolbar" (click)="abrirSeletorImagemCorpo()" title="Inserir imagem no corpo">
+            <i class="pi pi-image"></i>
+            Inserir imagem
+          </button>
+        </div>
+        <div
+          #editorCorpo
+          class="editor-corpo texto-normal"
+          contenteditable="true"
+          role="textbox"
+          aria-label="Corpo do e-mail"
+          data-placeholder="Digite o conteúdo do e-mail..."
+        ></div>
+        <input
+          #inputImagemCorpo
+          type="file"
+          accept="image/*"
+          class="input-oculto"
+          (change)="inserirImagemNoCorpo($event)"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Anexos</label>
+        <div class="anexos-barra">
+          <button type="button" class="btn-secondary" (click)="abrirSeletorAnexos()">
+            <i class="pi pi-paperclip"></i>
+            Adicionar anexo
+          </button>
+          <input
+            #inputAnexos
+            type="file"
+            multiple
+            class="input-oculto"
+            (change)="adicionarAnexos($event)"
+          />
+        </div>
+        @if (anexos.length > 0) {
+          <ul class="lista-anexos">
+            @for (anexo of anexos; track anexo.nome; let i = $index) {
+              <li>
+                <span class="anexo-info">
+                  <i class="pi pi-file"></i>
+                  {{ anexo.nome }}
+                  <small>({{ anexo.tamanho }})</small>
+                </span>
+                <button type="button" class="btn-remover-anexo" (click)="removerAnexo(i)" title="Remover anexo">
+                  <i class="pi pi-times"></i>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="anexos-vazio">Nenhum anexo adicionado.</p>
+        }
+      </div>
+
+      <div class="acoes-envio">
+        <button
+          type="button"
+          class="btn-primary btn-enviar"
+          (click)="enviar()"
+          [disabled]="enviando || campanhaEmAndamento"
+        >
+          <i class="pi pi-send"></i>
+          {{ enviando ? 'Enviando...' : 'Enviar e-mail' }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  @if (historicoRelatorios.length > 0) {
+    <section class="cadastro-section secao-relatorios">
+      <div class="cadastro-section-header">
+        <h3>Relatórios recentes</h3>
+      </div>
+      <div class="table-wrap">
+        <table class="cadastro-table">
+          <thead>
+            <tr>
+              <th>Campanha</th>
+              <th>Assunto</th>
+              <th>Enviados</th>
+              <th>Erros</th>
+              <th>Conclusão</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of historicoRelatorios; track item.id) {
+              <tr>
+                <td>#{{ item.id }}</td>
+                <td>{{ item.assunto }}</td>
+                <td class="col-numero col-sucesso">{{ item.enviados }}</td>
+                <td class="col-numero" [class.col-erro]="item.erros > 0">{{ item.erros }}</td>
+                <td>{{ item.dataConclusao | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>
+                  <button type="button" class="btn-link" (click)="abrirRelatorio(item)">
+                    Ver relatório
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>
+
+@if (exibirRelatorio && relatorioAtual) {
+  <div class="modal-overlay" (click)="fecharRelatorio()">
+    <div class="modal-relatorio" (click)="$event.stopPropagation()">
+      <div class="modal-cabecalho">
+        <h3>Relatório — Campanha #{{ relatorioAtual.id }}</h3>
+        <button type="button" class="btn-fechar-modal" (click)="fecharRelatorio()" title="Fechar">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-resumo">
+        <p><strong>Assunto:</strong> {{ relatorioAtual.assunto }}</p>
+        <p>
+          <strong>Resultado:</strong>
+          {{ relatorioAtual.enviados }} enviado(s),
+          {{ relatorioAtual.erros }} erro(s),
+          {{ relatorioAtual.totalItens }} total
+        </p>
+      </div>
+
+      <div class="abas-relatorio">
+        <button
+          type="button"
+          class="aba-relatorio"
+          [class.aba-ativa]="abaRelatorio === 'enviados'"
+          (click)="abaRelatorio = 'enviados'"
+        >
+          Enviados ({{ relatorioAtual.itensEnviados.length }})
+        </button>
+        <button
+          type="button"
+          class="aba-relatorio"
+          [class.aba-ativa]="abaRelatorio === 'erros'"
+          (click)="abaRelatorio = 'erros'"
+        >
+          Erros ({{ relatorioAtual.itensComErro.length }})
+        </button>
+      </div>
+
+      <div class="modal-lista">
+        @if (abaRelatorio === 'enviados') {
+          @if (relatorioAtual.itensEnviados.length === 0) {
+            <p class="lista-vazia">Nenhum envio registrado.</p>
+          } @else {
+            <table class="cadastro-table tabela-relatorio">
+              <thead>
+                <tr>
+                  <th>E-mail</th>
+                  <th>Remetente</th>
+                  <th>Data</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of relatorioAtual.itensEnviados; track item.email) {
+                  <tr>
+                    <td>{{ item.email }}</td>
+                    <td>{{ item.remetenteEmail }}</td>
+                    <td>{{ item.dataEnvio | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        } @else {
+          @if (relatorioAtual.itensComErro.length === 0) {
+            <p class="lista-vazia">Nenhum erro registrado.</p>
+          } @else {
+            <table class="cadastro-table tabela-relatorio">
+              <thead>
+                <tr>
+                  <th>E-mail</th>
+                  <th>Remetente</th>
+                  <th>Erro</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of relatorioAtual.itensComErro; track item.email) {
+                  <tr>
+                    <td>{{ item.email }}</td>
+                    <td>{{ item.remetenteEmail }}</td>
+                    <td class="col-erro-texto">{{ item.mensagemErro }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        }
+      </div>
+    </div>
+  </div>
+}

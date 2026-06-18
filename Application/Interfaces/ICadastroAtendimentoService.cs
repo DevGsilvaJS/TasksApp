@@ -23,12 +23,6 @@ public interface ICadastroAtendimentoService
     Task<CadastroTipoContatoResponseDto?> AtualizarTipoContatoAsync(int id, CadastroTipoContatoRequestDto dto);
     Task<bool> AlterarAtivoTipoContatoAsync(int id, bool ativo);
 
-    Task<IEnumerable<CadastroAndamentoResponseDto>> ListarAndamentoAsync(bool? apenasAtivos = null);
-    Task<CadastroAndamentoResponseDto?> ObterAndamentoPorIdAsync(int id);
-    Task<CadastroAndamentoResponseDto> CriarAndamentoAsync(CadastroAndamentoRequestDto dto);
-    Task<CadastroAndamentoResponseDto?> AtualizarAndamentoAsync(int id, CadastroAndamentoRequestDto dto);
-    Task<bool> AlterarAtivoAndamentoAsync(int id, bool ativo);
-
     Task<IEnumerable<CadastroStatusAtendimentoComercialResponseDto>> ListarStatusAtendimentoComercialAsync(bool? apenasAtivos = null);
     Task<CadastroStatusAtendimentoComercialResponseDto?> ObterStatusAtendimentoComercialPorIdAsync(int id);
     Task<CadastroStatusAtendimentoComercialResponseDto> CriarStatusAtendimentoComercialAsync(CadastroStatusAtendimentoComercialRequestDto dto);

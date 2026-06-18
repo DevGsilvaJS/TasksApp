@@ -74,12 +74,16 @@
               }
             </div>
             <div class="form-group">
-              <label>Andamento</label>
-              <select [(ngModel)]="novoTarefa.andamento" name="andamento" class="form-select">
-                @for (opt of andamentoOptions; track opt.value) {
-                  <option [ngValue]="opt.value">{{ opt.label }}</option>
-                }
-              </select>
+              <label for="celularSolicitante">Celular</label>
+              <input
+                id="celularSolicitante"
+                type="text"
+                [ngModel]="novoTarefa.celularSolicitante"
+                (input)="aplicarMascaraCelular($event)"
+                name="celularSolicitante"
+                class="form-input"
+                placeholder="(11) 99999-9999"
+                maxlength="15">
             </div>
             <div class="form-group">
               <label>Status</label>
@@ -234,7 +238,7 @@
         [tableStyle]="{ 'min-width': '50rem' }">
         <ng-template pTemplate="groupheader" let-rowData>
           <tr class="p-row-group-header">
-            <td [attr.colspan]="10">
+            <td [attr.colspan]="9">
               @if (agruparPor) {
                 <strong>{{ getAgruparPorLabel() }}: {{ getGroupHeaderValue(rowData) }}</strong>
               }
@@ -263,10 +267,6 @@
               Solicitante <p-sortIcon field="solicitante"></p-sortIcon>
               <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('solicitante', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
             </th>
-            <th pSortableColumn="andamentoDescricao">
-              Andamento <p-sortIcon field="andamentoDescricao"></p-sortIcon>
-              <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('andamentoDescricao', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
-            </th>
             <th pSortableColumn="tipoAtendimentoDescricao">
               Tipo <p-sortIcon field="tipoAtendimentoDescricao"></p-sortIcon>
               <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('tipoAtendimentoDescricao', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
@@ -289,11 +289,6 @@
             <td>{{ rowData.titulo }}</td>
             <td>{{ rowData.clienteNome }}</td>
             <td>{{ rowData.solicitante }}</td>
-            <td>
-              <span class="andamento-badge" [ngClass]="obterClasseAndamento(rowData.andamento, rowData.andamentoDescricao)">
-                {{ rowData.andamentoDescricao || '—' }}
-              </span>
-            </td>
             <td>{{ rowData.tipoAtendimentoDescricao }}</td>
             <td>
               <span class="prioridade-badge" [ngClass]="obterClassePrioridade(rowData.prioridadeDescricao)">{{ rowData.prioridadeDescricao }}</span>

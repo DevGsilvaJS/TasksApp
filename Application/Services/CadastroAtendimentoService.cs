@@ -10,7 +10,6 @@ public class CadastroAtendimentoService : ICadastroAtendimentoService
     private readonly IRepository<CadastroStatusTarefa> _statusRepo;
     private readonly IRepository<CadastroTipoAtendimento> _tipoAtendimentoRepo;
     private readonly IRepository<CadastroTipoContato> _tipoContatoRepo;
-    private readonly IRepository<CadastroAndamento> _andamentoRepo;
     private readonly IRepository<CadastroStatusAtendimentoComercial> _statusComercialRepo;
     private readonly IRepository<PossivelCliente> _possivelClienteRepo;
     private readonly IRepository<Tarefa> _tarefaRepo;
@@ -19,7 +18,6 @@ public class CadastroAtendimentoService : ICadastroAtendimentoService
         IRepository<CadastroStatusTarefa> statusRepo,
         IRepository<CadastroTipoAtendimento> tipoAtendimentoRepo,
         IRepository<CadastroTipoContato> tipoContatoRepo,
-        IRepository<CadastroAndamento> andamentoRepo,
         IRepository<CadastroStatusAtendimentoComercial> statusComercialRepo,
         IRepository<PossivelCliente> possivelClienteRepo,
         IRepository<Tarefa> tarefaRepo)
@@ -27,7 +25,6 @@ public class CadastroAtendimentoService : ICadastroAtendimentoService
         _statusRepo = statusRepo;
         _tipoAtendimentoRepo = tipoAtendimentoRepo;
         _tipoContatoRepo = tipoContatoRepo;
-        _andamentoRepo = andamentoRepo;
         _statusComercialRepo = statusComercialRepo;
         _possivelClienteRepo = possivelClienteRepo;
         _tarefaRepo = tarefaRepo;
@@ -38,8 +35,6 @@ public class CadastroAtendimentoService : ICadastroAtendimentoService
     private static CadastroTipoAtendimentoResponseDto ToTipoAtendimentoDto(CadastroTipoAtendimento e) =>
         new() { Id = e.Id, Descricao = e.Descricao, Ativo = e.Ativo };
     private static CadastroTipoContatoResponseDto ToTipoContatoDto(CadastroTipoContato e) =>
-        new() { Id = e.Id, Descricao = e.Descricao, Ativo = e.Ativo };
-    private static CadastroAndamentoResponseDto ToAndamentoDto(CadastroAndamento e) =>
         new() { Id = e.Id, Descricao = e.Descricao, Ativo = e.Ativo };
     private static CadastroStatusAtendimentoComercialResponseDto ToStatusComercialDto(CadastroStatusAtendimentoComercial e) =>
         new() { Id = e.Id, Numero = e.Numero, Descricao = e.Descricao, Ativo = e.Ativo };
@@ -191,51 +186,6 @@ public class CadastroAtendimentoService : ICadastroAtendimentoService
         e.Ativo = ativo;
         await _tipoContatoRepo.AtualizarAsync(e);
         await _tipoContatoRepo.SalvarAlteracoesAsync();
-        return true;
-    }
-
-    public async Task<IEnumerable<CadastroAndamentoResponseDto>> ListarAndamentoAsync(bool? apenasAtivos = null)
-    {
-        var list = apenasAtivos == true
-            ? await _andamentoRepo.BuscarTodosAsync(x => x.Ativo)
-            : await _andamentoRepo.ListarTodosAsync();
-        return list.OrderBy(x => x.Id).Select(ToAndamentoDto);
-    }
-
-    public async Task<CadastroAndamentoResponseDto?> ObterAndamentoPorIdAsync(int id)
-    {
-        var e = await _andamentoRepo.GetByIdAsync(id);
-        return e == null ? null : ToAndamentoDto(e);
-    }
-
-    public async Task<CadastroAndamentoResponseDto> CriarAndamentoAsync(CadastroAndamentoRequestDto dto)
-    {
-        var todos = await _andamentoRepo.ListarTodosAsync();
-        var nextId = todos.Any() ? todos.Max(x => x.Id) + 1 : 1;
-        var entity = new CadastroAndamento { Id = nextId, Descricao = dto.Descricao.Trim(), Ativo = dto.Ativo };
-        await _andamentoRepo.InserirAsync(entity);
-        await _andamentoRepo.SalvarAlteracoesAsync();
-        return ToAndamentoDto(entity);
-    }
-
-    public async Task<CadastroAndamentoResponseDto?> AtualizarAndamentoAsync(int id, CadastroAndamentoRequestDto dto)
-    {
-        var e = await _andamentoRepo.GetByIdAsync(id);
-        if (e == null) return null;
-        e.Descricao = dto.Descricao.Trim();
-        e.Ativo = dto.Ativo;
-        await _andamentoRepo.AtualizarAsync(e);
-        await _andamentoRepo.SalvarAlteracoesAsync();
-        return ToAndamentoDto(e);
-    }
-
-    public async Task<bool> AlterarAtivoAndamentoAsync(int id, bool ativo)
-    {
-        var e = await _andamentoRepo.GetByIdAsync(id);
-        if (e == null) return false;
-        e.Ativo = ativo;
-        await _andamentoRepo.AtualizarAsync(e);
-        await _andamentoRepo.SalvarAlteracoesAsync();
         return true;
     }
 

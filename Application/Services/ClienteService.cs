@@ -2,6 +2,7 @@ using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
+using System.Globalization;
 
 namespace Application.Services;
 
@@ -192,7 +193,9 @@ public class ClienteService : IClienteService
             }
         }
 
-        return resultado;
+        return resultado.OrderBy(
+            c => c.Codigo,
+            StringComparer.Create(CultureInfo.GetCultureInfo("pt-BR"), ignoreCase: true));
     }
 
     public async Task<ClienteResponseDto> AtualizarClienteAsync(int id, CadastroClienteDto dto)

@@ -1,5 +1,7 @@
-using Infrastructure.Extensions;
+using Application.Configuration;
+using Application.Interfaces;
 using Infrastructure.Data;
+using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -131,6 +133,10 @@ builder.Configuration["ConnectionStrings:DefaultConnection"] = databaseUrl;
 
 // Adiciona DbContext e serviços usando AddInfrastructure
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.Configure<EmailEnvioComercialOptions>(
+    builder.Configuration.GetSection(EmailEnvioComercialOptions.Secao));
+builder.Services.AddSingleton<IAppPathsProvider, TasksAppAPI.Infrastructure.AppPathsProvider>();
+builder.Services.AddHostedService<TasksAppAPI.HostedServices.EmailEnvioComercialBackgroundService>();
 
 // ======================
 // Static files (Angular)
@@ -196,21 +202,6 @@ try
         db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_POSSIVEL_CLIENTE"" ADD COLUMN IF NOT EXISTS ""POC_STATUS_ATENDIMENTO"" integer NULL");
         db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_POSSIVEL_CLIENTE"" ADD COLUMN IF NOT EXISTS ""POC_MOTIVO_PERDA"" character varying(500) NULL");
         db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_POSSIVEL_CLIENTE"" ADD COLUMN IF NOT EXISTS ""POC_DATA_STATUS_ATENDIMENTO"" timestamp with time zone NULL");
-        db.Database.ExecuteSqlRaw(@"ALTER TABLE ""TB_TAR_TAREFAS"" ADD COLUMN IF NOT EXISTS ""TARANDAMENTO"" integer NOT NULL DEFAULT 1");
-        db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS ""TB_CAD_ANDAMENTO"" (
-            ""ANID"" integer NOT NULL,
-            ""ANDESCRICAO"" character varying(100) NOT NULL,
-            ""ANATIVO"" boolean NOT NULL DEFAULT true,
-            CONSTRAINT ""PK_TB_CAD_ANDAMENTO"" PRIMARY KEY (""ANID"")
-        )");
-        db.Database.ExecuteSqlRaw(@"
-            INSERT INTO ""TB_CAD_ANDAMENTO"" (""ANID"", ""ANDESCRICAO"", ""ANATIVO"") VALUES
-            (1, 'A FAZER', true),
-            (2, 'EM ANDAMENTO', true),
-            (3, 'TESTAR', true),
-            (4, 'RESOLVIDO', true)
-            ON CONFLICT (""ANID"") DO NOTHING;
-        ");
         db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS ""TB_POSSIVEL_CLIENTE_ANOTACAO"" (
             ""PCAID"" serial PRIMARY KEY,
             ""POCID"" integer NOT NULL REFERENCES ""TB_POSSIVEL_CLIENTE""(""POCID""),
@@ -351,6 +342,25 @@ try
 catch (Exception ex)
 {
     Console.WriteLine($"⚠️ Erro ao garantir tabela TB_CLI_CONTRATO_VALOR: {ex.Message}");
+}
+
+// ======================
+// Seed: destinatários de e-mail comercial
+// ======================
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await GarantirTabelaEmailEnvioComercialRunner.ExecutarAsync(db);
+        await GarantirRemoverAndamentoRunner.ExecutarAsync(db);
+        var scriptsPath = Path.Combine(app.Environment.ContentRootPath ?? ".", "Scripts");
+        await EmailsComercialSeedRunner.ExecutarAsync(db, scriptsPath);
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"⚠️ Erro ao importar e-mails comerciais: {ex.Message}");
 }
 
 // ======================

@@ -9,11 +9,19 @@ export const notificacaoHttpInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((err: unknown) => {
-      const mensagem = extrairMensagemErroApi(err);
-      if (err instanceof HttpErrorResponse && err.status === 400) {
-        notificacao.aviso(mensagem);
-      } else {
-        notificacao.erro(mensagem);
+      if (err instanceof HttpErrorResponse) {
+        const consultaCampanhaAtiva =
+          err.status === 404 && req.url.includes('email-envio/campanhas/ativa');
+        if (consultaCampanhaAtiva) {
+          return throwError(() => err);
+        }
+
+        const mensagem = extrairMensagemErroApi(err);
+        if (err.status === 400) {
+          notificacao.aviso(mensagem);
+        } else {
+          notificacao.erro(mensagem);
+        }
       }
       return throwError(() => err);
     })

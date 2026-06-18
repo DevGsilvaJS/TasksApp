@@ -28,15 +28,15 @@ html, body {
   height: 100%;
 }
 
-/* Padrão do sistema: campos em MAIÚSCULO */
-input,
-textarea,
-select {
+/* Padrão do sistema: campos em MAIÚSCULO (exceto .texto-normal) */
+input:not(.texto-normal),
+textarea:not(.texto-normal),
+select:not(.texto-normal) {
   text-transform: uppercase;
 }
 
-input::placeholder,
-textarea::placeholder {
+input:not(.texto-normal)::placeholder,
+textarea:not(.texto-normal)::placeholder {
   text-transform: uppercase;
 }
 

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
-import { TarefaService, TarefaResponseDto, CadastroTarefaDto, StatusTarefa, TipoAtendimento, PrioridadeTarefa, TipoContato, AndamentoTarefa } from '../../services/tarefa.service';
+import { TarefaService, TarefaResponseDto, CadastroTarefaDto, StatusTarefa, TipoAtendimento, PrioridadeTarefa, TipoContato } from '../../services/tarefa.service';
 import { ClienteService, ClienteResponseDto } from '../../services/cliente.service';
 import { UsuarioService, UsuarioResponseDto } from '../../services/usuario.service';
 import { AnotacaoService, CadastroAnotacaoDto } from '../../services/anotacao.service';
@@ -26,8 +26,6 @@ export class AtendimentosComponent implements OnInit {
   TipoAtendimento = TipoAtendimento;
   PrioridadeTarefa = PrioridadeTarefa;
   TipoContato = TipoContato;
-  AndamentoTarefa = AndamentoTarefa;
-  andamentoOptions: { value: number; label: string }[] = [];
 
   tarefas: TarefaResponseDto[] = [];
   tarefasFiltradas: TarefaResponseDto[] = [];
@@ -79,7 +77,6 @@ export class AtendimentosComponent implements OnInit {
     protocolo: undefined,
     solicitante: undefined,
     celularSolicitante: undefined,
-    andamento: AndamentoTarefa.AFazer,
     tipoAtendimento: TipoAtendimento.Suporte,
     prioridade: PrioridadeTarefa.Baixa,
     tipoContato: TipoContato.WhatsApp,
@@ -112,7 +109,6 @@ export class AtendimentosComponent implements OnInit {
     { campo: 'titulo', label: 'Título' },
     { campo: 'clienteNome', label: 'Cliente' },
     { campo: 'solicitante', label: 'Solicitante' },
-    { campo: 'andamentoDescricao', label: 'Andamento' },
     { campo: 'tipoAtendimentoDescricao', label: 'Tipo' },
     { campo: 'prioridadeDescricao', label: 'Prioridade' },
     { campo: 'usuarioNome', label: 'Usuário' }
@@ -291,14 +287,12 @@ export class AtendimentosComponent implements OnInit {
     forkJoin({
       status: this.cadastroAtendimentoService.listarStatus(true),
       tipoAtendimento: this.cadastroAtendimentoService.listarTipoAtendimento(true),
-      tipoContato: this.cadastroAtendimentoService.listarTipoContato(true),
-      andamento: this.cadastroAtendimentoService.listarAndamento(true)
+      tipoContato: this.cadastroAtendimentoService.listarTipoContato(true)
     }).subscribe({
       next: (res) => {
         this.statusOptions = res.status.map(x => ({ value: x.id, label: x.descricao }));
         this.tipoAtendimentoOptions = res.tipoAtendimento.map(x => ({ value: x.id, label: x.descricao }));
         this.tipoContatoOptions = res.tipoContato.map(x => ({ value: x.id, label: x.descricao }));
-        this.andamentoOptions = res.andamento.map(x => ({ value: x.id, label: x.descricao }));
         this.sincronizarValoresPadraoFormulario();
       },
       error: (err) => {
@@ -384,9 +378,7 @@ export class AtendimentosComponent implements OnInit {
   carregarClientes() {
     this.clienteService.listarTodosClientes().subscribe({
       next: (data) => {
-        this.clientes = [...data].sort((a, b) =>
-          a.codigo.localeCompare(b.codigo, 'pt-BR', { numeric: true })
-        );
+        this.clientes = data;
         console.log('Clientes carregados:', this.clientes);
         if (this.clientes.length === 0 && !this.error) {
           this.error = 'Nenhum cliente cadastrado. Cadastre um cliente primeiro.';
@@ -463,7 +455,7 @@ export class AtendimentosComponent implements OnInit {
       titulo: '',
       protocolo: '',
       solicitante: '',
-      andamento: this.obterAndamentoPadrao(),
+      celularSolicitante: '',
       tipoAtendimento: TipoAtendimento.Suporte,
       prioridade: PrioridadeTarefa.Baixa,
       tipoContato: TipoContato.WhatsApp,
@@ -497,7 +489,7 @@ export class AtendimentosComponent implements OnInit {
       titulo: tarefa.titulo,
       protocolo: tarefa.protocolo,
       solicitante: tarefa.solicitante,
-      andamento: tarefa.andamento ?? AndamentoTarefa.AFazer,
+      celularSolicitante: tarefa.celularSolicitante,
       tipoAtendimento: tarefa.tipoAtendimento,
       prioridade: tarefa.prioridade || PrioridadeTarefa.Media,
       tipoContato: tarefa.tipoContato,
@@ -641,11 +633,6 @@ export class AtendimentosComponent implements OnInit {
     return emAberto?.value ?? StatusTarefa.EmAberto;
   }
 
-  private obterAndamentoPadrao(): number {
-    const aFazer = this.andamentoOptions.find(a => a.label.toUpperCase().includes('FAZER'));
-    return aFazer?.value ?? AndamentoTarefa.AFazer;
-  }
-
   private normalizarCampoNumerico(valor: unknown, padrao: number): number {
     const numero = Number(valor);
     return Number.isFinite(numero) ? numero : padrao;
@@ -657,11 +644,6 @@ export class AtendimentosComponent implements OnInit {
     const statusAtual = this.normalizarCampoNumerico(this.novoTarefa.status, NaN);
     if (!Number.isFinite(statusAtual) || !this.statusOptions.some(s => s.value === statusAtual)) {
       this.novoTarefa.status = this.obterStatusPadrao();
-    }
-
-    const andamentoAtual = this.normalizarCampoNumerico(this.novoTarefa.andamento, NaN);
-    if (!Number.isFinite(andamentoAtual) || !this.andamentoOptions.some(a => a.value === andamentoAtual)) {
-      this.novoTarefa.andamento = this.obterAndamentoPadrao();
     }
   }
 
@@ -686,7 +668,6 @@ export class AtendimentosComponent implements OnInit {
     this.error = null;
 
     const statusEnvio = this.normalizarCampoNumerico(this.novoTarefa.status, this.obterStatusPadrao());
-    const andamentoEnvio = this.normalizarCampoNumerico(this.novoTarefa.andamento, this.obterAndamentoPadrao());
 
     if (statusEnvio === StatusTarefa.Concluida && !this.novoTarefa.dataConclusao) {
       this.novoTarefa.dataConclusao = new Date().toISOString().split('T')[0];
@@ -709,7 +690,7 @@ export class AtendimentosComponent implements OnInit {
       titulo: this.novoTarefa.titulo ? this.novoTarefa.titulo.toUpperCase() : undefined,
       protocolo: this.novoTarefa.protocolo ? this.novoTarefa.protocolo.toUpperCase() : undefined,
       solicitante: this.novoTarefa.solicitante ? this.novoTarefa.solicitante.toUpperCase() : undefined,
-      andamento: andamentoEnvio,
+      celularSolicitante: this.novoTarefa.celularSolicitante?.trim() || undefined,
       tipoAtendimento: this.novoTarefa.tipoAtendimento,
       prioridade: this.novoTarefa.prioridade || PrioridadeTarefa.Media,
       tipoContato: this.novoTarefa.tipoContato,
@@ -834,23 +815,6 @@ export class AtendimentosComponent implements OnInit {
       .replace(/[\u0300-\u036f]/g, ''); // Remove acentos
 
     return `prioridade-${descricaoNormalizada}`;
-  }
-
-  obterClasseAndamento(andamento?: number, descricao?: string): string {
-    if (andamento != null) {
-      switch (andamento) {
-        case AndamentoTarefa.EmAndamento: return 'andamento-em-andamento';
-        case AndamentoTarefa.AFazer: return 'andamento-a-fazer';
-        case AndamentoTarefa.Testar: return 'andamento-testar';
-        case AndamentoTarefa.Resolvido: return 'andamento-resolvido';
-      }
-    }
-    const d = (descricao || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    if (d.includes('em andamento')) return 'andamento-em-andamento';
-    if (d.includes('a fazer')) return 'andamento-a-fazer';
-    if (d.includes('testar')) return 'andamento-testar';
-    if (d.includes('resolvido')) return 'andamento-resolvido';
-    return '';
   }
 
   /** Classe da linha inteira por status (para AG Grid getRowClass). */

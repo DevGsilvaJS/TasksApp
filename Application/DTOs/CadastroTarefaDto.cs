@@ -35,11 +35,6 @@ public class CadastroTarefaDto
     public string? CelularSolicitante { get; set; }
 
     /// <summary>
-    /// Id do andamento cadastrado em "Parâmetros de atendimentos" (TB_CAD_ANDAMENTO).
-    /// </summary>
-    public int Andamento { get; set; } = (int)AndamentoTarefa.AFazer;
-
-    /// <summary>
     /// Id do tipo de atendimento cadastrado (TB_CAD_TIPO_ATENDIMENTO).
     /// </summary>
     public int? TipoAtendimento { get; set; }

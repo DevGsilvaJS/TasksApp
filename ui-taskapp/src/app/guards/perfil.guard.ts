@@ -11,7 +11,7 @@ export const perfilGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
 
   if (authService.isAdministrador()) return true;
-  if (state.url.includes('possiveis-clientes')) return true;
+  if (state.url.includes('possiveis-clientes') || state.url.includes('envio-email')) return true;
 
   router.navigate(['/possiveis-clientes']);
   return false;

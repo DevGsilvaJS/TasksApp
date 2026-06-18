@@ -58,6 +58,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'envio-email',
+    loadComponent: () => import('./components/envio-email/envio-email.component').then(m => m.EnvioEmailComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'cadastro-atendimento',
     loadComponent: () => import('./components/cadastro-atendimento/cadastro-atendimento.component').then(m => m.CadastroAtendimentoComponent),
     canActivate: [authGuard, perfilGuard]
