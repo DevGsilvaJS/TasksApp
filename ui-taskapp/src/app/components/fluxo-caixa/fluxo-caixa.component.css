@@ -1,3 +1,32 @@
+:host {
+  --fc-navy: #1e3a5f;
+  --fc-navy-soft: #2c5282;
+  --fc-slate: #334155;
+  --fc-muted: #64748b;
+
+  --fc-ident-centro: #e8eef5;
+  --fc-ident-plano: #f4f7fb;
+  --fc-mes: #ffffff;
+  --fc-mes-alt: #f8fafc;
+  --fc-mes-border: #e2e8f0;
+
+  --fc-receita-bg: #ecfdf5;
+  --fc-receita-bg-strong: #d1fae5;
+  --fc-receita-text: #047857;
+  --fc-receita-header: #065f46;
+
+  --fc-despesa-bg: #fef2f2;
+  --fc-despesa-bg-strong: #fee2e2;
+  --fc-despesa-text: #b91c1c;
+  --fc-despesa-header: #991b1b;
+
+  --fc-saldo-bg: #eff6ff;
+  --fc-saldo-bg-strong: #dbeafe;
+  --fc-saldo-text: #0369a1;
+  --fc-saldo-positivo: #047857;
+  --fc-saldo-negativo: #b91c1c;
+}
+
 .page-container {
   padding: 2rem;
   max-width: calc(100vw - var(--sidebar-width));
@@ -17,12 +46,12 @@
   margin: 0 0 0.25rem;
   font-size: 1.875rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--fc-navy);
 }
 
 .page-subtitle {
   margin: 0;
-  color: #64748b;
+  color: var(--fc-muted);
   font-size: 0.9375rem;
 }
 
@@ -41,7 +70,7 @@
 
 .header-filtros label {
   font-weight: 500;
-  color: #475569;
+  color: var(--fc-slate);
   font-size: 0.875rem;
 }
 
@@ -50,8 +79,9 @@
   width: auto;
   min-width: 6rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid #cbd5e1;
   border-radius: 0.5rem;
+  background: #fff;
 }
 
 .select-empresa {
@@ -66,7 +96,7 @@
   gap: 1rem 1.5rem;
   margin-bottom: 1.25rem;
   font-size: 0.875rem;
-  color: #475569;
+  color: var(--fc-slate);
 }
 
 .legenda-item {
@@ -81,8 +111,8 @@
   border-radius: 50%;
 }
 
-.dot.receita { background: #16a34a; }
-.dot.despesa { background: #dc2626; }
+.dot.receita { background: var(--fc-receita-text); }
+.dot.despesa { background: var(--fc-despesa-text); }
 
 .legenda-aviso {
   color: #94a3b8;
@@ -101,13 +131,13 @@
 .loading {
   padding: 2rem;
   text-align: center;
-  color: #64748b;
+  color: var(--fc-muted);
 }
 
 .empty-msg {
   padding: 2rem;
   text-align: center;
-  color: #64748b;
+  color: var(--fc-muted);
   background: #f8fafc;
   border-radius: 0.5rem;
   border: 1px dashed #cbd5e1;
@@ -123,143 +153,241 @@
 .card {
   background: #fff;
   border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
+  border-radius: 0.625rem;
   padding: 1rem 1.25rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 2px rgba(30, 58, 95, 0.06);
 }
 
 .card-label {
   display: block;
   font-size: 0.8125rem;
-  color: #64748b;
+  color: var(--fc-muted);
   margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 600;
 }
 
 .card-valor {
   font-size: 1.25rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
-.resumo-receita .card-valor { color: #16a34a; }
-.resumo-despesa .card-valor { color: #dc2626; }
-.resumo-positivo .card-valor { color: #16a34a; }
-.resumo-negativo .card-valor { color: #dc2626; }
+.resumo-receita {
+  border-left: 4px solid var(--fc-receita-text);
+  background: linear-gradient(90deg, var(--fc-receita-bg) 0%, #fff 55%);
+}
+
+.resumo-despesa {
+  border-left: 4px solid var(--fc-despesa-text);
+  background: linear-gradient(90deg, var(--fc-despesa-bg) 0%, #fff 55%);
+}
+
+.resumo-receita .card-valor { color: var(--fc-receita-text); }
+.resumo-despesa .card-valor { color: var(--fc-despesa-text); }
+
+.resumo-positivo {
+  border-left: 4px solid var(--fc-saldo-positivo);
+  background: linear-gradient(90deg, var(--fc-receita-bg) 0%, #fff 55%);
+}
+
+.resumo-negativo {
+  border-left: 4px solid var(--fc-saldo-negativo);
+  background: linear-gradient(90deg, var(--fc-despesa-bg) 0%, #fff 55%);
+}
+
+.resumo-positivo .card-valor { color: var(--fc-saldo-positivo); }
+.resumo-negativo .card-valor { color: var(--fc-saldo-negativo); }
 
 .table-wrap {
   overflow-x: auto;
   overflow-y: auto;
   max-height: min(70vh, calc(100vh - 14rem));
   background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #cbd5e1;
+  border-radius: 0.625rem;
+  box-shadow: 0 4px 16px rgba(30, 58, 95, 0.08);
 }
 
 .fluxo-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.8125rem;
   min-width: 1100px;
 }
 
 .fluxo-table th,
 .fluxo-table td {
-  padding: 0.4rem 0.5rem;
-  border-bottom: 1px solid #f1f5f9;
+  padding: 0.45rem 0.55rem;
+  border-bottom: 1px solid var(--fc-mes-border);
   vertical-align: middle;
   line-height: 1.3;
+  font-variant-numeric: tabular-nums;
 }
 
-.fluxo-table th {
-  background: #f8fafc;
+/* Cabeçalho — estilo razão contábil */
+.fluxo-table thead th {
+  background: var(--fc-navy);
+  color: #f8fafc;
   font-weight: 600;
-  color: #475569;
   text-align: center;
   white-space: nowrap;
   position: sticky;
   top: 0;
   z-index: 4;
+  border-bottom: 2px solid var(--fc-navy-soft);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
-.fluxo-table tfoot td {
-  background: #f8fafc;
-  font-weight: 600;
-  border-top: 2px solid #e2e8f0;
+.fluxo-table thead .sticky-col,
+.fluxo-table thead .sticky-col-plano {
+  background: #163049;
+  color: #e2e8f0;
+  text-align: left !important;
+  z-index: 5;
 }
 
+.fluxo-table thead .col-mes {
+  background: var(--fc-navy-soft);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fluxo-table thead .col-total.receita {
+  background: var(--fc-receita-header);
+  color: #ecfdf5;
+  border-left: 3px solid #34d399;
+}
+
+.fluxo-table thead .col-total.despesa {
+  background: var(--fc-despesa-header);
+  color: #fef2f2;
+}
+
+.fluxo-table thead .col-saldo {
+  background: #1e40af;
+  color: #eff6ff;
+}
+
+/* Colunas fixas — identificação */
 .sticky-col {
   position: sticky;
   left: 0;
   z-index: 2;
-  background: #fff;
   min-width: 150px;
   max-width: 180px;
   text-align: left !important;
+  background: var(--fc-ident-centro);
+  border-right: 1px solid #cbd5e1;
 }
 
 .sticky-col-plano {
   position: sticky;
   left: 150px;
   z-index: 2;
-  background: #fff;
   min-width: 140px;
   max-width: 200px;
   text-align: left !important;
+  background: var(--fc-ident-plano);
+  border-right: 2px solid #cbd5e1;
 }
 
 .col-plano {
   font-size: 0.8125rem;
-  color: #475569;
-}
-
-.linha-centro td {
-  background: #f1f5f9;
-  font-weight: 600;
-}
-
-.linha-centro .sticky-col,
-.linha-centro .sticky-col-plano {
-  background: #f1f5f9;
-}
-
-.linha-plano td {
-  background: #fff;
-}
-
-.linha-plano .sticky-col-plano {
-  padding-left: 1.25rem;
-}
-
-.subtotal-label {
-  color: #64748b;
-  font-style: italic;
-}
-
-.fluxo-table thead .sticky-col,
-.fluxo-table tfoot .sticky-col {
-  background: #f8fafc;
-  z-index: 3;
+  color: var(--fc-slate);
 }
 
 .col-centro strong {
   display: block;
-  color: #1e293b;
+  color: var(--fc-navy);
+  font-size: 0.8125rem;
 }
 
 .col-centro small {
   display: block;
   color: #94a3b8;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   margin-top: 0.15rem;
 }
 
+/* Colunas mensais */
 .col-mes {
   min-width: 88px;
   text-align: center;
+  background: var(--fc-mes);
+  border-left: 1px solid #f1f5f9;
+}
+
+.linha-plano:nth-child(even) .col-mes {
+  background: var(--fc-mes-alt);
 }
 
 .celula-mes {
   line-height: 1.35;
+}
+
+/* Colunas de totais — faixas contábeis */
+.col-total.receita {
+  text-align: right !important;
+  white-space: nowrap;
+  min-width: 95px;
+  font-weight: 600;
+  background: var(--fc-receita-bg);
+  color: var(--fc-receita-text);
+  border-left: 3px solid #6ee7b7;
+}
+
+.col-total.despesa {
+  text-align: right !important;
+  white-space: nowrap;
+  min-width: 95px;
+  font-weight: 600;
+  background: var(--fc-despesa-bg);
+  color: var(--fc-despesa-text);
+}
+
+.col-total.col-saldo {
+  text-align: right !important;
+  white-space: nowrap;
+  min-width: 95px;
+  font-weight: 700;
+  background: var(--fc-saldo-bg);
+  color: var(--fc-saldo-text);
+}
+
+.linha-plano td {
+  transition: background-color 0.12s ease;
+}
+
+.linha-plano .sticky-col {
+  background: var(--fc-ident-centro);
+}
+
+.linha-plano .sticky-col-plano {
+  background: var(--fc-ident-plano);
+}
+
+.linha-plano:nth-child(even) .sticky-col {
+  background: #dfe8f2;
+}
+
+.linha-plano:nth-child(even) .sticky-col-plano {
+  background: #eef2f7;
+}
+
+.linha-plano:nth-child(even) .col-total.receita {
+  background: #e6faf2;
+}
+
+.linha-plano:nth-child(even) .col-total.despesa {
+  background: #fdeaea;
+}
+
+.linha-plano:nth-child(even) .col-total.col-saldo {
+  background: #e8f2fe;
 }
 
 .valor {
@@ -268,26 +396,50 @@
   white-space: nowrap;
 }
 
-.valor.receita { color: #16a34a; }
-.valor.despesa { color: #dc2626; }
+.valor.receita { color: var(--fc-receita-text); }
+.valor.despesa { color: var(--fc-despesa-text); }
 .valor.vazio { color: #cbd5e1; font-weight: 400; }
 
-.col-total {
-  text-align: right !important;
-  white-space: nowrap;
-  min-width: 95px;
-  font-weight: 600;
+.saldo-positivo { color: var(--fc-saldo-positivo) !important; }
+.saldo-negativo { color: var(--fc-saldo-negativo) !important; }
+
+/* Rodapé — totalizador */
+.fluxo-table tfoot td {
+  font-weight: 700;
+  border-top: 3px solid var(--fc-navy);
+  border-bottom: none;
+  background: #e8eef5;
+  color: var(--fc-navy);
 }
 
-.col-total.receita { color: #16a34a; }
-.col-total.despesa { color: #dc2626; }
-.saldo-positivo { color: #16a34a; }
-.saldo-negativo { color: #dc2626; }
+.fluxo-table tfoot .sticky-col {
+  background: #d9e2ec;
+  z-index: 3;
+}
+
+.fluxo-table tfoot .col-mes {
+  background: #e8eef5;
+}
+
+.fluxo-table tfoot .col-total.receita {
+  background: var(--fc-receita-bg-strong);
+  color: var(--fc-receita-header);
+}
+
+.fluxo-table tfoot .col-total.despesa {
+  background: var(--fc-despesa-bg-strong);
+  color: var(--fc-despesa-header);
+}
+
+.fluxo-table tfoot .col-saldo {
+  background: var(--fc-saldo-bg-strong);
+}
 
 .fluxo-table tbody tr:hover td {
-  background: #fafbfc;
+  filter: brightness(0.97);
 }
 
-.fluxo-table tbody tr:hover .sticky-col {
-  background: #fafbfc;
+.fluxo-table tbody tr:hover .sticky-col,
+.fluxo-table tbody tr:hover .sticky-col-plano {
+  filter: brightness(0.96);
 }

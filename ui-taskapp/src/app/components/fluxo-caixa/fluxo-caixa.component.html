@@ -73,40 +73,21 @@
               }
               <th class="col-total receita">Σ Receitas</th>
               <th class="col-total despesa">Σ Despesas</th>
-              <th class="col-total">Saldo</th>
+              <th class="col-total col-saldo">Valor Líquido</th>
             </tr>
           </thead>
           <tbody>
             @for (centro of centrosExibicao; track centro.empresaId) {
-              <tr class="linha-centro">
-                <td class="col-centro sticky-col" [attr.rowspan]="(centro.planosContas?.length ?? 0) + 1">
-                  <strong>{{ centro.empresaFantasia }}</strong>
-                  @if (centro.empresaCnpj) {
-                    <small>{{ formatarCnpj(centro.empresaCnpj) }}</small>
-                  }
-                </td>
-                <td class="col-plano sticky-col-plano subtotal-label"><em>Subtotal</em></td>
-                @for (m of [1,2,3,4,5,6,7,8,9,10,11,12]; track m) {
-                  <td class="col-mes celula-mes">
-                    @if (obterMes(centro, m).receitas > 0) {
-                      <span class="valor receita">{{ formatarMoeda(obterMes(centro, m).receitas) }}</span>
-                    }
-                    @if (obterMes(centro, m).despesas > 0) {
-                      <span class="valor despesa">{{ formatarMoeda(obterMes(centro, m).despesas) }}</span>
-                    }
-                    @if (obterMes(centro, m).receitas === 0 && obterMes(centro, m).despesas === 0) {
-                      <span class="valor vazio">-</span>
-                    }
-                  </td>
-                }
-                <td class="col-total receita">{{ formatarMoeda(centro.totalReceitas) }}</td>
-                <td class="col-total despesa">{{ formatarMoeda(centro.totalDespesas) }}</td>
-                <td class="col-total" [class.saldo-positivo]="centro.saldo >= 0" [class.saldo-negativo]="centro.saldo < 0">
-                  {{ formatarMoeda(centro.saldo) }}
-                </td>
-              </tr>
-              @for (plano of centro.planosContas; track plano.planoContasId) {
+              @for (plano of centro.planosContas; track plano.planoContasId; let primeiroPlano = $first) {
                 <tr class="linha-plano">
+                  @if (primeiroPlano) {
+                    <td class="col-centro sticky-col" [attr.rowspan]="centro.planosContas?.length || 1">
+                      <strong>{{ centro.empresaFantasia }}</strong>
+                      @if (centro.empresaCnpj) {
+                        <small>{{ formatarCnpj(centro.empresaCnpj) }}</small>
+                      }
+                    </td>
+                  }
                   <td class="col-plano sticky-col-plano">{{ plano.descricao }}</td>
                   @for (m of [1,2,3,4,5,6,7,8,9,10,11,12]; track m) {
                     <td class="col-mes celula-mes">
@@ -123,7 +104,7 @@
                   }
                   <td class="col-total receita">{{ formatarMoeda(plano.totalReceitas) }}</td>
                   <td class="col-total despesa">{{ formatarMoeda(plano.totalDespesas) }}</td>
-                  <td class="col-total" [class.saldo-positivo]="plano.saldo >= 0" [class.saldo-negativo]="plano.saldo < 0">
+                  <td class="col-total col-saldo" [class.saldo-positivo]="plano.saldo > 0" [class.saldo-negativo]="plano.saldo < 0">
                     {{ formatarMoeda(plano.saldo) }}
                   </td>
                 </tr>
@@ -138,21 +119,19 @@
               @for (m of [1,2,3,4,5,6,7,8,9,10,11,12]; track m) {
                 <td class="col-mes celula-mes">
                   @if (obterTotalMes(m); as total) {
-                    @if (total.receitas > 0) {
-                      <span class="valor receita">{{ formatarMoeda(total.receitas) }}</span>
-                    }
-                    @if (total.despesas > 0) {
-                      <span class="valor despesa">{{ formatarMoeda(total.despesas) }}</span>
-                    }
                     @if (total.receitas === 0 && total.despesas === 0) {
                       <span class="valor vazio">-</span>
+                    } @else {
+                      <span class="valor" [class.saldo-positivo]="total.saldo > 0" [class.saldo-negativo]="total.saldo < 0">
+                        {{ formatarMoeda(total.saldo) }}
+                      </span>
                     }
                   }
                 </td>
               }
               <td class="col-total receita">{{ formatarMoeda(totalReceitasExibicao) }}</td>
               <td class="col-total despesa">{{ formatarMoeda(totalDespesasExibicao) }}</td>
-              <td class="col-total" [class.saldo-positivo]="saldoAnoExibicao >= 0" [class.saldo-negativo]="saldoAnoExibicao < 0">
+              <td class="col-total col-saldo" [class.saldo-positivo]="saldoAnoExibicao > 0" [class.saldo-negativo]="saldoAnoExibicao < 0">
                 {{ formatarMoeda(saldoAnoExibicao) }}
               </td>
             </tr>
