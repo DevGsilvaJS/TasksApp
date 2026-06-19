@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ui-taskapp/package-lock.json
+
+      - name: Build Angular (production)
+        working-directory: ui-taskapp
+        run: |
+          npm ci
+          npm run build -- --configuration production
+
+      - name: Verify frontend features in bundle
+        run: |
+          DIST="ui-taskapp/dist/ui-taskapp/browser"
+          grep -rq "inativar-parcelas-restantes" "$DIST"
+          grep -rq "contas_receber_agrupar_por" "$DIST"
+          grep -rq "dataPagamento" "$DIST"
+          echo "Frontend feature verification passed."
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore and build backend
+        run: |
+          dotnet restore
+          dotnet build TasksAppAPI/TasksAppAPI.csproj -c Release
+
+      - name: Verify backend features
+        run: |
+          grep -q "InativarParcelasRestantesAsync" Application/Services/DuplicataService.cs
+          grep -q "DataPagamento" Application/DTOs/BaixarParcelaDto.cs
+          grep -q "carregarPreferenciaAgruparPor" ui-taskapp/src/app/shared/utils/grid-agrupamento.util.ts
+          echo "Backend/source feature verification passed."
+
+      - name: Build Docker image
+        run: docker build -t tasksapp:ci .
+
+      - name: Verify Docker image version metadata
+        run: |
+          docker run --rm tasksapp:ci cat /app/wwwroot/app-version.json
