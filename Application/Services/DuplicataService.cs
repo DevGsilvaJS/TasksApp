@@ -1,4 +1,5 @@
 using Application.DTOs;
+using Application.Helpers;
 using Application.Interfaces;
 using Domain.Entities;
 
@@ -269,6 +270,11 @@ public class DuplicataService : IDuplicataService
             throw new InvalidOperationException("Parcela já está paga.");
         }
 
+        if (ParcelaEstaCancelada(parcela))
+        {
+            throw new InvalidOperationException("Parcela inativa não pode ser recebida.");
+        }
+
         var duplicata = await _duplicataRepository.GetByIdAsync(parcela.DupId);
         if (duplicata == null)
             throw new InvalidOperationException("Duplicata não encontrada.");
@@ -302,7 +308,9 @@ public class DuplicataService : IDuplicataService
 
         parcela.PlcId = planoId is > 0 ? planoId : null;
         parcela.ParStatus = "Paga";
-        parcela.ParDataPagamento = DateTime.UtcNow;
+        parcela.ParDataPagamento = dto?.DataPagamento.HasValue == true
+            ? DateTime.SpecifyKind(dto.DataPagamento.Value.Date, DateTimeKind.Utc)
+            : DateTime.UtcNow;
 
         await _parcelaRepository.AtualizarAsync(parcela);
         await _parcelaRepository.SalvarAlteracoesAsync();
@@ -318,7 +326,7 @@ public class DuplicataService : IDuplicataService
 
         if (!ParcelaEstaPaga(parcela))
         {
-            throw new InvalidOperationException("Apenas parcelas pagas podem ser reativadas.");
+            throw new InvalidOperationException("Apenas parcelas recebidas podem ser reativadas.");
         }
 
         parcela.ParStatus = "Pendente";
@@ -328,6 +336,86 @@ public class DuplicataService : IDuplicataService
         await _parcelaRepository.SalvarAlteracoesAsync();
 
         var duplicata = await _duplicataRepository.GetByIdAsync(parcela.DupId);
+        return await MontarParcelaResponseDtoAsync(parcela, duplicata);
+    }
+
+    public async Task<ParcelaResponseDto> InativarParcelaAsync(int parcelaId)
+    {
+        var parcela = await _parcelaRepository.GetByIdAsync(parcelaId);
+        if (parcela == null)
+            throw new InvalidOperationException("Parcela não encontrada.");
+
+        var duplicata = await _duplicataRepository.GetByIdAsync(parcela.DupId);
+        if (duplicata == null)
+            throw new InvalidOperationException("Duplicata não encontrada.");
+
+        ValidarOperacaoContasReceber(duplicata);
+
+        if (!ParcelaEstaPendente(parcela))
+        {
+            throw new InvalidOperationException("Apenas parcelas pendentes podem ser inativadas.");
+        }
+
+        parcela.ParStatus = "Cancelada";
+        parcela.ParDataPagamento = null;
+
+        await _parcelaRepository.AtualizarAsync(parcela);
+        await _parcelaRepository.SalvarAlteracoesAsync();
+
+        return await MontarParcelaResponseDtoAsync(parcela, duplicata);
+    }
+
+    public async Task<DuplicataResponseDto> InativarParcelasRestantesAsync(int duplicataId)
+    {
+        var duplicata = await _duplicataRepository.GetByIdAsync(duplicataId);
+        if (duplicata == null)
+            throw new InvalidOperationException("Duplicata não encontrada.");
+
+        ValidarOperacaoContasReceber(duplicata);
+
+        var parcelas = await _parcelaRepository.BuscarTodosAsync(p => p.DupId == duplicataId);
+        var parcelasPendentes = parcelas.Where(ParcelaEstaPendente).ToList();
+
+        if (!parcelasPendentes.Any())
+        {
+            throw new InvalidOperationException("Não há parcelas pendentes para inativar.");
+        }
+
+        foreach (var parcela in parcelasPendentes)
+        {
+            parcela.ParStatus = "Cancelada";
+            parcela.ParDataPagamento = null;
+            await _parcelaRepository.AtualizarAsync(parcela);
+        }
+
+        await _parcelaRepository.SalvarAlteracoesAsync();
+
+        return await MontarDuplicataResponseDto(duplicata);
+    }
+
+    public async Task<ParcelaResponseDto> ReativarParcelaInativaAsync(int parcelaId)
+    {
+        var parcela = await _parcelaRepository.GetByIdAsync(parcelaId);
+        if (parcela == null)
+            throw new InvalidOperationException("Parcela não encontrada.");
+
+        var duplicata = await _duplicataRepository.GetByIdAsync(parcela.DupId);
+        if (duplicata == null)
+            throw new InvalidOperationException("Duplicata não encontrada.");
+
+        ValidarOperacaoContasReceber(duplicata);
+
+        if (!ParcelaEstaCancelada(parcela))
+        {
+            throw new InvalidOperationException("Apenas parcelas inativas podem ser reativadas.");
+        }
+
+        parcela.ParStatus = "Pendente";
+        parcela.ParDataPagamento = null;
+
+        await _parcelaRepository.AtualizarAsync(parcela);
+        await _parcelaRepository.SalvarAlteracoesAsync();
+
         return await MontarParcelaResponseDtoAsync(parcela, duplicata);
     }
 
@@ -392,7 +480,9 @@ public class DuplicataService : IDuplicataService
 
         var valorTotal = parcelasDto.Sum(p => p.Valor);
         var valorPago = parcelasDto.Where(p => ParcelaDtoEstaPaga(p.Status)).Sum(p => p.ValorTotal);
-        var valorPendente = valorTotal - valorPago;
+        var valorPendente = parcelasDto
+            .Where(p => ParcelaDtoEstaPendente(p.Status))
+            .Sum(p => p.ValorTotal);
 
         string? clienteNome = null;
         if (duplicata.CliId.HasValue)
@@ -483,8 +573,26 @@ public class DuplicataService : IDuplicataService
     private static bool ParcelaEstaPaga(Parcela parcela) =>
         ParcelaDtoEstaPaga(parcela.ParStatus);
 
+    private static bool ParcelaEstaPendente(Parcela parcela) =>
+        ParcelaDtoEstaPendente(parcela.ParStatus);
+
+    private static bool ParcelaEstaCancelada(Parcela parcela) =>
+        ParcelaDtoEstaCancelada(parcela.ParStatus);
+
     private static bool ParcelaDtoEstaPaga(string? status) =>
-        string.Equals(status, "Paga", StringComparison.OrdinalIgnoreCase);
+        ParcelaStatusHelper.IsPaga(status);
+
+    private static bool ParcelaDtoEstaPendente(string? status) =>
+        ParcelaStatusHelper.IsPendente(status);
+
+    private static bool ParcelaDtoEstaCancelada(string? status) =>
+        ParcelaStatusHelper.IsCancelada(status);
+
+    private static void ValidarOperacaoContasReceber(Duplicata duplicata)
+    {
+        if (!string.Equals(duplicata.DupTipo, "CR", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Inativação de parcelas só está disponível em contas a receber.");
+    }
 
     private async Task AplicarPadroesContasReceberAsync(CadastroDuplicataDto dto)
     {

@@ -12,6 +12,9 @@ public interface IDuplicataService
     Task ExcluirDuplicataAsync(int id);
     Task<ParcelaResponseDto> BaixarParcelaAsync(int parcelaId, BaixarParcelaDto? dto = null);
     Task<ParcelaResponseDto> ReativarParcelaAsync(int parcelaId);
+    Task<ParcelaResponseDto> InativarParcelaAsync(int parcelaId);
+    Task<DuplicataResponseDto> InativarParcelasRestantesAsync(int duplicataId);
+    Task<ParcelaResponseDto> ReativarParcelaInativaAsync(int parcelaId);
     Task<ParcelaResponseDto> AtualizarClassificacaoParcelaAsync(int parcelaId, AtualizarClassificacaoParcelaDto dto);
     Task<int> ObterProximoNumeroAsync(string tipo);
 }

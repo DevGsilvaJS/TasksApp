@@ -5,6 +5,8 @@ import { AnotacaoGeralService, AnotacaoGeralResponseDto, CadastroAnotacaoGeralDt
 import { NotificacaoService } from '../../services/notificacao.service';
 import {
   criarOpcoesAgrupamento,
+  carregarPreferenciaAgruparPor,
+  salvarPreferenciaAgruparPor,
   deveExibirCabecalhoGrupo,
   obterRotuloAgrupamento,
   obterValorCabecalhoGrupo,
@@ -33,6 +35,7 @@ export class AnotacoesComponent implements OnInit {
   agruparPorOpcoes = criarOpcoesAgrupamento([
     { value: 'dataCadastro', label: 'Data Cadastro' }
   ]);
+  private readonly STORAGE_KEY_AGRUPAR_POR = 'anotacoes_agrupar_por';
 
   novaAnotacao: CadastroAnotacaoGeralDto = {
     descricao: '',
@@ -54,6 +57,7 @@ export class AnotacoesComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    this.agruparPor = carregarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, this.agruparPorOpcoes);
     this.carregarAnotacoes();
   }
 
@@ -209,6 +213,11 @@ export class AnotacoesComponent implements OnInit {
   fecharSuccessModal() {
     this.showSuccessModal = false;
     this.successMessage = '';
+  }
+
+  onAgruparPorChange(valor: string) {
+    this.agruparPor = valor;
+    salvarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, valor);
   }
 
   get anotacoesParaTabela(): AnotacaoGeralResponseDto[] {

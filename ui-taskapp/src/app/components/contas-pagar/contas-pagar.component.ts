@@ -12,6 +12,8 @@ import {
 import { NotificacaoService } from '../../services/notificacao.service';
 import {
   criarOpcoesAgrupamento,
+  carregarPreferenciaAgruparPor,
+  salvarPreferenciaAgruparPor,
   deveExibirCabecalhoGrupo,
   obterRotuloAgrupamento,
   obterValorCabecalhoGrupo,
@@ -32,6 +34,9 @@ export class ContasPagarComponent implements OnInit {
   exibirTitulosBaixados = false;
   showForm = false;
   showParcelas = false;
+  showModalBaixaParcela = false;
+  parcelaBaixa: ParcelaResponseDto | null = null;
+  dataPagamentoBaixa = '';
   loading = false;
   error: string | null = null;
   editando = false;
@@ -50,6 +55,7 @@ export class ContasPagarComponent implements OnInit {
     { value: 'descricaoDespesa', label: 'Descrição da Despesa' },
     { value: 'dataEmissao', label: 'Data Emissão' }
   ]);
+  private readonly STORAGE_KEY_AGRUPAR_POR = 'contas_pagar_agrupar_por';
 
   // Modal de confirmação
   showConfirmModal = false;
@@ -81,6 +87,7 @@ export class ContasPagarComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    this.agruparPor = carregarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, this.agruparPorOpcoes);
     this.carregarDuplicatas();
     this.empresaService.listarTodasEmpresas().subscribe({
       next: (data) => this.empresas = data,
@@ -338,40 +345,58 @@ export class ContasPagarComponent implements OnInit {
   }
 
   baixarParcela(parcela: ParcelaResponseDto) {
-    this.confirmarBaixaParcela(parcela);
+    this.parcelaBaixa = parcela;
+    this.dataPagamentoBaixa = this.obterDataHojeInput();
+    this.showModalBaixaParcela = true;
   }
 
-  private async confirmarBaixaParcela(parcela: ParcelaResponseDto): Promise<void> {
-    const ok = await this.notificacao.confirmar(
-      'Confirmar baixa',
-      `Deseja confirmar o pagamento (baixa) da parcela ${parcela.numeroParcela}?`,
-      'Confirmar',
-      'Cancelar'
-    );
-    if (!ok) return;
+  fecharModalBaixaParcela() {
+    this.showModalBaixaParcela = false;
+    this.parcelaBaixa = null;
+    this.dataPagamentoBaixa = '';
+  }
 
-      this.loading = true;
-      this.error = null;
+  confirmarBaixaParcela() {
+    if (!this.parcelaBaixa || !this.dataPagamentoBaixa) {
+      this.notificacao.aviso('Informe a data do pagamento.');
+      return;
+    }
 
-      this.duplicataService.baixarParcela(parcela.parcelaId).subscribe({
-        next: () => {
-          const duplicataIdSelecionada = this.duplicataSelecionada?.duplicataId;
-          this.carregarDuplicatas(() => {
-            if (duplicataIdSelecionada != null) {
-              const duplicataAtualizada = this.duplicatas.find(d => d.duplicataId === duplicataIdSelecionada);
-              if (duplicataAtualizada) {
-                this.duplicataSelecionada = duplicataAtualizada;
-              }
+    const parcela = this.parcelaBaixa;
+    this.loading = true;
+    this.error = null;
+
+    this.duplicataService.baixarParcela(parcela.parcelaId, {
+      dataPagamento: this.dataPagamentoBaixa
+    }).subscribe({
+      next: () => {
+        this.fecharModalBaixaParcela();
+        const duplicataIdSelecionada = this.duplicataSelecionada?.duplicataId;
+        this.carregarDuplicatas(() => {
+          if (duplicataIdSelecionada != null) {
+            const duplicataAtualizada = this.duplicatas.find(d => d.duplicataId === duplicataIdSelecionada);
+            if (duplicataAtualizada) {
+              this.duplicataSelecionada = duplicataAtualizada;
             }
-          });
-          this.notificacao.sucesso('Parcela baixada com sucesso.');
-        },
-        error: (err) => {
-          this.error = err.error?.message || 'Erro ao baixar parcela.';
+          }
           this.loading = false;
-          console.error(err);
-        }
-      });
+        });
+        this.notificacao.sucesso('Parcela baixada com sucesso.');
+      },
+      error: (err) => {
+        this.error = err.error?.message || 'Erro ao baixar parcela.';
+        this.loading = false;
+        console.error(err);
+      }
+    });
+  }
+
+  private obterDataHojeInput(): string {
+    const hoje = new Date();
+    const yyyy = hoje.getFullYear();
+    const mm = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoje.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
   }
 
   reativarParcela(parcela: ParcelaResponseDto) {
@@ -518,6 +543,11 @@ export class ContasPagarComponent implements OnInit {
       default:
         return '';
     }
+  }
+
+  onAgruparPorChange(valor: string) {
+    this.agruparPor = valor;
+    salvarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, valor);
   }
 
   get duplicatasParaTabela(): DuplicataResponseDto[] {

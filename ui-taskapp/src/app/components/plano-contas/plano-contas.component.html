@@ -27,7 +27,7 @@
       </div>
       <app-seletor-agrupamento-grid
         [agruparPor]="agruparPor"
-        (agruparPorChange)="agruparPor = $event"
+        (agruparPorChange)="onAgruparPorChange($event)"
         [opcoes]="agruparPorOpcoes" />
       <div class="table-wrap">
         <table class="cadastro-table">

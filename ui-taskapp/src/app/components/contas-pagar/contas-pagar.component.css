@@ -408,6 +408,11 @@ tbody tr:hover {
   z-index: 1100;
 }
 
+.modal-baixa-parcela {
+  max-width: 420px;
+  width: 100%;
+}
+
 .form-hint {
   margin: 0 0 1rem;
   color: #64748b;

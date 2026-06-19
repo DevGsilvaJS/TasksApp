@@ -183,6 +183,18 @@
             <span class="info-label">Valor Pendente:</span>
             <span class="info-value status-pendente">{{ formatarMoeda(duplicataSelecionada.valorPendente) }}</span>
           </div>
+          @if (possuiParcelasPendentes(duplicataSelecionada)) {
+            <div class="info-item parcelas-acao-em-lote">
+              <button
+                type="button"
+                class="btn-inativar-lote"
+                (click)="inativarParcelasRestantes()"
+                [disabled]="loading"
+                title="Inativa todas as parcelas pendentes restantes">
+                Inativar parcelas restantes ({{ quantidadeParcelasPendentes(duplicataSelecionada) }})
+              </button>
+            </div>
+          }
         </div>
         <div class="table-container">
           <table class="data-table">
@@ -208,7 +220,7 @@
                   <td>{{ formatarData(parcela.vencimento) }}</td>
                   <td>
                     <span class="status-badge" [ngClass]="getStatusClass(parcela.status)">
-                      {{ parcela.status }}
+                      {{ obterLabelStatusParcela(parcela.status) }}
                     </span>
                   </td>
                   <td>{{ parcela.dataPagamento ? formatarData(parcela.dataPagamento) : '-' }}</td>
@@ -221,15 +233,19 @@
                         </svg>
                         Receber
                       </button>
-                    } @else {
-                      <button class="btn-reativar" (click)="reativarParcela(parcela)" title="Reativar Parcela" [disabled]="loading">
+                    } @else if (parcelaPaga(parcela)) {
+                      <button class="btn-reativar" (click)="reativarParcela(parcela)" title="Desfazer recebimento" [disabled]="loading">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
                           <path d="M21 3v5h-5"></path>
                           <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
                           <path d="M3 21v-5h5"></path>
                         </svg>
-                        Reativar
+                        Desfazer recebimento
+                      </button>
+                    } @else if (parcelaInativa(parcela)) {
+                      <button class="btn-reativar" (click)="reativarParcelaInativa(parcela)" title="Reativar parcela inativa" [disabled]="loading">
+                        Reativar parcela
                       </button>
                     }
                   </td>
@@ -237,6 +253,34 @@
               }
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showModalBaixaParcela && parcelaBaixa) {
+    <div class="modal-overlay modal-overlay-nested" (click)="fecharModalBaixaParcela()">
+      <div class="modal-content modal-baixa-parcela" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Receber parcela {{ parcelaBaixa.numeroParcela }}</h3>
+          <button type="button" class="btn-close" (click)="fecharModalBaixaParcela()" aria-label="Fechar">×</button>
+        </div>
+        <div class="form-group">
+          <label for="cr-data-recebimento">Data do recebimento *</label>
+          <input
+            id="cr-data-recebimento"
+            type="date"
+            class="form-input"
+            [(ngModel)]="dataPagamentoBaixa"
+            name="dataPagamentoBaixa"
+            required>
+          <p class="form-hint">Use a data em que o recebimento foi efetuado (pode ser retroativa).</p>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="fecharModalBaixaParcela()">Cancelar</button>
+          <button type="button" class="btn-primary" (click)="confirmarBaixaParcela()" [disabled]="loading || !dataPagamentoBaixa">
+            {{ loading ? 'Salvando...' : 'Confirmar recebimento' }}
+          </button>
         </div>
       </div>
     </div>
@@ -271,7 +315,7 @@
   } @else {
     <app-seletor-agrupamento-grid
       [agruparPor]="agruparPor"
-      (agruparPorChange)="agruparPor = $event"
+      (agruparPorChange)="onAgruparPorChange($event)"
       [opcoes]="agruparPorOpcoes" />
     <div class="table-container">
       <table class="data-table">

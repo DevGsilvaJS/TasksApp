@@ -218,7 +218,7 @@
   } @else {
     <app-seletor-agrupamento-grid
       [agruparPor]="agruparPor"
-      (agruparPorChange)="agruparPor = $event"
+      (agruparPorChange)="onAgruparPorChange($event)"
       [opcoes]="agruparPorOpcoes">
       @if (hasFiltrosColuna) {
         <button type="button" class="filter-clear-all-btn" (click)="limparFiltrosColuna()" title="Limpar filtros das colunas">Limpar filtros</button>

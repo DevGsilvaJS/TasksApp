@@ -8,6 +8,8 @@ import { NotificacaoService } from '../../services/notificacao.service';
 import { extrairMensagemErroApi } from '../../utils/erro-api.util';
 import {
   criarOpcoesAgrupamento,
+  carregarPreferenciaAgruparPor,
+  salvarPreferenciaAgruparPor,
   deveExibirCabecalhoGrupo,
   obterRotuloAgrupamento,
   obterValorCabecalhoGrupo,
@@ -61,6 +63,7 @@ export class ClientesComponent implements OnInit {
     { value: 'usuarioNome', label: 'Usuário' },
     { value: 'status', label: 'Status' }
   ]);
+  private readonly STORAGE_KEY_AGRUPAR_POR = 'clientes_agrupar_por';
 
   constructor(
     private clienteService: ClienteService,
@@ -69,8 +72,18 @@ export class ClientesComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    this.carregarPreferenciaAgruparPor();
     this.carregarClientes();
     this.carregarUsuarios();
+  }
+
+  private carregarPreferenciaAgruparPor() {
+    this.agruparPor = carregarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, this.agruparPorOpcoes);
+  }
+
+  onAgruparPorChange(valor: string) {
+    this.agruparPor = valor;
+    salvarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, valor);
   }
 
   carregarUsuarios() {

@@ -9,6 +9,8 @@ import {
 import { NotificacaoService } from '../../services/notificacao.service';
 import {
   criarOpcoesAgrupamento,
+  carregarPreferenciaAgruparPor,
+  salvarPreferenciaAgruparPor,
   deveExibirCabecalhoGrupo,
   obterRotuloAgrupamento,
   obterValorCabecalhoGrupo,
@@ -47,6 +49,7 @@ export class EmpresasComponent implements OnInit {
     { value: 'fantasia', label: 'Fantasia' },
     { value: 'razaoSocial', label: 'Razão Social' }
   ]);
+  private readonly STORAGE_KEY_AGRUPAR_POR = 'empresas_agrupar_por';
 
   constructor(
     private empresaService: EmpresaService,
@@ -54,6 +57,7 @@ export class EmpresasComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.agruparPor = carregarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, this.agruparPorOpcoes);
     this.carregar();
   }
 
@@ -200,6 +204,11 @@ export class EmpresasComponent implements OnInit {
     valor = valor.replace(/\.(\d{3})(\d)/, '.$1/$2');
     valor = valor.replace(/(\d{4})(\d)/, '$1-$2');
     return valor;
+  }
+
+  onAgruparPorChange(valor: string) {
+    this.agruparPor = valor;
+    salvarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, valor);
   }
 
   get empresasParaTabela(): EmpresaResponseDto[] {

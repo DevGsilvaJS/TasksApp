@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -10,6 +10,8 @@ import {
 import { extrairMensagemErroApi } from '../../utils/erro-api.util';
 import {
   criarOpcoesAgrupamento,
+  carregarPreferenciaAgruparPor,
+  salvarPreferenciaAgruparPor,
   deveExibirCabecalhoGrupo,
   obterRotuloAgrupamento,
   obterValorCabecalhoGrupo,
@@ -25,7 +27,7 @@ import { RelatorioGerencialLinhaDto } from '../../services/relatorio-gerencial.s
   templateUrl: './relatorios-gerenciais.component.html',
   styleUrl: './relatorios-gerenciais.component.css'
 })
-export class RelatoriosGerenciaisComponent {
+export class RelatoriosGerenciaisComponent implements OnInit {
   readonly tiposRelatorio = TIPOS_RELATORIO;
 
   dataInicial = this.primeiroDiaDoMes();
@@ -42,8 +44,13 @@ export class RelatoriosGerenciaisComponent {
     { value: 'descricaoDespesa', label: 'Descrição' },
     { value: 'numeroDuplicata', label: 'Duplicata' }
   ]);
+  private readonly STORAGE_KEY_AGRUPAR_POR = 'relatorios_gerenciais_agrupar_por';
 
   constructor(private relatorioService: RelatorioGerencialService) { }
+
+  ngOnInit(): void {
+    this.agruparPor = carregarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, this.agruparPorOpcoes);
+  }
 
   pesquisar(): void {
     if (!this.dataInicial || !this.dataFinal) {
@@ -89,6 +96,11 @@ export class RelatoriosGerenciaisComponent {
     if (this.exibirColunaCliente) colunas++;
     if (this.exibirColunaDataPagamento) colunas++;
     return colunas;
+  }
+
+  onAgruparPorChange(valor: string) {
+    this.agruparPor = valor;
+    salvarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, valor);
   }
 
   get itensRelatorioParaTabela(): RelatorioGerencialLinhaDto[] {

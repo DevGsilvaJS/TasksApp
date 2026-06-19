@@ -18,6 +18,8 @@ import { AuthService } from '../../services/auth.service';
 import { CadastroAtendimentoService } from '../../services/cadastro-atendimento.service';
 import {
   criarOpcoesAgrupamento,
+  carregarPreferenciaAgruparPor,
+  salvarPreferenciaAgruparPor,
   obterRotuloAgrupamento,
   obterValorCabecalhoGrupo,
   ordenarItensParaAgrupamento
@@ -48,6 +50,7 @@ export class PossiveisClientesComponent implements OnInit {
     { value: 'pocFantasia', label: 'Cliente / Fantasia' },
     { value: 'pocStatusAtendimento', label: 'Status' }
   ]);
+  private readonly STORAGE_KEY_AGRUPAR_POR_COLUNA = 'possiveis_clientes_agrupar_por_coluna';
   /** 'tabela' ou 'cards' */
   viewLayout: 'tabela' | 'cards' = 'tabela';
   /** Códigos expandidos na tabela (quando agruparPorCliente) */
@@ -94,6 +97,10 @@ export class PossiveisClientesComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    this.agruparPorColuna = carregarPreferenciaAgruparPor(
+      this.STORAGE_KEY_AGRUPAR_POR_COLUNA,
+      this.agruparPorColunaOpcoes
+    );
     this.carregar();
     this.cadastroAtendimentoService.listarStatusAtendimentoComercial(true).subscribe({
       next: (data) => {
@@ -585,6 +592,11 @@ export class PossiveisClientesComponent implements OnInit {
       return `(${ddd2}) ${celRaw.slice(0, 4)}-${celRaw.slice(4, 8)}`;
     }
     return `(${ddd2}) ${celRaw}`.trim() || '-';
+  }
+
+  onAgruparPorColunaChange(valor: string) {
+    this.agruparPorColuna = valor;
+    salvarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR_COLUNA, valor);
   }
 
   get listaParaTabelaFlat(): PossivelClienteResponseDto[] {

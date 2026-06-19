@@ -9,6 +9,8 @@ import {
 import { NotificacaoService } from '../../services/notificacao.service';
 import {
   criarOpcoesAgrupamento,
+  carregarPreferenciaAgruparPor,
+  salvarPreferenciaAgruparPor,
   deveExibirCabecalhoGrupo,
   obterRotuloAgrupamento,
   obterValorCabecalhoGrupo,
@@ -42,6 +44,7 @@ export class PlanoContasComponent implements OnInit {
   agruparPorOpcoes = criarOpcoesAgrupamento([
     { value: 'descricao', label: 'Descrição' }
   ]);
+  private readonly STORAGE_KEY_AGRUPAR_POR = 'plano_contas_agrupar_por';
 
   constructor(
     private planoContasService: PlanoContasService,
@@ -49,6 +52,7 @@ export class PlanoContasComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.agruparPor = carregarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, this.agruparPorOpcoes);
     this.carregar();
   }
 
@@ -158,6 +162,11 @@ export class PlanoContasComponent implements OnInit {
         this.excluindo = false;
       }
     });
+  }
+
+  onAgruparPorChange(valor: string) {
+    this.agruparPor = valor;
+    salvarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, valor);
   }
 
   get planosParaTabela(): PlanoContasResponseDto[] {

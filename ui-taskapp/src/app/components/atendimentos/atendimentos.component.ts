@@ -12,6 +12,10 @@ import { CadastroAtendimentoService } from '../../services/cadastro-atendimento.
 import { forkJoin } from 'rxjs';
 import { NotificacaoService } from '../../services/notificacao.service';
 import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
+import {
+  carregarPreferenciaAgruparPor,
+  salvarPreferenciaAgruparPor,
+} from '../../shared/utils/grid-agrupamento.util';
 
 @Component({
   selector: 'app-atendimentos',
@@ -66,6 +70,7 @@ export class AtendimentosComponent implements OnInit {
   mostrarTodosUsuarios = false;
   private readonly STORAGE_KEY_MOSTRAR_CONCLUIDAS = 'atendimentos_mostrar_concluidas';
   private readonly STORAGE_KEY_MOSTRAR_TODOS_USUARIOS = 'atendimentos_mostrar_todos_usuarios';
+  private readonly STORAGE_KEY_AGRUPAR_POR = 'atendimentos_agrupar_por';
 
   novoTarefa: CadastroTarefaDto = {
     clienteId: 0,
@@ -277,6 +282,7 @@ export class AtendimentosComponent implements OnInit {
   ngOnInit() {
     this.carregarPreferenciaMostrarConcluidas();
     this.carregarPreferenciaMostrarTodosUsuarios();
+    this.carregarPreferenciaAgruparPor();
     this.carregarCadastrosAtendimento();
     this.carregarTarefas();
     this.carregarClientes();
@@ -339,6 +345,15 @@ export class AtendimentosComponent implements OnInit {
     } catch (error) {
       console.error('Erro ao salvar preferência de todos usuários:', error);
     }
+  }
+
+  private carregarPreferenciaAgruparPor() {
+    this.agruparPor = carregarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, this.agruparPorOpcoes);
+  }
+
+  onAgruparPorChange(valor: string) {
+    this.agruparPor = valor;
+    salvarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, valor);
   }
 
   onMostrarConcluidasChange() {

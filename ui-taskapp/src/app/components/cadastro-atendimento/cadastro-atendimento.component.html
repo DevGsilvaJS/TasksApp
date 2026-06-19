@@ -33,7 +33,7 @@
         </div>
         <app-seletor-agrupamento-grid
           [agruparPor]="agruparPor.status"
-          (agruparPorChange)="agruparPor.status = $event"
+          (agruparPorChange)="onAgruparPorChange('status', $event)"
           [opcoes]="agruparPorOpcoesCadastro" />
         <div class="table-wrap">
           <table class="cadastro-table">
@@ -85,7 +85,7 @@
         </div>
         <app-seletor-agrupamento-grid
           [agruparPor]="agruparPor.tipoAtendimento"
-          (agruparPorChange)="agruparPor.tipoAtendimento = $event"
+          (agruparPorChange)="onAgruparPorChange('tipoAtendimento', $event)"
           [opcoes]="agruparPorOpcoesCadastro" />
         <div class="table-wrap">
           <table class="cadastro-table">
@@ -137,7 +137,7 @@
         </div>
         <app-seletor-agrupamento-grid
           [agruparPor]="agruparPor.tipoContato"
-          (agruparPorChange)="agruparPor.tipoContato = $event"
+          (agruparPorChange)="onAgruparPorChange('tipoContato', $event)"
           [opcoes]="agruparPorOpcoesCadastro" />
         <div class="table-wrap">
           <table class="cadastro-table">

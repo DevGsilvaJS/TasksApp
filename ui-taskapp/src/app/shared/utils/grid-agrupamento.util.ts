@@ -63,3 +63,27 @@ export function deveExibirCabecalhoGrupo<T>(
 
   return obterValor(itens[index]) !== obterValor(itens[index - 1]);
 }
+
+export function carregarPreferenciaAgruparPor(
+  storageKey: string,
+  opcoes: OpcaoAgrupamentoGrid[],
+  valorPadrao = ''
+): string {
+  try {
+    const stored = sessionStorage.getItem(storageKey);
+    if (stored !== null && opcoes.some(o => o.value === stored)) {
+      return stored;
+    }
+  } catch {
+    // sessionStorage indisponível
+  }
+  return valorPadrao;
+}
+
+export function salvarPreferenciaAgruparPor(storageKey: string, valor: string): void {
+  try {
+    sessionStorage.setItem(storageKey, valor);
+  } catch {
+    // sessionStorage indisponível
+  }
+}

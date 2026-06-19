@@ -206,7 +206,7 @@
       } @else {
         <app-seletor-agrupamento-grid
           [agruparPor]="agruparPorColuna"
-          (agruparPorChange)="agruparPorColuna = $event"
+          (agruparPorChange)="onAgruparPorColunaChange($event)"
           [opcoes]="agruparPorColunaOpcoes" />
         <p-table
           [value]="listaParaTabelaFlat"

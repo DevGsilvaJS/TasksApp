@@ -6,9 +6,13 @@ export function isParcelaPaga(status: string | null | undefined): boolean {
   return status?.toLowerCase() === 'paga';
 }
 
+export function isParcelaCancelada(status: string | null | undefined): boolean {
+  return status?.toLowerCase() === 'cancelada';
+}
+
 export function labelStatusParcela(status: string | null | undefined): string {
-  if (isParcelaPaga(status)) return 'Paga';
+  if (isParcelaPaga(status)) return 'Recebida';
   if (isParcelaPendente(status)) return 'Pendente';
-  if (status?.toLowerCase() === 'cancelada') return 'Cancelada';
+  if (isParcelaCancelada(status)) return 'Inativa';
   return status ?? '—';
 }

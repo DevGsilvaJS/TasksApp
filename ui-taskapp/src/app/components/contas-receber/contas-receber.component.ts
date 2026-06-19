@@ -13,12 +13,20 @@ import {
 import { NotificacaoService } from '../../services/notificacao.service';
 import {
   criarOpcoesAgrupamento,
+  carregarPreferenciaAgruparPor,
+  salvarPreferenciaAgruparPor,
   deveExibirCabecalhoGrupo,
   obterRotuloAgrupamento,
   obterValorCabecalhoGrupo,
   ordenarItensParaAgrupamento
 } from '../../shared/utils/grid-agrupamento.util';
 import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
+import {
+  isParcelaCancelada,
+  isParcelaPaga,
+  isParcelaPendente,
+  labelStatusParcela
+} from '../../utils/parcela-status.util';
 
 @Component({
   selector: 'app-contas-receber',
@@ -34,6 +42,9 @@ export class ContasReceberComponent implements OnInit {
   exibirTitulosBaixados = false;
   showForm = false;
   showParcelas = false;
+  showModalBaixaParcela = false;
+  parcelaBaixa: ParcelaResponseDto | null = null;
+  dataPagamentoBaixa = '';
   loading = false;
   error: string | null = null;
   editando = false;
@@ -53,6 +64,7 @@ export class ContasReceberComponent implements OnInit {
     { value: 'descricaoDespesa', label: 'Descrição da Despesa' },
     { value: 'dataEmissao', label: 'Data Emissão' }
   ]);
+  private readonly STORAGE_KEY_AGRUPAR_POR = 'contas_receber_agrupar_por';
   readonly planoPadraoDescricao = PLANO_RECEITA_CONSULTORIA;
   planoContasPadraoId?: number;
 
@@ -88,6 +100,7 @@ export class ContasReceberComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    this.agruparPor = carregarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, this.agruparPorOpcoes);
     this.carregarDuplicatas();
     this.clienteService.listarTodosClientes().subscribe({
       next: (data) => this.clientes = data,
@@ -375,28 +388,37 @@ export class ContasReceberComponent implements OnInit {
   }
 
   baixarParcela(parcela: ParcelaResponseDto): void {
-    this.confirmarBaixaParcela(parcela);
-  }
-
-  private async confirmarBaixaParcela(parcela: ParcelaResponseDto): Promise<void> {
     if (!this.duplicataSelecionada?.empresaId) {
       this.notificacao.aviso('Informe o centro de custo na duplicata antes de receber a parcela.');
       return;
     }
 
-    const ok = await this.notificacao.confirmar(
-      'Confirmar recebimento',
-      `Deseja confirmar o recebimento da parcela ${parcela.numeroParcela}?`,
-      'Confirmar',
-      'Cancelar'
-    );
-    if (!ok) return;
+    this.parcelaBaixa = parcela;
+    this.dataPagamentoBaixa = this.obterDataHojeInput();
+    this.showModalBaixaParcela = true;
+  }
 
+  fecharModalBaixaParcela(): void {
+    this.showModalBaixaParcela = false;
+    this.parcelaBaixa = null;
+    this.dataPagamentoBaixa = '';
+  }
+
+  confirmarBaixaParcela(): void {
+    if (!this.parcelaBaixa || !this.dataPagamentoBaixa) {
+      this.notificacao.aviso('Informe a data do recebimento.');
+      return;
+    }
+
+    const parcela = this.parcelaBaixa;
     this.loading = true;
     this.error = null;
 
-    this.duplicataService.baixarParcela(parcela.parcelaId).subscribe({
+    this.duplicataService.baixarParcela(parcela.parcelaId, {
+      dataPagamento: this.dataPagamentoBaixa
+    }).subscribe({
       next: () => {
+        this.fecharModalBaixaParcela();
         this.recarregarDuplicataSelecionada();
         this.loading = false;
         this.notificacao.sucesso('Parcela recebida com sucesso.');
@@ -407,6 +429,14 @@ export class ContasReceberComponent implements OnInit {
         console.error(err);
       }
     });
+  }
+
+  private obterDataHojeInput(): string {
+    const hoje = new Date();
+    const yyyy = hoje.getFullYear();
+    const mm = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoje.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
   }
 
   private recarregarDuplicataSelecionada(): void {
@@ -425,10 +455,73 @@ export class ContasReceberComponent implements OnInit {
     this.confirmarReativacaoParcela(parcela);
   }
 
+  reativarParcelaInativa(parcela: ParcelaResponseDto) {
+    this.confirmarReativacaoParcelaInativa(parcela);
+  }
+
+  inativarParcelasRestantes() {
+    if (!this.duplicataSelecionada) return;
+    this.confirmarInativacaoParcelasRestantes(this.duplicataSelecionada);
+  }
+
+  private async confirmarInativacaoParcelasRestantes(duplicata: DuplicataResponseDto): Promise<void> {
+    const quantidade = this.quantidadeParcelasPendentes(duplicata);
+    const ok = await this.notificacao.confirmar(
+      'Inativar parcelas restantes',
+      `Deseja inativar ${quantidade} parcela(s) pendente(s) da duplicata #${duplicata.numero}? Elas não aparecerão no dashboard nem serão somadas como pendentes.`,
+      'Inativar todas',
+      'Cancelar'
+    );
+    if (!ok) return;
+
+    this.loading = true;
+    this.error = null;
+
+    this.duplicataService.inativarParcelasRestantes(duplicata.duplicataId).subscribe({
+      next: (duplicataAtualizada) => {
+        this.duplicataSelecionada = duplicataAtualizada;
+        this.carregarDuplicatas();
+        this.loading = false;
+        this.notificacao.sucesso('Parcelas restantes inativadas com sucesso.');
+      },
+      error: (err) => {
+        this.error = err.error?.message || 'Erro ao inativar parcelas restantes.';
+        this.loading = false;
+        console.error(err);
+      }
+    });
+  }
+
+  private async confirmarReativacaoParcelaInativa(parcela: ParcelaResponseDto): Promise<void> {
+    const ok = await this.notificacao.confirmar(
+      'Reativar parcela inativa',
+      `Deseja reativar a parcela ${parcela.numeroParcela}? Ela voltará a aparecer como pendente.`,
+      'Reativar',
+      'Cancelar'
+    );
+    if (!ok) return;
+
+    this.loading = true;
+    this.error = null;
+
+    this.duplicataService.reativarParcelaInativa(parcela.parcelaId).subscribe({
+      next: () => {
+        this.recarregarDuplicataSelecionada();
+        this.loading = false;
+        this.notificacao.sucesso('Parcela reativada com sucesso.');
+      },
+      error: (err) => {
+        this.error = err.error?.message || 'Erro ao reativar parcela inativa.';
+        this.loading = false;
+        console.error(err);
+      }
+    });
+  }
+
   private async confirmarReativacaoParcela(parcela: ParcelaResponseDto): Promise<void> {
     const ok = await this.notificacao.confirmar(
       'Confirmar reativação',
-      `Deseja reativar a parcela ${parcela.numeroParcela}?`,
+      `Deseja reativar o recebimento da parcela ${parcela.numeroParcela}?`,
       'Confirmar',
       'Cancelar'
     );
@@ -439,16 +532,9 @@ export class ContasReceberComponent implements OnInit {
 
       this.duplicataService.reativarParcela(parcela.parcelaId).subscribe({
         next: () => {
-          const duplicataIdSelecionada = this.duplicataSelecionada?.duplicataId;
-          this.carregarDuplicatas(() => {
-            if (duplicataIdSelecionada != null) {
-              const duplicataAtualizada = this.duplicatas.find(d => d.duplicataId === duplicataIdSelecionada);
-              if (duplicataAtualizada) {
-                this.duplicataSelecionada = duplicataAtualizada;
-              }
-            }
-          });
-          this.notificacao.sucesso('Parcela reativada com sucesso.');
+          this.recarregarDuplicataSelecionada();
+          this.loading = false;
+          this.notificacao.sucesso('Recebimento desfeito com sucesso.');
         },
         error: (err) => {
           this.error = err.error?.message || 'Erro ao reativar parcela.';
@@ -488,11 +574,27 @@ export class ContasReceberComponent implements OnInit {
   }
 
   parcelaPaga(parcela: ParcelaResponseDto): boolean {
-    return parcela.status?.toLowerCase() === 'paga';
+    return isParcelaPaga(parcela.status);
   }
 
   parcelaPendente(parcela: ParcelaResponseDto): boolean {
-    return parcela.status?.toLowerCase() === 'pendente';
+    return isParcelaPendente(parcela.status);
+  }
+
+  parcelaInativa(parcela: ParcelaResponseDto): boolean {
+    return isParcelaCancelada(parcela.status);
+  }
+
+  obterLabelStatusParcela(status: string): string {
+    return labelStatusParcela(status);
+  }
+
+  possuiParcelasPendentes(duplicata: DuplicataResponseDto): boolean {
+    return this.quantidadeParcelasPendentes(duplicata) > 0;
+  }
+
+  quantidadeParcelasPendentes(duplicata: DuplicataResponseDto): number {
+    return duplicata.parcelas?.filter((parcela) => this.parcelaPendente(parcela)).length ?? 0;
   }
 
   filtrarDuplicatas() {
@@ -525,11 +627,11 @@ export class ContasReceberComponent implements OnInit {
   }
 
   private possuiParcelaEmAberto(duplicata: DuplicataResponseDto): boolean {
-    return duplicata.parcelas?.some((parcela: ParcelaResponseDto) => parcela.status?.toLowerCase() === 'pendente') ?? false;
+    return duplicata.parcelas?.some((parcela: ParcelaResponseDto) => this.parcelaPendente(parcela)) ?? false;
   }
 
   duplicataPossuiParcelaPaga(duplicata: DuplicataResponseDto): boolean {
-    return duplicata.parcelas?.some((parcela: ParcelaResponseDto) => parcela.status?.toLowerCase() === 'paga') ?? false;
+    return duplicata.parcelas?.some((parcela: ParcelaResponseDto) => this.parcelaPaga(parcela)) ?? false;
   }
 
   obterValorParcela(duplicata: DuplicataResponseDto): number {
@@ -567,6 +669,11 @@ export class ContasReceberComponent implements OnInit {
       default:
         return '';
     }
+  }
+
+  onAgruparPorChange(valor: string) {
+    this.agruparPor = valor;
+    salvarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, valor);
   }
 
   get duplicatasParaTabela(): DuplicataResponseDto[] {

@@ -50,6 +50,7 @@ export interface AtualizarClassificacaoParcelaDto {
 
 export interface BaixarParcelaDto {
   planoContasId?: number;
+  dataPagamento?: string;
 }
 
 export interface DuplicataResponseDto {
@@ -103,6 +104,18 @@ export class DuplicataService {
 
   reativarParcela(parcelaId: number): Observable<ParcelaResponseDto> {
     return this.api.post<ParcelaResponseDto>(`duplicata/parcelas/${parcelaId}/reativar`, {});
+  }
+
+  inativarParcela(parcelaId: number): Observable<ParcelaResponseDto> {
+    return this.api.post<ParcelaResponseDto>(`duplicata/parcelas/${parcelaId}/inativar`, {});
+  }
+
+  inativarParcelasRestantes(duplicataId: number): Observable<DuplicataResponseDto> {
+    return this.api.post<DuplicataResponseDto>(`duplicata/${duplicataId}/inativar-parcelas-restantes`, {});
+  }
+
+  reativarParcelaInativa(parcelaId: number): Observable<ParcelaResponseDto> {
+    return this.api.post<ParcelaResponseDto>(`duplicata/parcelas/${parcelaId}/reativar-inativa`, {});
   }
 
   atualizarClassificacaoParcela(parcelaId: number, dto: AtualizarClassificacaoParcelaDto): Observable<ParcelaResponseDto> {

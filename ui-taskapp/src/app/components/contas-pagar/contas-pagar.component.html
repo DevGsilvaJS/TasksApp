@@ -229,6 +229,34 @@
     </div>
   }
 
+  @if (showModalBaixaParcela && parcelaBaixa) {
+    <div class="modal-overlay modal-overlay-nested" (click)="fecharModalBaixaParcela()">
+      <div class="modal-content modal-baixa-parcela" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Baixar parcela {{ parcelaBaixa.numeroParcela }}</h3>
+          <button type="button" class="btn-close" (click)="fecharModalBaixaParcela()" aria-label="Fechar">×</button>
+        </div>
+        <div class="form-group">
+          <label for="cp-data-pagamento">Data do pagamento *</label>
+          <input
+            id="cp-data-pagamento"
+            type="date"
+            class="form-input"
+            [(ngModel)]="dataPagamentoBaixa"
+            name="dataPagamentoBaixa"
+            required>
+          <p class="form-hint">Use a data em que o pagamento foi efetuado (pode ser retroativa).</p>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="fecharModalBaixaParcela()">Cancelar</button>
+          <button type="button" class="btn-primary" (click)="confirmarBaixaParcela()" [disabled]="loading || !dataPagamentoBaixa">
+            {{ loading ? 'Salvando...' : 'Confirmar baixa' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
   <div class="filtros-container">
     <label class="checkbox-filtro">
       <input
@@ -258,7 +286,7 @@
   } @else {
     <app-seletor-agrupamento-grid
       [agruparPor]="agruparPor"
-      (agruparPorChange)="agruparPor = $event"
+      (agruparPorChange)="onAgruparPorChange($event)"
       [opcoes]="agruparPorOpcoes" />
     <div class="table-container">
       <table class="data-table">

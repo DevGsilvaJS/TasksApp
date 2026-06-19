@@ -258,6 +258,8 @@
 
 .parcelas-info {
   display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
   gap: 2rem;
   padding: 1.5rem;
   background: #f8fafc;
@@ -280,6 +282,31 @@
   font-size: 1.25rem;
   font-weight: 600;
   color: #1e293b;
+}
+
+.parcelas-acao-em-lote {
+  margin-left: auto;
+}
+
+.btn-inativar-lote {
+  padding: 0.625rem 1rem;
+  border: 1px solid #fecaca;
+  border-radius: 0.375rem;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-inativar-lote:hover:not(:disabled) {
+  background: #fee2e2;
+}
+
+.btn-inativar-lote:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .search-container {
@@ -385,13 +412,19 @@ tbody tr:hover {
 
 .actions-cell {
   display: flex;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.35rem;
   justify-content: center;
   align-items: center;
 }
 
 .modal-overlay-nested {
   z-index: 1100;
+}
+
+.modal-baixa-parcela {
+  max-width: 420px;
+  width: 100%;
 }
 
 .form-hint {
