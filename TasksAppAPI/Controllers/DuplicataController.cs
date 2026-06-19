@@ -97,7 +97,7 @@ public class DuplicataController : ControllerBase
     /// </summary>
     [HttpGet("tipo/{tipo}")]
     [ProducesResponseType(typeof(IEnumerable<DuplicataResponseDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ListarDuplicatasPorTipo(string tipo)
+    public async Task<IActionResult> ListarDuplicatasPorTipo(string tipo, [FromQuery] bool incluirInativas = false)
     {
         try
         {
@@ -106,7 +106,7 @@ public class DuplicataController : ControllerBase
                 return BadRequest(new { message = "Tipo inválido. Use 'CP' para Contas a Pagar ou 'CR' para Contas a Receber." });
             }
 
-            var duplicatas = await _duplicataService.ListarDuplicatasPorTipoAsync(tipo);
+            var duplicatas = await _duplicataService.ListarDuplicatasPorTipoAsync(tipo, incluirInativas);
             return Ok(duplicatas);
         }
         catch (Exception ex)

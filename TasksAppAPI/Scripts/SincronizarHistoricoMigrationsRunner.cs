@@ -109,6 +109,32 @@ public static class SincronizarHistoricoMigrationsRunner
             SELECT 1 FROM "__EFMigrationsHistory"
             WHERE "MigrationId" = '20260617142053_CriarTabelaEmailEnvioComercial'
         );
+
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        SELECT '20260619120500_AdicionarCongeladaPorClienteParcela', '8.0.0'
+        WHERE EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'TB_PAR_PARCELA'
+              AND column_name = 'PARCONGELADAPORCLIENTE'
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM "__EFMigrationsHistory"
+            WHERE "MigrationId" = '20260619120500_AdicionarCongeladaPorClienteParcela'
+        );
+
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        SELECT '20260619123000_AdicionarInativaDuplicata', '8.0.0'
+        WHERE EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'TB_DUP_DUPLICATA'
+              AND column_name = 'DUPINATIVA'
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM "__EFMigrationsHistory"
+            WHERE "MigrationId" = '20260619123000_AdicionarInativaDuplicata'
+        );
         """;
 
         var inseridos = db.Database.ExecuteSqlRaw(sql);

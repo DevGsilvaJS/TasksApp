@@ -2,6 +2,7 @@ using Application.DTOs;
 using Application.Helpers;
 using Application.Interfaces;
 using Domain.Entities;
+using Domain.Enums;
 
 namespace Application.Services;
 
@@ -55,7 +56,8 @@ public class DuplicataService : IDuplicataService
             DupTipo = dto.Tipo ?? "CP",
             CliId = dto.ClienteId,
             EmpId = dto.EmpresaId,
-            PlcId = ResolverPlanoContasIdCadastro(dto)
+            PlcId = ResolverPlanoContasIdCadastro(dto),
+            DupInativa = string.Equals(dto.Tipo ?? "CP", "CP", StringComparison.OrdinalIgnoreCase) && dto.Inativa
         };
 
         await _duplicataRepository.InserirAsync(duplicata);
@@ -109,6 +111,7 @@ public class DuplicataService : IDuplicataService
         }
 
         await _parcelaRepository.SalvarAlteracoesAsync();
+        await AplicarCongelamentoClienteSeNecessarioAsync(dto.Tipo, dto.ClienteId);
 
         return await MontarDuplicataResponseDto(duplicata);
     }
@@ -135,9 +138,11 @@ public class DuplicataService : IDuplicataService
         return duplicatasDto.OrderByDescending(d => d.DataEmissao);
     }
 
-    public async Task<IEnumerable<DuplicataResponseDto>> ListarDuplicatasPorTipoAsync(string tipo)
+    public async Task<IEnumerable<DuplicataResponseDto>> ListarDuplicatasPorTipoAsync(string tipo, bool incluirInativas = false)
     {
+        _ = incluirInativas;
         var duplicatas = await _duplicataRepository.BuscarTodosAsync(d => d.DupTipo == tipo);
+
         var duplicatasDto = new List<DuplicataResponseDto>();
 
         foreach (var duplicata in duplicatas)
@@ -174,6 +179,7 @@ public class DuplicataService : IDuplicataService
         duplicata.CliId = dto.ClienteId;
         duplicata.EmpId = dto.EmpresaId;
         duplicata.PlcId = ResolverPlanoContasIdCadastro(dto);
+        AplicarInativaContasPagar(duplicata, dto);
 
         await _duplicataRepository.AtualizarAsync(duplicata);
 
@@ -231,6 +237,7 @@ public class DuplicataService : IDuplicataService
             }
         }
         await _parcelaRepository.SalvarAlteracoesAsync();
+        await AplicarCongelamentoClienteSeNecessarioAsync(dto.Tipo, dto.ClienteId);
 
         return await MontarDuplicataResponseDto(duplicata);
     }
@@ -357,6 +364,7 @@ public class DuplicataService : IDuplicataService
         }
 
         parcela.ParStatus = "Cancelada";
+        parcela.ParCongeladaPorCliente = false;
         parcela.ParDataPagamento = null;
 
         await _parcelaRepository.AtualizarAsync(parcela);
@@ -384,6 +392,7 @@ public class DuplicataService : IDuplicataService
         foreach (var parcela in parcelasPendentes)
         {
             parcela.ParStatus = "Cancelada";
+            parcela.ParCongeladaPorCliente = false;
             parcela.ParDataPagamento = null;
             await _parcelaRepository.AtualizarAsync(parcela);
         }
@@ -410,13 +419,70 @@ public class DuplicataService : IDuplicataService
             throw new InvalidOperationException("Apenas parcelas inativas podem ser reativadas.");
         }
 
+        await ValidarReativacaoParcelaCongeladaAsync(parcela, duplicata);
+
         parcela.ParStatus = "Pendente";
+        parcela.ParCongeladaPorCliente = false;
         parcela.ParDataPagamento = null;
 
         await _parcelaRepository.AtualizarAsync(parcela);
         await _parcelaRepository.SalvarAlteracoesAsync();
 
         return await MontarParcelaResponseDtoAsync(parcela, duplicata);
+    }
+
+    public async Task CongelarParcelasAbertasPorClienteAsync(int clienteId)
+    {
+        var duplicatas = await _duplicataRepository.BuscarTodosAsync(d =>
+            d.DupTipo == "CR" && d.CliId == clienteId);
+
+        var alterou = false;
+
+        foreach (var duplicata in duplicatas)
+        {
+            var parcelas = await _parcelaRepository.BuscarTodosAsync(p => p.DupId == duplicata.DupId);
+
+            foreach (var parcela in parcelas.Where(ParcelaEstaPendente))
+            {
+                parcela.ParStatus = "Cancelada";
+                parcela.ParCongeladaPorCliente = true;
+                parcela.ParDataPagamento = null;
+                await _parcelaRepository.AtualizarAsync(parcela);
+                alterou = true;
+            }
+        }
+
+        if (alterou)
+        {
+            await _parcelaRepository.SalvarAlteracoesAsync();
+        }
+    }
+
+    public async Task DescongelarParcelasPorClienteAsync(int clienteId)
+    {
+        var duplicatas = await _duplicataRepository.BuscarTodosAsync(d =>
+            d.DupTipo == "CR" && d.CliId == clienteId);
+
+        var alterou = false;
+
+        foreach (var duplicata in duplicatas)
+        {
+            var parcelas = await _parcelaRepository.BuscarTodosAsync(p => p.DupId == duplicata.DupId);
+
+            foreach (var parcela in parcelas.Where(p => ParcelaEstaCancelada(p) && p.ParCongeladaPorCliente))
+            {
+                parcela.ParStatus = "Pendente";
+                parcela.ParCongeladaPorCliente = false;
+                parcela.ParDataPagamento = null;
+                await _parcelaRepository.AtualizarAsync(parcela);
+                alterou = true;
+            }
+        }
+
+        if (alterou)
+        {
+            await _parcelaRepository.SalvarAlteracoesAsync();
+        }
     }
 
     public async Task<ParcelaResponseDto> AtualizarClassificacaoParcelaAsync(int parcelaId, AtualizarClassificacaoParcelaDto dto)
@@ -529,7 +595,8 @@ public class DuplicataService : IDuplicataService
             Parcelas = parcelasDto,
             ValorTotal = valorTotal,
             ValorPago = valorPago,
-            ValorPendente = valorPendente
+            ValorPendente = valorPendente,
+            Inativa = duplicata.DupInativa
         };
     }
 
@@ -557,6 +624,7 @@ public class DuplicataService : IDuplicataService
         duplicata.EmpId = dto.EmpresaId;
         var planoId = ResolverPlanoContasIdCadastro(dto);
         duplicata.PlcId = planoId;
+        AplicarInativaContasPagar(duplicata, dto);
 
         await _duplicataRepository.AtualizarAsync(duplicata);
 
@@ -588,10 +656,45 @@ public class DuplicataService : IDuplicataService
     private static bool ParcelaDtoEstaCancelada(string? status) =>
         ParcelaStatusHelper.IsCancelada(status);
 
+    private static void AplicarInativaContasPagar(Duplicata duplicata, CadastroDuplicataDto dto)
+    {
+        if (!string.Equals(duplicata.DupTipo, "CP", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        duplicata.DupInativa = dto.Inativa;
+    }
+
     private static void ValidarOperacaoContasReceber(Duplicata duplicata)
     {
         if (!string.Equals(duplicata.DupTipo, "CR", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Inativação de parcelas só está disponível em contas a receber.");
+    }
+
+    private async Task ValidarReativacaoParcelaCongeladaAsync(Parcela parcela, Duplicata duplicata)
+    {
+        if (!parcela.ParCongeladaPorCliente)
+            return;
+
+        if (!duplicata.CliId.HasValue)
+        {
+            throw new InvalidOperationException("Parcela congelada pelo status do cliente. Reative o cliente para liberar as parcelas.");
+        }
+
+        var cliente = await _clienteRepository.GetByIdAsync(duplicata.CliId.Value);
+        if (cliente == null || cliente.CliStatus != StatusCliente.Ativo)
+        {
+            throw new InvalidOperationException("Parcela congelada pelo status do cliente. Reative o cliente para liberar as parcelas.");
+        }
+    }
+
+    private async Task AplicarCongelamentoClienteSeNecessarioAsync(string? tipo, int? clienteId)
+    {
+        if (!string.Equals(tipo, "CR", StringComparison.OrdinalIgnoreCase) || !clienteId.HasValue)
+            return;
+
+        var cliente = await _clienteRepository.GetByIdAsync(clienteId.Value);
+        if (cliente != null && cliente.CliStatus != StatusCliente.Ativo)
+            await CongelarParcelasAbertasPorClienteAsync(clienteId.Value);
     }
 
     private async Task AplicarPadroesContasReceberAsync(CadastroDuplicataDto dto)
@@ -715,6 +818,7 @@ public class DuplicataService : IDuplicataService
             ValorTotal = valorTotal,
             Vencimento = parcela.ParVencimento,
             Status = parcela.ParStatus,
+            CongeladaPorCliente = parcela.ParCongeladaPorCliente,
             DataPagamento = parcela.ParDataPagamento,
             EmpresaId = empresaId,
             CentroCustoDescricao = centroCustoDescricao,

@@ -32,6 +32,9 @@ public class Parcela
     [MaxLength(50)]
     public string ParStatus { get; set; } = "Pendente"; // Pendente, Paga, Cancelada
 
+    [Column("PARCONGELADAPORCLIENTE")]
+    public bool ParCongeladaPorCliente { get; set; }
+
     [Column("PAR_DATA_PAGAMENTO")]
     public DateTime? ParDataPagamento { get; set; }
 

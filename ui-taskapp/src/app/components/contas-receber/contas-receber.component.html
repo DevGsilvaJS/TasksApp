@@ -219,8 +219,8 @@
                   <td>{{ formatarMoeda(parcela.valorTotal) }}</td>
                   <td>{{ formatarData(parcela.vencimento) }}</td>
                   <td>
-                    <span class="status-badge" [ngClass]="getStatusClass(parcela.status)">
-                      {{ obterLabelStatusParcela(parcela.status) }}
+                    <span class="status-badge" [ngClass]="getStatusClass(parcela)">
+                      {{ obterLabelStatusParcela(parcela) }}
                     </span>
                   </td>
                   <td>{{ parcela.dataPagamento ? formatarData(parcela.dataPagamento) : '-' }}</td>
@@ -247,6 +247,8 @@
                       <button class="btn-reativar" (click)="reativarParcelaInativa(parcela)" title="Reativar parcela inativa" [disabled]="loading">
                         Reativar parcela
                       </button>
+                    } @else if (parcelaCongeladaPorCliente(parcela)) {
+                      <span class="acao-info" title="Parcela congelada pelo status do cliente. Reative o cliente para liberar.">Congelada</span>
                     }
                   </td>
                 </tr>
@@ -290,6 +292,14 @@
     <label class="checkbox-filtro">
       <input
         type="checkbox"
+        [(ngModel)]="exibirTitulosInativos"
+        (ngModelChange)="onToggleExibirTitulosInativos()"
+        name="exibirTitulosInativos">
+      Exibir títulos inativos
+    </label>
+    <label class="checkbox-filtro">
+      <input
+        type="checkbox"
         [(ngModel)]="exibirTitulosBaixados"
         (ngModelChange)="onToggleExibirTitulosBaixados()"
         name="exibirTitulosBaixados">
@@ -325,12 +335,12 @@
             <th>Data Emissão</th>
             <th>Cliente</th>
             <th>Centro de Custo</th>
-            <th>Descrição da Despesa</th>
-            <th>Parcelas</th>
-            <th>Valor da Parcela</th>
+            <th>Descrição</th>
+            <th>Parc.</th>
+            <th>Vlr. Parc.</th>
             <th>Valor Total</th>
-            <th>Valor Recebido</th>
-            <th>Valor Pendente</th>
+            <th>Recebido</th>
+            <th>Pendente</th>
             <th class="actions-column">Ações</th>
           </tr>
         </thead>
@@ -338,11 +348,16 @@
           @for (duplicata of duplicatasParaTabela; track duplicata.duplicataId; let i = $index) {
             @if (exibirCabecalhoGrupoDuplicata(i)) {
               <tr class="grupo-grid-row">
-                <td [attr.colspan]="12"><strong>{{ getAgruparPorLabel() }}: {{ getValorGrupoDuplicata(duplicata) }}</strong></td>
+                <td [attr.colspan]="11"><strong>{{ getAgruparPorLabel() }}: {{ getValorGrupoDuplicata(duplicata) }}</strong></td>
               </tr>
             }
-            <tr>
-              <td>{{ duplicata.numero }}</td>
+            <tr [class.row-titulo-inativo]="tituloInativo(duplicata)">
+              <td>
+                {{ duplicata.numero }}
+                @if (tituloInativo(duplicata)) {
+                  <span class="badge-inativo" title="Título com parcelas inativas">Inativo</span>
+                }
+              </td>
               <td>{{ formatarData(duplicata.dataEmissao) }}</td>
               <td [title]="duplicata.clienteNome || '-'">{{ duplicata.clienteNome || '-' }}</td>
               <td [title]="duplicata.centroCustoDescricao || '-'">{{ duplicata.centroCustoDescricao || '-' }}</td>
@@ -353,26 +368,23 @@
               <td class="status-paga">{{ formatarMoeda(duplicata.valorPago) }}</td>
               <td class="status-pendente">{{ formatarMoeda(duplicata.valorPendente) }}</td>
               <td class="actions-cell">
-                <button class="btn-view" (click)="abrirParcelas(duplicata)" title="Ver Parcelas">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button type="button" class="btn-view btn-acao-compacto" (click)="abrirParcelas(duplicata)" title="Ver parcelas">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
-                  Parcelas
+                  <span>Parcelas</span>
                 </button>
                 <button
-                  class="btn-edit"
+                  type="button"
+                  class="btn-edit btn-acao-compacto btn-acao-icone"
                   (click)="abrirFormularioEdicao(duplicata)"
-                  [title]="duplicataPossuiParcelaPaga(duplicata) ? 'Editar (parcelas recebidas: edição parcial)' : 'Editar'"
-                  [disabled]="loading">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  [title]="duplicataPossuiParcelaPaga(duplicata) ? 'Editar (edição parcial)' : 'Editar'"
+                  [disabled]="loading"
+                  aria-label="Editar">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                  </svg>
-                </button>
-                <button class="btn-delete" (click)="excluirDuplicata(duplicata)" title="Excluir" [disabled]="duplicata.valorPago > 0">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                   </svg>
                 </button>
               </td>

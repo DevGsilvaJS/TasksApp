@@ -23,6 +23,7 @@ import {
 import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
 import {
   isParcelaCancelada,
+  isParcelaCongeladaPorCliente,
   isParcelaPaga,
   isParcelaPendente,
   labelStatusParcela
@@ -40,6 +41,7 @@ export class ContasReceberComponent implements OnInit {
   duplicatasFiltradas: DuplicataResponseDto[] = [];
   clientes: ClienteResponseDto[] = [];
   exibirTitulosBaixados = false;
+  exibirTitulosInativos = false;
   showForm = false;
   showParcelas = false;
   showModalBaixaParcela = false;
@@ -357,36 +359,6 @@ export class ContasReceberComponent implements OnInit {
     });
   }
 
-  excluirDuplicata(duplicata: DuplicataResponseDto) {
-    this.confirmarExclusaoDuplicata(duplicata);
-  }
-
-  private async confirmarExclusaoDuplicata(duplicata: DuplicataResponseDto): Promise<void> {
-    const ok = await this.notificacao.confirmar(
-      'Confirmar exclusão',
-      `Tem certeza que deseja excluir a duplicata #${duplicata.numero}?`,
-      'Excluir',
-      'Cancelar'
-    );
-    if (!ok) return;
-
-      this.loading = true;
-      this.error = null;
-
-      this.duplicataService.excluirDuplicata(duplicata.duplicataId).subscribe({
-        next: () => {
-          this.carregarDuplicatas();
-          this.loading = false;
-          this.notificacao.sucesso('Conta a receber excluída com sucesso.');
-        },
-        error: (err) => {
-          this.error = err.error?.message || 'Erro ao excluir conta a receber.';
-          this.loading = false;
-          console.error(err);
-        }
-      });
-  }
-
   baixarParcela(parcela: ParcelaResponseDto): void {
     if (!this.duplicataSelecionada?.empresaId) {
       this.notificacao.aviso('Informe o centro de custo na duplicata antes de receber a parcela.');
@@ -582,11 +554,15 @@ export class ContasReceberComponent implements OnInit {
   }
 
   parcelaInativa(parcela: ParcelaResponseDto): boolean {
-    return isParcelaCancelada(parcela.status);
+    return isParcelaCancelada(parcela.status) && !parcela.congeladaPorCliente;
   }
 
-  obterLabelStatusParcela(status: string): string {
-    return labelStatusParcela(status);
+  parcelaCongeladaPorCliente(parcela: ParcelaResponseDto): boolean {
+    return isParcelaCongeladaPorCliente(parcela.status, parcela.congeladaPorCliente);
+  }
+
+  obterLabelStatusParcela(parcela: ParcelaResponseDto): string {
+    return labelStatusParcela(parcela.status, parcela.congeladaPorCliente);
   }
 
   possuiParcelasPendentes(duplicata: DuplicataResponseDto): boolean {
@@ -605,14 +581,44 @@ export class ContasReceberComponent implements OnInit {
     this.aplicarFiltros();
   }
 
+  onToggleExibirTitulosInativos() {
+    this.aplicarFiltros();
+  }
+
+  tituloInativo(duplicata: DuplicataResponseDto): boolean {
+    const parcelas = duplicata.parcelas ?? [];
+    if (parcelas.some((parcela) => this.parcelaPendente(parcela))) {
+      return false;
+    }
+
+    return parcelas.some((parcela) => this.parcelaInativa(parcela));
+  }
+
+  tituloBaixado(duplicata: DuplicataResponseDto): boolean {
+    const parcelas = duplicata.parcelas ?? [];
+    return parcelas.length > 0 && parcelas.every((parcela) => this.parcelaPaga(parcela));
+  }
+
   private aplicarFiltros(): void {
     const termoBuscaNormalizado: string = this.termoBusca.trim().toLowerCase();
 
     let lista: DuplicataResponseDto[] = this.duplicatas;
 
-    if (!this.exibirTitulosBaixados) {
-      lista = lista.filter((duplicata: DuplicataResponseDto) => this.possuiParcelaEmAberto(duplicata));
-    }
+    lista = lista.filter((duplicata: DuplicataResponseDto) => {
+      if (this.tituloInativo(duplicata)) {
+        return this.exibirTitulosInativos;
+      }
+
+      if (this.possuiParcelaEmAberto(duplicata)) {
+        return true;
+      }
+
+      if (this.tituloBaixado(duplicata)) {
+        return this.exibirTitulosBaixados;
+      }
+
+      return true;
+    });
 
     if (termoBuscaNormalizado) {
       lista = lista.filter((duplicata: DuplicataResponseDto) =>
@@ -658,8 +664,12 @@ export class ContasReceberComponent implements OnInit {
     return new Date(data).toLocaleDateString('pt-BR');
   }
 
-  getStatusClass(status: string): string {
-    switch (status.toLowerCase()) {
+  getStatusClass(parcela: ParcelaResponseDto): string {
+    if (this.parcelaCongeladaPorCliente(parcela)) {
+      return 'status-congelada';
+    }
+
+    switch (parcela.status.toLowerCase()) {
       case 'paga':
         return 'status-paga';
       case 'pendente':

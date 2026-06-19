@@ -58,6 +58,11 @@ public class Duplicata
 
 
 
+    [Column("DUPINATIVA")]
+    public bool DupInativa { get; set; }
+
+
+
     [Column("CLIID")]
 
     public int? CliId { get; set; }

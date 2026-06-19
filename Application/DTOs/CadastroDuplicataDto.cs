@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Application.DTOs;
-
 public class CadastroDuplicataDto
 {
     // Número é opcional - se não informado, será gerado automaticamente
@@ -44,4 +44,7 @@ public class CadastroDuplicataDto
 
     // Lista opcional de parcelas com datas personalizadas
     public List<CadastroParcelaDto>? Parcelas { get; set; }
-}
+
+    /// <summary>Inativa contas a pagar (CP). Título inativo não aparece na listagem nem no dashboard.</summary>
+    [JsonPropertyName("inativa")]
+    public bool Inativa { get; set; }}

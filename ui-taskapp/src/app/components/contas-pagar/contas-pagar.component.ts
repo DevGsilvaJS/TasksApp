@@ -32,6 +32,7 @@ export class ContasPagarComponent implements OnInit {
   duplicatas: DuplicataResponseDto[] = [];
   duplicatasFiltradas: DuplicataResponseDto[] = [];
   exibirTitulosBaixados = false;
+  exibirTitulosInativos = false;
   showForm = false;
   showParcelas = false;
   showModalBaixaParcela = false;
@@ -76,6 +77,7 @@ export class ContasPagarComponent implements OnInit {
     juros: 0,
     descricaoDespesa: undefined,
     tipo: 'CP',
+    inativa: false,
     dataPrimeiroVencimento: new Date().toISOString().split('T')[0]
   };
 
@@ -137,6 +139,7 @@ export class ContasPagarComponent implements OnInit {
           juros: 0,
           descricaoDespesa: undefined,
           tipo: 'CP',
+          inativa: false,
           empresaId: undefined,
           planoContasId: undefined,
           dataPrimeiroVencimento: new Date().toISOString().split('T')[0]
@@ -165,6 +168,7 @@ export class ContasPagarComponent implements OnInit {
       juros: duplicata.parcelas[0]?.juros || 0,
       descricaoDespesa: duplicata.descricaoDespesa,
       tipo: duplicata.tipo || 'CP',
+      inativa: duplicata.inativa ?? false,
       empresaId: duplicata.empresaId,
       planoContasId: planoContasIdPermitidoEmContasPagar(duplicata.planoContasId, this.planosContas),
       dataPrimeiroVencimento: duplicata.parcelas[0]?.vencimento.split('T')[0] || new Date().toISOString().split('T')[0]
@@ -292,6 +296,9 @@ export class ContasPagarComponent implements OnInit {
       this.novaDuplicata.numero = 0;
     }
 
+    this.novaDuplicata.tipo = 'CP';
+    this.novaDuplicata.inativa = this.novaDuplicata.inativa === true;
+
     this.loading = true;
     this.error = null;
 
@@ -301,10 +308,15 @@ export class ContasPagarComponent implements OnInit {
 
     operacao.subscribe({
       next: () => {
+        const inativou = this.novaDuplicata.inativa === true;
         this.carregarDuplicatas();
         this.fecharFormulario();
         this.loading = false;
-        this.notificacao.sucesso(this.editando ? 'Conta a pagar atualizada com sucesso.' : 'Conta a pagar cadastrada com sucesso.');
+        if (inativou) {
+          this.notificacao.sucesso('Conta a pagar inativada com sucesso.');
+        } else {
+          this.notificacao.sucesso(this.editando ? 'Conta a pagar atualizada com sucesso.' : 'Conta a pagar cadastrada com sucesso.');
+        }
       },
       error: (err) => {
         this.error = err.error?.message || 'Erro ao salvar conta a pagar.';
@@ -312,36 +324,6 @@ export class ContasPagarComponent implements OnInit {
         console.error(err);
       }
     });
-  }
-
-  excluirDuplicata(duplicata: DuplicataResponseDto) {
-    this.confirmarExclusaoDuplicata(duplicata);
-  }
-
-  private async confirmarExclusaoDuplicata(duplicata: DuplicataResponseDto): Promise<void> {
-    const ok = await this.notificacao.confirmar(
-      'Confirmar exclusão',
-      `Tem certeza que deseja excluir a duplicata #${duplicata.numero}?`,
-      'Excluir',
-      'Cancelar'
-    );
-    if (!ok) return;
-
-      this.loading = true;
-      this.error = null;
-
-      this.duplicataService.excluirDuplicata(duplicata.duplicataId).subscribe({
-        next: () => {
-          this.carregarDuplicatas();
-          this.loading = false;
-          this.notificacao.sucesso('Conta a pagar excluída com sucesso.');
-        },
-        error: (err) => {
-          this.error = err.error?.message || 'Erro ao excluir conta a pagar.';
-          this.loading = false;
-          console.error(err);
-        }
-      });
   }
 
   baixarParcela(parcela: ParcelaResponseDto) {
@@ -477,8 +459,52 @@ export class ContasPagarComponent implements OnInit {
     this.aplicarFiltros();
   }
 
-  onToggleExibirTitulosBaixados() {
+  onToggleExibirTitulosBaixados(exibir: boolean) {
+    this.exibirTitulosBaixados = exibir;
     this.aplicarFiltros();
+  }
+
+  onToggleExibirTitulosInativos(exibir: boolean) {
+    this.exibirTitulosInativos = exibir;
+    this.aplicarFiltros();
+  }
+
+  tituloInativo(duplicata: DuplicataResponseDto): boolean {
+    return duplicata.inativa === true;
+  }
+
+  possuiTitulosOcultosPorFiltro(): boolean {
+    if (this.duplicatas.length === 0) {
+      return false;
+    }
+
+    return this.duplicatas.some((duplicata) => {
+      if (this.tituloInativo(duplicata)) {
+        return !this.exibirTitulosInativos;
+      }
+
+      if (this.possuiParcelaEmAberto(duplicata)) {
+        return false;
+      }
+
+      return !this.exibirTitulosBaixados;
+    });
+  }
+
+  mensagemListaVazia(): string {
+    if (this.termoBusca.trim()) {
+      return 'Nenhuma duplicata encontrada para a busca.';
+    }
+
+    if (this.possuiTitulosOcultosPorFiltro()) {
+      if (!this.exibirTitulosInativos) {
+        return 'Existem títulos inativos ocultos. Marque "Exibir títulos inativos" para visualizá-los.';
+      }
+
+      return 'Existem títulos baixados ocultos. Marque "Exibir títulos baixados" para visualizá-los.';
+    }
+
+    return 'Nenhuma duplicata cadastrada.';
   }
 
   private aplicarFiltros(): void {
@@ -486,9 +512,17 @@ export class ContasPagarComponent implements OnInit {
 
     let lista: DuplicataResponseDto[] = this.duplicatas;
 
-    if (!this.exibirTitulosBaixados) {
-      lista = lista.filter((duplicata: DuplicataResponseDto) => this.possuiParcelaEmAberto(duplicata));
-    }
+    lista = lista.filter((duplicata: DuplicataResponseDto) => {
+      if (this.tituloInativo(duplicata)) {
+        return this.exibirTitulosInativos;
+      }
+
+      if (this.possuiParcelaEmAberto(duplicata)) {
+        return true;
+      }
+
+      return this.exibirTitulosBaixados;
+    });
 
     if (termoBuscaNormalizado) {
       lista = lista.filter((duplicata: DuplicataResponseDto) =>

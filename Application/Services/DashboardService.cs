@@ -132,6 +132,7 @@ public class DashboardService : IDashboardService
 
         var contasAPagar = todasParcelas
             .Where(p => duplicatasDict.ContainsKey(p.DupId) && duplicatasDict[p.DupId].DupTipo == "CP")
+            .Where(p => !duplicatasDict[p.DupId].DupInativa)
             .Select(parcela => MapearContaParcela(
                 parcela,
                 duplicatasDict[parcela.DupId],
@@ -149,8 +150,17 @@ public class DashboardService : IDashboardService
             p.ParVencimento <= fimMesAtual && 
             p.ParStatus != null && p.ParStatus.ToUpper() == "PENDENTE");
         
+        var clientesAtivosIds = (await _clienteRepository.BuscarTodosAsync(c => c.CliStatus == StatusCliente.Ativo))
+            .Select(c => c.CliId)
+            .ToHashSet();
+
         var contasAReceber = parcelasAReceber
             .Where(p => duplicatasDict.ContainsKey(p.DupId) && duplicatasDict[p.DupId].DupTipo == "CR")
+            .Where(p =>
+            {
+                var duplicata = duplicatasDict[p.DupId];
+                return !duplicata.CliId.HasValue || clientesAtivosIds.Contains(duplicata.CliId.Value);
+            })
             .Select(parcela => MapearContaParcela(
                 parcela,
                 duplicatasDict[parcela.DupId],
@@ -216,7 +226,9 @@ public class DashboardService : IDashboardService
 
         foreach (var parcela in contasPagasMes)
         {
-            if (duplicatasDict.ContainsKey(parcela.DupId) && duplicatasDict[parcela.DupId].DupTipo == "CP")
+            if (duplicatasDict.ContainsKey(parcela.DupId)
+                && duplicatasDict[parcela.DupId].DupTipo == "CP"
+                && !duplicatasDict[parcela.DupId].DupInativa)
             {
                 contasPagasDto.Add(MapearContaParcela(
                     parcela,

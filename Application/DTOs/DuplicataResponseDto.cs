@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Application.DTOs;
 
 public class DuplicataResponseDto
@@ -18,4 +20,7 @@ public class DuplicataResponseDto
     public double ValorTotal { get; set; }
     public double ValorPago { get; set; }
     public double ValorPendente { get; set; }
+
+    [JsonPropertyName("inativa")]
+    public bool Inativa { get; set; }
 }

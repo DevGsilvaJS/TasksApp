@@ -379,6 +379,10 @@ namespace Infrastructure.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("DUPDESCRICAODESPESA");
 
+                    b.Property<bool>("DupInativa")
+                        .HasColumnType("boolean")
+                        .HasColumnName("DUPINATIVA");
+
                     b.Property<int>("DupNumero")
                         .HasColumnType("integer")
                         .HasColumnName("DUPNUMERO");
@@ -584,6 +588,10 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("ParDataPagamento")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("PAR_DATA_PAGAMENTO");
+
+                    b.Property<bool>("ParCongeladaPorCliente")
+                        .HasColumnType("boolean")
+                        .HasColumnName("PARCONGELADAPORCLIENTE");
 
                     b.Property<double>("ParJuros")
                         .HasColumnType("double precision")
