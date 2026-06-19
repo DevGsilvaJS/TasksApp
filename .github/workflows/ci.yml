@@ -56,4 +56,8 @@ jobs:
 
       - name: Verify Docker image version metadata
         run: |
-          docker run --rm tasksapp:ci cat /app/wwwroot/app-version.json
+          id=$(docker create tasksapp:ci)
+          docker cp "$id:/app/wwwroot/app-version.json" ./app-version.json
+          docker rm "$id"
+          cat app-version.json
+          grep -q "agrupamento-coluna" app-version.json

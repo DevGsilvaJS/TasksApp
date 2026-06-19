@@ -71,6 +71,44 @@ public static class SincronizarHistoricoMigrationsRunner
             SELECT 1 FROM "__EFMigrationsHistory"
             WHERE "MigrationId" = '20260612145500_AdicionarCentroCustoPlanoContasParcela'
         );
+
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        SELECT '20260612141051_AdicionarCentroCustoDuplicata', '8.0.0'
+        WHERE EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'TB_DUP_DUPLICATA'
+              AND column_name = 'CCUID'
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM "__EFMigrationsHistory"
+            WHERE "MigrationId" = '20260612141051_AdicionarCentroCustoDuplicata'
+        );
+
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        SELECT '20260612141735_AdicionarPlanoContasDuplicata', '8.0.0'
+        WHERE EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'TB_DUP_DUPLICATA'
+              AND column_name = 'PLCID'
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM "__EFMigrationsHistory"
+            WHERE "MigrationId" = '20260612141735_AdicionarPlanoContasDuplicata'
+        );
+
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        SELECT '20260617142053_CriarTabelaEmailEnvioComercial', '8.0.0'
+        WHERE EXISTS (
+            SELECT 1 FROM information_schema.tables
+            WHERE table_schema = 'public'
+              AND table_name = 'TB_EMAIL_ENVIO_COMERCIAL'
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM "__EFMigrationsHistory"
+            WHERE "MigrationId" = '20260617142053_CriarTabelaEmailEnvioComercial'
+        );
         """;
 
         var inseridos = db.Database.ExecuteSqlRaw(sql);

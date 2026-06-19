@@ -170,12 +170,12 @@ try
         {
             db.Database.Migrate();
         }
-        catch (PostgresException ex) when (ex.SqlState == "42P07")
+        catch (PostgresException ex) when (ex.SqlState is "42P07" or "42701")
         {
-            // Tabela/objeto já existe (banco com histórico divergente de migrations).
+            // 42P07 = relation already exists; 42701 = duplicate column (scripts de startup já aplicaram)
             Console.WriteLine($"⚠️ Migração ignorada (objeto já existe): {ex.MessageText}");
         }
-        catch (Exception ex) when (ex.InnerException is PostgresException pex && pex.SqlState == "42P07")
+        catch (Exception ex) when (ex.InnerException is PostgresException pex && pex.SqlState is "42P07" or "42701")
         {
             Console.WriteLine($"⚠️ Migração ignorada (objeto já existe): {pex.MessageText}");
         }
