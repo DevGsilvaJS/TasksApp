@@ -67,7 +67,7 @@ COPY --from=backend-build /app/publish ./
 COPY --from=frontend-build /app/ui-taskapp/dist/ui-taskapp/browser ./wwwroot
 
 # Metadados de versão consultáveis via GET /api/health/version
-RUN printf '{"commit":"%s","builtAt":"%s","features":["agrupamento-coluna","baixa-retroativa","inativar-parcelas-restantes"]}\n' \
+RUN printf '{"commit":"%s","builtAt":"%s","features":["agrupamento-coluna","baixa-retroativa","inativar-parcelas-restantes","regras-empresa","alertas-fechar-livre","contratos-vencendo-modal","rolagem-global"]}\n' \
     "${RENDER_GIT_COMMIT}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > ./wwwroot/app-version.json
 
 # Variáveis de ambiente

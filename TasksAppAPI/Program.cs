@@ -525,14 +525,41 @@ app.Use(async (context, next) =>
     await next();
 });
 
-app.UseStaticFiles();
-app.UseSpaStaticFiles();
+static void ConfigurarCacheArquivosEstaticos(StaticFileResponseContext ctx)
+{
+    var nome = ctx.File.Name;
+    // index.html e versão: nunca cachear, para o browser sempre pegar o deploy novo
+    if (nome.Equals("index.html", StringComparison.OrdinalIgnoreCase)
+        || nome.Equals("app-version.json", StringComparison.OrdinalIgnoreCase))
+    {
+        ctx.Context.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";
+        ctx.Context.Response.Headers.Pragma = "no-cache";
+        ctx.Context.Response.Headers.Expires = "0";
+        return;
+    }
+
+    // Assets com hash no nome (main-XXXX.js): cache longo
+    if (nome.EndsWith(".js", StringComparison.OrdinalIgnoreCase)
+        || nome.EndsWith(".css", StringComparison.OrdinalIgnoreCase)
+        || nome.EndsWith(".woff2", StringComparison.OrdinalIgnoreCase))
+    {
+        ctx.Context.Response.Headers.CacheControl = "public,max-age=31536000,immutable";
+    }
+}
+
+var staticOptions = new StaticFileOptions
+{
+    OnPrepareResponse = ConfigurarCacheArquivosEstaticos
+};
+
+app.UseStaticFiles(staticOptions);
+app.UseSpaStaticFiles(staticOptions);
 
 app.UseAuthorization();
 app.MapControllers();
 
-// Fallback para Angular Router
-app.MapFallbackToFile("index.html");
+// Fallback para Angular Router (index sem cache)
+app.MapFallbackToFile("index.html", staticOptions);
 
 // ======================
 // Seed de usuários padrão
