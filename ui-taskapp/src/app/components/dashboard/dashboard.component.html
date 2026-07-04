@@ -122,7 +122,13 @@
     <fieldset class="dashboard-fieldset">
       <legend class="dashboard-fieldset-legend">Financeiro</legend>
       <div class="cards-container">
-        <div class="stat-card stat-card-alerta">
+        <div
+          class="stat-card stat-card-alerta"
+          (click)="abrirModalContratosVencendo()"
+          role="button"
+          tabindex="0"
+          (keydown.enter)="abrirModalContratosVencendo()"
+          title="Ver clientes com contrato vencendo">
           <div class="card-icon card-icon-alerta">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 9v4"></path>
@@ -269,6 +275,56 @@
                 }
               </tbody>
             </table>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Contratos vencendo -->
+  @if (showModalContratosVencendo) {
+    <div class="modal-overlay" (click)="fecharModalContratosVencendo()">
+      <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Clientes com contrato vencendo (30 dias)</h3>
+          <button type="button" class="btn-close" (click)="fecharModalContratosVencendo()" aria-label="Fechar">×</button>
+        </div>
+        <div class="modal-body">
+          @if (carregandoAlertasContratosVencendo) {
+            <p class="empty-state">Carregando...</p>
+          } @else if (erroAlertasContratosVencendo) {
+            <p class="empty-state">{{ erroAlertasContratosVencendo }}</p>
+          } @else if (alertasContratosVencendo.length === 0) {
+            <p class="empty-state">Nenhum contrato vencendo nos próximos 30 dias.</p>
+          } @else {
+            <div class="modal-table-wrap">
+              <table class="detail-table">
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Cliente</th>
+                    <th>Vigência até</th>
+                    <th>Dias para vencer</th>
+                    <th>Valor mensal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of alertasContratosVencendo; track item.clienteId) {
+                    <tr>
+                      <td>{{ item.clienteCodigo }}</td>
+                      <td>{{ item.clienteNome }}</td>
+                      <td>{{ formatarData(item.dataFimVigencia) }}</td>
+                      <td>
+                        <span class="dias-vencer-badge" [class.urgente]="item.diasParaVencer <= 7">
+                          {{ item.diasParaVencer }} dia(s)
+                        </span>
+                      </td>
+                      <td>{{ formatarMoeda(item.valorMensalVigente) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
           }
         </div>
       </div>

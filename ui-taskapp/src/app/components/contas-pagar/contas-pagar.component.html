@@ -237,26 +237,37 @@
 
   @if (showModalBaixaParcela && parcelaBaixa) {
     <div class="modal-overlay modal-overlay-nested" (click)="fecharModalBaixaParcela()">
-      <div class="modal-content modal-baixa-parcela" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Baixar parcela {{ parcelaBaixa.numeroParcela }}</h3>
-          <button type="button" class="btn-close" (click)="fecharModalBaixaParcela()" aria-label="Fechar">×</button>
+      <div class="modal-baixa-parcela" (click)="$event.stopPropagation()">
+        <div class="modal-baixa-header">
+          <div class="modal-baixa-titulo">
+            <span class="modal-baixa-badge">Pagamento</span>
+            <h3>Parcela {{ parcelaBaixa.numeroParcela }}</h3>
+          </div>
+          <button type="button" class="btn-close-baixa" (click)="fecharModalBaixaParcela()" aria-label="Fechar">×</button>
         </div>
-        <div class="form-group">
-          <label for="cp-data-pagamento">Data do pagamento *</label>
-          <input
-            id="cp-data-pagamento"
-            type="date"
-            class="form-input"
-            [(ngModel)]="dataPagamentoBaixa"
-            name="dataPagamentoBaixa"
-            required>
-          <p class="form-hint">Use a data em que o pagamento foi efetuado (pode ser retroativa).</p>
+        <div class="modal-baixa-body">
+          <div class="modal-baixa-campos">
+            <div class="modal-baixa-campo">
+              <label class="modal-baixa-label">Valor</label>
+              <div class="modal-baixa-valor">{{ formatarMoeda(parcelaBaixa.valorTotal) }}</div>
+            </div>
+            <div class="modal-baixa-campo">
+              <label class="modal-baixa-label" for="cp-data-pagamento">Data</label>
+              <input
+                id="cp-data-pagamento"
+                type="date"
+                class="form-input-baixa"
+                [(ngModel)]="dataPagamentoBaixa"
+                name="dataPagamentoBaixa"
+                [max]="dataHojeInput"
+                required>
+            </div>
+          </div>
         </div>
-        <div class="form-actions">
-          <button type="button" class="btn-secondary" (click)="fecharModalBaixaParcela()">Cancelar</button>
-          <button type="button" class="btn-primary" (click)="confirmarBaixaParcela()" [disabled]="loading || !dataPagamentoBaixa">
-            {{ loading ? 'Salvando...' : 'Confirmar baixa' }}
+        <div class="modal-baixa-actions">
+          <button type="button" class="btn-secondary btn-baixa-sm" (click)="fecharModalBaixaParcela()">Cancelar</button>
+          <button type="button" class="btn-primary btn-baixa-sm" (click)="confirmarBaixaParcela()" [disabled]="loading || !dataPagamentoBaixa">
+            {{ loading ? '...' : 'Confirmar' }}
           </button>
         </div>
       </div>

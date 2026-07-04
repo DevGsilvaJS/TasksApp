@@ -135,6 +135,25 @@ public static class SincronizarHistoricoMigrationsRunner
             SELECT 1 FROM "__EFMigrationsHistory"
             WHERE "MigrationId" = '20260619123000_AdicionarInativaDuplicata'
         );
+
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        SELECT '20260703210000_AdicionarTipoObservacoesAnotacao', '8.0.0'
+        WHERE EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'TB_ANO_ANOTACAO'
+              AND column_name = 'ANOTIPO'
+        )
+        AND EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'TB_ANO_ANOTACAO'
+              AND column_name = 'ANOOBSERVACOES'
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM "__EFMigrationsHistory"
+            WHERE "MigrationId" = '20260703210000_AdicionarTipoObservacoesAnotacao'
+        );
         """;
 
         var inseridos = db.Database.ExecuteSqlRaw(sql);

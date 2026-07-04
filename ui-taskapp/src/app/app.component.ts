@@ -149,11 +149,12 @@ export class AppComponent implements OnInit {
   }
 
   onCliqueOverlayAlerta() {
-    // Padronização: só avança após marcar ciência.
+    // Overlay não fecha: evita fechar sem querer.
   }
 
-  onCliqueFecharAlerta() {
-    // Padronização: só avança após marcar ciência.
+  /** Fecha o alerta atual sem gravar ciência (pode voltar a aparecer). */
+  fecharAlertaAtual(): void {
+    this.avancarAlerta();
   }
 
   avancarAlerta() {
@@ -166,28 +167,21 @@ export class AppComponent implements OnInit {
     }
   }
 
-  fecharAlertaPendencias(): void {
-    if (this.alertaAtual?.tipo !== 'pendencias') return;
-    this.avancarAlerta();
-  }
-
-  confirmarPendenciasEAvancar(): void {
-    if (this.alertaAtual?.tipo !== 'pendencias') return;
-    if (this.cienteAlertaAtual) {
-      this.marcarCiencia(this.chaveCienciaPendencias());
-    }
-    this.avancarAlerta();
-  }
-
-  confirmarCienciaEAvancar() {
+  /**
+   * Entendi: sempre avança.
+   * Só deixa de alertar de novo se o checkbox "ciente / não exibir novamente" estiver marcado.
+   */
+  confirmarAlertaEAvancar(): void {
     if (!this.alertaAtual) return;
-    if (!this.cienteAlertaAtual) return;
 
-    if (this.alertaAtual.tipo === 'contrato-vencendo') {
-      this.marcarCiencia(this.chaveCienciaContrato(this.alertaAtual.data));
-    }
-    if (this.alertaAtual.tipo === 'reunioes') {
-      this.marcarCiencia(this.chaveCienciaReunioes(this.alertaAtual.data));
+    if (this.cienteAlertaAtual) {
+      if (this.alertaAtual.tipo === 'pendencias') {
+        this.marcarCiencia(this.chaveCienciaPendencias());
+      } else if (this.alertaAtual.tipo === 'contrato-vencendo') {
+        this.marcarCiencia(this.chaveCienciaContrato(this.alertaAtual.data));
+      } else if (this.alertaAtual.tipo === 'reunioes') {
+        this.marcarCiencia(this.chaveCienciaReunioes(this.alertaAtual.data));
+      }
     }
 
     this.avancarAlerta();

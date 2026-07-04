@@ -19,7 +19,6 @@ export class DashboardComponent implements OnInit {
   alertasContratosVencendo: AlertaContratoVencendoDto[] = [];
   carregandoAlertasContratosVencendo = false;
   erroAlertasContratosVencendo: string | null = null;
-  private abrirModalContratosAoCarregar = true;
 
   /** Valores exibidos com animação de count-up (iniciam em 0 e sobem até o valor real) */
   totalAtendimentosPorUsuarioDisplay = 0;
@@ -50,6 +49,7 @@ export class DashboardComponent implements OnInit {
   showModalValoresPorMes = false;
   showModalDRE = false;
   showModalNotasServico = false;
+  showModalContratosVencendo = false;
 
   dadosModalNotasServico: NotaServicoItemDto[] = [];
   loadingNotasServico = false;
@@ -101,8 +101,11 @@ export class DashboardComponent implements OnInit {
   }
 
   abrirModalContratosVencendo() {
-    // Modal removida do Dashboard: alertas sequenciais ficam no pop-up global (AppComponent).
-    return;
+    this.showModalContratosVencendo = true;
+  }
+
+  fecharModalContratosVencendo() {
+    this.showModalContratosVencendo = false;
   }
 
   carregarContatosTelemarketing() {
@@ -424,8 +427,17 @@ export class DashboardComponent implements OnInit {
   }
 
   formatarData(data: string): string {
-    const date = new Date(data);
-    return date.toLocaleDateString('pt-BR');
+    if (!data) {
+      return '-';
+    }
+
+    const parte = data.length >= 10 ? data.substring(0, 10) : data;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(parte)) {
+      const [ano, mes, dia] = parte.split('-');
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    return new Date(data).toLocaleDateString('pt-BR');
   }
 
   formatarMoeda(valor: number): string {

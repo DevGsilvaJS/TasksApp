@@ -5,7 +5,24 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M12 5v14M5 12h14"></path>
       </svg>
-      Nova Anotação
+      {{ tituloBotaoNovo }}
+    </button>
+  </div>
+
+  <div class="tabs-container">
+    <button
+      type="button"
+      class="tab-button tab-anotacoes"
+      [class.active]="abaAtiva === 'anotacoes'"
+      (click)="selecionarAba('anotacoes')">
+      Anotações
+    </button>
+    <button
+      type="button"
+      class="tab-button tab-regras"
+      [class.active]="abaAtiva === 'regras'"
+      (click)="selecionarAba('regras')">
+      Regras da Empresa
     </button>
   </div>
 
@@ -19,30 +36,45 @@
     <div class="modal-overlay" (click)="fecharFormulario()">
       <div class="modal-content" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h3>{{ editando ? 'Editar Anotação' : 'Cadastrar Nova Anotação' }}</h3>
-          <button class="btn-close" (click)="fecharFormulario()">×</button>
+          <h3>{{ tituloFormulario }}</h3>
+          <button type="button" class="btn-close" (click)="fecharFormulario()" aria-label="Fechar">×</button>
         </div>
         <form (ngSubmit)="salvarAnotacao()" class="form">
           <div class="form-group">
             <label>Descrição *</label>
-            <textarea 
-              [(ngModel)]="novaAnotacao.descricao" 
-              name="descricao" 
-              required 
+            <textarea
+              [(ngModel)]="novaAnotacao.descricao"
+              name="descricao"
+              required
               class="form-input"
               rows="4"
-              placeholder="Digite a descrição da anotação..."
+              [placeholder]="isAbaRegras ? 'Digite a descrição da regra...' : 'Digite a descrição da anotação...'"
               maxlength="1000"></textarea>
           </div>
-          <div class="form-group">
-            <label>Link</label>
-            <input 
-              type="text" 
-              [(ngModel)]="novaAnotacao.link" 
-              name="link" 
-              class="form-input" 
-              placeholder="https://exemplo.com ou exemplo.com">
-          </div>
+
+          @if (isAbaRegras) {
+            <div class="form-group">
+              <label>Observações</label>
+              <textarea
+                [(ngModel)]="novaAnotacao.observacoes"
+                name="observacoes"
+                class="form-input"
+                rows="4"
+                placeholder="Digite as observações da regra..."
+                maxlength="3000"></textarea>
+            </div>
+          } @else {
+            <div class="form-group">
+              <label>Link</label>
+              <input
+                type="text"
+                [(ngModel)]="novaAnotacao.link"
+                name="link"
+                class="form-input"
+                placeholder="https://exemplo.com ou exemplo.com">
+            </div>
+          }
+
           <div class="form-actions">
             <button type="button" class="btn-secondary" (click)="fecharFormulario()">Cancelar</button>
             <button type="submit" class="btn-primary" [disabled]="loading">
@@ -55,9 +87,9 @@
   }
 
   <div class="search-container">
-    <input 
-      type="text" 
-      placeholder="Buscar por descrição ou link..." 
+    <input
+      type="text"
+      [placeholder]="isAbaRegras ? 'Buscar por descrição ou observações...' : 'Buscar por descrição ou link...'"
       [(ngModel)]="termoBusca"
       (input)="filtrarAnotacoes()"
       class="search-input">
@@ -67,7 +99,7 @@
     <div class="loading">Carregando...</div>
   } @else if (anotacoesFiltradas.length === 0) {
     <div class="empty-state">
-      <p>{{ termoBusca ? 'Nenhuma anotação encontrada' : 'Nenhuma anotação cadastrada' }}</p>
+      <p>{{ mensagemVazia }}</p>
     </div>
   } @else {
     <app-seletor-agrupamento-grid
@@ -79,7 +111,11 @@
         <thead>
           <tr>
             <th>Descrição</th>
-            <th>Link</th>
+            @if (isAbaRegras) {
+              <th>Observações</th>
+            } @else {
+              <th>Link</th>
+            }
             <th>Data Cadastro</th>
             <th class="actions-column">Ações</th>
           </tr>
@@ -93,33 +129,37 @@
             }
             <tr>
               <td>{{ anotacao.descricao }}</td>
-              <td>
-                @if (anotacao.link) {
-                  <a 
-                    href="#" 
-                    (click)="abrirLink(anotacao.link); $event.preventDefault()"
-                    class="link-anotacao"
-                    title="Abrir link">
-                    {{ anotacao.link }}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; margin-left: 4px; vertical-align: middle;">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                      <polyline points="15 3 21 3 21 9"></polyline>
-                      <line x1="10" y1="14" x2="21" y2="3"></line>
-                    </svg>
-                  </a>
-                } @else {
-                  <span style="color: #94a3b8;">-</span>
-                }
-              </td>
+              @if (isAbaRegras) {
+                <td>{{ anotacao.observacoes || '-' }}</td>
+              } @else {
+                <td>
+                  @if (anotacao.link) {
+                    <a
+                      href="#"
+                      (click)="abrirLink(anotacao.link); $event.preventDefault()"
+                      class="link-anotacao"
+                      title="Abrir link">
+                      {{ anotacao.link }}
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; margin-left: 4px; vertical-align: middle;">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                      </svg>
+                    </a>
+                  } @else {
+                    <span class="texto-vazio">-</span>
+                  }
+                </td>
+              }
               <td>{{ formatarData(anotacao.dataCadastro) }}</td>
               <td class="actions-cell">
-                <button class="btn-edit" (click)="abrirFormularioEdicao(anotacao)" title="Editar">
+                <button type="button" class="btn-edit" (click)="abrirFormularioEdicao(anotacao)" title="Editar">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                   </svg>
                 </button>
-                <button class="btn-delete" (click)="excluirAnotacao(anotacao)" title="Excluir">
+                <button type="button" class="btn-delete" (click)="excluirAnotacao(anotacao)" title="Excluir">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                   </svg>
@@ -132,7 +172,6 @@
     </div>
   }
 
-  <!-- Modal de Confirmação -->
   @if (showConfirmModal) {
     <div class="modal-overlay" (click)="fecharConfirmModal()">
       <div class="modal-content modal-confirm" (click)="$event.stopPropagation()">
@@ -157,7 +196,6 @@
     </div>
   }
 
-  <!-- Modal de Sucesso -->
   @if (showSuccessModal) {
     <div class="modal-overlay" (click)="fecharSuccessModal()">
       <div class="modal-content modal-success" (click)="$event.stopPropagation()">

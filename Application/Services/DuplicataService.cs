@@ -315,9 +315,8 @@ public class DuplicataService : IDuplicataService
 
         parcela.PlcId = planoId is > 0 ? planoId : null;
         parcela.ParStatus = "Paga";
-        parcela.ParDataPagamento = dto?.DataPagamento.HasValue == true
-            ? DateTime.SpecifyKind(dto.DataPagamento.Value.Date, DateTimeKind.Utc)
-            : DateTime.UtcNow;
+        // Data informada (pode ser retroativa) ou hoje no fuso Brasil; gravada sem deslocar o dia na exibição
+        parcela.ParDataPagamento = NormalizarDataPagamento(dto?.DataPagamento);
 
         await _parcelaRepository.AtualizarAsync(parcela);
         await _parcelaRepository.SalvarAlteracoesAsync();
@@ -655,6 +654,38 @@ public class DuplicataService : IDuplicataService
 
     private static bool ParcelaDtoEstaCancelada(string? status) =>
         ParcelaStatusHelper.IsCancelada(status);
+
+    /// <summary>
+    /// Normaliza a data de pagamento/recebimento (retroativa permitida).
+    /// Grava meia-noite UTC da data civil para a exibição por yyyy-MM-dd não recuar um dia.
+    /// </summary>
+    private static DateTime NormalizarDataPagamento(DateTime? dataInformada)
+    {
+        if (dataInformada.HasValue)
+            return DateTime.SpecifyKind(dataInformada.Value.Date, DateTimeKind.Utc);
+
+        return ObterDataAtualBrasilUtc();
+    }
+
+    private static DateTime ObterDataAtualBrasilUtc()
+    {
+        TimeZoneInfo fusoBrasil;
+        try
+        {
+            fusoBrasil = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            fusoBrasil = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+        }
+        catch (InvalidTimeZoneException)
+        {
+            fusoBrasil = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+        }
+
+        var hojeBrasil = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, fusoBrasil).Date;
+        return DateTime.SpecifyKind(hojeBrasil, DateTimeKind.Utc);
+    }
 
     private static void AplicarInativaContasPagar(Duplicata duplicata, CadastroDuplicataDto dto)
     {

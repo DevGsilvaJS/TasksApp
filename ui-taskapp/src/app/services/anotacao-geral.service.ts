@@ -2,15 +2,22 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 
+export const TIPO_ANOTACAO = 'ANOTACAO';
+export const TIPO_REGRA_EMPRESA = 'REGRA_EMPRESA';
+
 export interface CadastroAnotacaoGeralDto {
   descricao: string;
+  observacoes?: string;
   link?: string;
+  tipo?: string;
 }
 
 export interface AnotacaoGeralResponseDto {
   anotacaoId: number;
   descricao: string;
+  observacoes?: string;
   link?: string;
+  tipo?: string;
   dataCadastro?: string;
 }
 

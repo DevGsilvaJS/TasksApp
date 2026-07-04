@@ -338,9 +338,22 @@ export class ContasPagarComponent implements OnInit {
     this.dataPagamentoBaixa = '';
   }
 
+  get dataHojeInput(): string {
+    return this.obterDataHojeInput();
+  }
+
   confirmarBaixaParcela() {
-    if (!this.parcelaBaixa || !this.dataPagamentoBaixa) {
+    if (!this.parcelaBaixa) {
+      return;
+    }
+
+    if (!this.dataPagamentoBaixa) {
       this.notificacao.aviso('Informe a data do pagamento.');
+      return;
+    }
+
+    if (this.dataPagamentoBaixa > this.obterDataHojeInput()) {
+      this.notificacao.aviso('A data do pagamento não pode ser futura.');
       return;
     }
 
@@ -563,6 +576,17 @@ export class ContasPagarComponent implements OnInit {
   }
 
   formatarData(data: string): string {
+    if (!data) {
+      return '-';
+    }
+
+    // Usa só a parte da data (yyyy-MM-dd) para não recuar um dia por fuso UTC
+    const parte = data.length >= 10 ? data.substring(0, 10) : data;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(parte)) {
+      const [ano, mes, dia] = parte.split('-');
+      return `${dia}/${mes}/${ano}`;
+    }
+
     return new Date(data).toLocaleDateString('pt-BR');
   }
 

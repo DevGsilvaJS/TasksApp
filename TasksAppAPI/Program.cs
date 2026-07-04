@@ -4,6 +4,8 @@ using Infrastructure.Data;
 using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql;
 using TasksAppAPI.Scripts;
 
@@ -67,10 +69,21 @@ builder.Services.AddCors(options =>
 // Database
 // ======================
 
-// Lê a variável de ambiente DATABASE_URL (Render) ou do appsettings
-var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
-    ?? builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("DATABASE_URL não encontrada.");
+// Em Development: usa somente appsettings.Development.json (banco local).
+// Em Production: DATABASE_URL (Render) tem prioridade.
+string? databaseUrl;
+if (builder.Environment.IsDevelopment())
+{
+    databaseUrl = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException(
+            "Configure ConnectionStrings:DefaultConnection em appsettings.Development.json apontando para o PostgreSQL local.");
+}
+else
+{
+    databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
+        ?? builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException("DATABASE_URL não encontrada.");
+}
 
 // Converter URL do Render (postgres:// ou postgresql://) para formato Npgsql
 // Aceita ambos os formatos: postgres:// e postgresql://
@@ -132,6 +145,22 @@ if (string.IsNullOrWhiteSpace(databaseUrl))
     throw new InvalidOperationException("Connection string está vazia após conversão.");
 }
 
+// Em Development, bloquear qualquer host remoto (produção / Render)
+if (builder.Environment.IsDevelopment())
+{
+    var hostLocal = new Npgsql.NpgsqlConnectionStringBuilder(databaseUrl).Host ?? "";
+    var hostNormalizado = hostLocal.Trim().ToLowerInvariant();
+    var ehLocal = hostNormalizado is "localhost" or "127.0.0.1" or "::1" or ".";
+    if (!ehLocal)
+    {
+        throw new InvalidOperationException(
+            $"Ambiente Development recusou conexão com host remoto '{hostLocal}'. " +
+            "Use apenas PostgreSQL local em appsettings.Development.json (Host=localhost).");
+    }
+
+    Console.WriteLine($"🔒 Development: banco LOCAL — Host={hostLocal}, Database={new Npgsql.NpgsqlConnectionStringBuilder(databaseUrl).Database}");
+}
+
 // Injetar a connection string convertida no IConfiguration
 // Isso permite que AddInfrastructure leia corretamente
 builder.Configuration["ConnectionStrings:DefaultConnection"] = databaseUrl;
@@ -171,19 +200,66 @@ try
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         SincronizarHistoricoMigrationsRunner.Executar(db);
         Console.WriteLine("🔄 Aplicando migrations automaticamente...");
+        var migrator = db.GetService<IMigrator>()
+            ?? throw new InvalidOperationException("IMigrator não disponível.");
+
+        static void RegistrarMigrationNoHistorico(ApplicationDbContext context, string migrationId)
+        {
+            context.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+                SELECT {0}, '8.0.0'
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = {0}
+                )
+                """,
+                migrationId);
+        }
+
+        // SqlStates de schema já aplicado / drift local: segue para a próxima migration
+        static bool EhErroSchemaJaAplicado(PostgresException ex) =>
+            ex.SqlState is "42P07" or "42701" or "2BP01" or "42703";
+
+        foreach (var migrationId in db.Database.GetPendingMigrations().ToList())
+        {
+            try
+            {
+                migrator.Migrate(migrationId);
+            }
+            catch (PostgresException ex) when (EhErroSchemaJaAplicado(ex))
+            {
+                Console.WriteLine($"⚠️ Migração ignorada ({migrationId}): {ex.MessageText}");
+                RegistrarMigrationNoHistorico(db, migrationId);
+            }
+            catch (Exception ex) when (ex.InnerException is PostgresException pex && EhErroSchemaJaAplicado(pex))
+            {
+                Console.WriteLine($"⚠️ Migração ignorada ({migrationId}): {pex.MessageText}");
+                RegistrarMigrationNoHistorico(db, migrationId);
+            }
+        }
+
+        // Sempre por último: colunas exigidas pelo dashboard (banco local pode ter histórico defasado)
         try
         {
-            db.Database.Migrate();
+            db.Database.ExecuteSqlRaw(
+                @"ALTER TABLE ""TB_PAR_PARCELA"" ADD COLUMN IF NOT EXISTS ""PARCONGELADAPORCLIENTE"" boolean NOT NULL DEFAULT FALSE");
+            db.Database.ExecuteSqlRaw(
+                @"ALTER TABLE ""TB_DUP_DUPLICATA"" ADD COLUMN IF NOT EXISTS ""DUPINATIVA"" boolean NOT NULL DEFAULT FALSE");
+            db.Database.ExecuteSqlRaw(
+                @"ALTER TABLE ""TB_ANO_ANOTACAO"" ADD COLUMN IF NOT EXISTS ""ANOTIPO"" character varying(30) NOT NULL DEFAULT 'ANOTACAO'");
+            db.Database.ExecuteSqlRaw(
+                @"ALTER TABLE ""TB_ANO_ANOTACAO"" ADD COLUMN IF NOT EXISTS ""ANOOBSERVACOES"" character varying(3000) NULL");
+            db.Database.ExecuteSqlRaw(
+                @"UPDATE ""TB_ANO_ANOTACAO"" SET ""ANOTIPO"" = 'ANOTACAO' WHERE ""ANOTIPO"" IS NULL OR TRIM(""ANOTIPO"") = ''");
+            Console.WriteLine("✅ Colunas de parcela, duplicata e anotação garantidas.");
         }
-        catch (PostgresException ex) when (ex.SqlState is "42P07" or "42701")
+        catch (Exception exColunas)
         {
-            // 42P07 = relation already exists; 42701 = duplicate column (scripts de startup já aplicaram)
-            Console.WriteLine($"⚠️ Migração ignorada (objeto já existe): {ex.MessageText}");
+            Console.WriteLine($"❌ Falha ao garantir colunas do dashboard: {exColunas.Message}");
+            throw;
         }
-        catch (Exception ex) when (ex.InnerException is PostgresException pex && pex.SqlState is "42P07" or "42701")
-        {
-            Console.WriteLine($"⚠️ Migração ignorada (objeto já existe): {pex.MessageText}");
-        }
+
+        SincronizarHistoricoMigrationsRunner.Executar(db);
         // Garantir tabela de possíveis clientes (migration pode não estar no histórico)
         db.Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS ""TB_POSSIVEL_CLIENTE"" (
             ""POCID"" serial PRIMARY KEY,
