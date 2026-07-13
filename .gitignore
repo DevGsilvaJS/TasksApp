@@ -27,8 +27,8 @@ appsettings.Production.json
 .env
 .env.local
 
-## Docker
-.dockerignore
+## Frontend publicado (gerado no build Docker/CI — nunca commitar)
+TasksAppAPI/wwwroot/
 
 ## IDE
 .idea/

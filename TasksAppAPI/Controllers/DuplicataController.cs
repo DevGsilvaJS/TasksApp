@@ -97,7 +97,7 @@ public class DuplicataController : ControllerBase
     /// </summary>
     [HttpGet("tipo/{tipo}")]
     [ProducesResponseType(typeof(IEnumerable<DuplicataResponseDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ListarDuplicatasPorTipo(string tipo)
+    public async Task<IActionResult> ListarDuplicatasPorTipo(string tipo, [FromQuery] bool incluirInativas = false)
     {
         try
         {
@@ -106,7 +106,7 @@ public class DuplicataController : ControllerBase
                 return BadRequest(new { message = "Tipo inválido. Use 'CP' para Contas a Pagar ou 'CR' para Contas a Receber." });
             }
 
-            var duplicatas = await _duplicataService.ListarDuplicatasPorTipoAsync(tipo);
+            var duplicatas = await _duplicataService.ListarDuplicatasPorTipoAsync(tipo, incluirInativas);
             return Ok(duplicatas);
         }
         catch (Exception ex)
@@ -241,6 +241,78 @@ public class DuplicataController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao reativar parcela: {ParcelaId}", parcelaId);
+            return StatusCode(500, new { message = "Erro interno do servidor" });
+        }
+    }
+
+    /// <summary>
+    /// Inativa uma parcela pendente de contas a receber
+    /// </summary>
+    [HttpPost("parcelas/{parcelaId}/inativar")]
+    [ProducesResponseType(typeof(ParcelaResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> InativarParcela(int parcelaId)
+    {
+        try
+        {
+            var parcela = await _duplicataService.InativarParcelaAsync(parcelaId);
+            return Ok(parcela);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao inativar parcela: {ParcelaId}", parcelaId);
+            return StatusCode(500, new { message = "Erro interno do servidor" });
+        }
+    }
+
+    /// <summary>
+    /// Inativa todas as parcelas pendentes restantes de uma duplicata de contas a receber
+    /// </summary>
+    [HttpPost("{duplicataId}/inativar-parcelas-restantes")]
+    [ProducesResponseType(typeof(DuplicataResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> InativarParcelasRestantes(int duplicataId)
+    {
+        try
+        {
+            var duplicata = await _duplicataService.InativarParcelasRestantesAsync(duplicataId);
+            return Ok(duplicata);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao inativar parcelas restantes: {DuplicataId}", duplicataId);
+            return StatusCode(500, new { message = "Erro interno do servidor" });
+        }
+    }
+
+    /// <summary>
+    /// Reativa uma parcela inativa de contas a receber (marca como pendente)
+    /// </summary>
+    [HttpPost("parcelas/{parcelaId}/reativar-inativa")]
+    [ProducesResponseType(typeof(ParcelaResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ReativarParcelaInativa(int parcelaId)
+    {
+        try
+        {
+            var parcela = await _duplicataService.ReativarParcelaInativaAsync(parcelaId);
+            return Ok(parcela);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao reativar parcela inativa: {ParcelaId}", parcelaId);
             return StatusCode(500, new { message = "Erro interno do servidor" });
         }
     }

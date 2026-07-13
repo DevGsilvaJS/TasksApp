@@ -1,16 +1,26 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AnotacaoGeralService, AnotacaoGeralResponseDto, CadastroAnotacaoGeralDto } from '../../services/anotacao-geral.service';
+import {
+  AnotacaoGeralService,
+  AnotacaoGeralResponseDto,
+  CadastroAnotacaoGeralDto,
+  TIPO_ANOTACAO,
+  TIPO_REGRA_EMPRESA
+} from '../../services/anotacao-geral.service';
 import { NotificacaoService } from '../../services/notificacao.service';
 import {
   criarOpcoesAgrupamento,
+  carregarPreferenciaAgruparPor,
+  salvarPreferenciaAgruparPor,
   deveExibirCabecalhoGrupo,
   obterRotuloAgrupamento,
   obterValorCabecalhoGrupo,
   ordenarItensParaAgrupamento
 } from '../../shared/utils/grid-agrupamento.util';
 import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor-agrupamento-grid/seletor-agrupamento-grid.component';
+
+type AbaAnotacoes = 'anotacoes' | 'regras';
 
 @Component({
   selector: 'app-anotacoes',
@@ -20,6 +30,7 @@ import { SeletorAgrupamentoGridComponent } from '../../shared/components/seletor
   styleUrl: './anotacoes.component.css'
 })
 export class AnotacoesComponent implements OnInit {
+  abaAtiva: AbaAnotacoes = 'anotacoes';
   anotacoes: AnotacaoGeralResponseDto[] = [];
   anotacoesFiltradas: AnotacaoGeralResponseDto[] = [];
   showForm = false;
@@ -33,13 +44,15 @@ export class AnotacoesComponent implements OnInit {
   agruparPorOpcoes = criarOpcoesAgrupamento([
     { value: 'dataCadastro', label: 'Data Cadastro' }
   ]);
+  private readonly STORAGE_KEY_AGRUPAR_POR = 'anotacoes_agrupar_por';
 
   novaAnotacao: CadastroAnotacaoGeralDto = {
     descricao: '',
-    link: ''
+    observacoes: '',
+    link: '',
+    tipo: TIPO_ANOTACAO
   };
 
-  // Modais
   showConfirmModal = false;
   confirmTitle = '';
   confirmMessage = '';
@@ -48,13 +61,51 @@ export class AnotacoesComponent implements OnInit {
   showSuccessModal = false;
   successMessage = '';
 
+  readonly TIPO_ANOTACAO = TIPO_ANOTACAO;
+  readonly TIPO_REGRA_EMPRESA = TIPO_REGRA_EMPRESA;
+
   constructor(
     private anotacaoGeralService: AnotacaoGeralService,
     private notificacao: NotificacaoService
   ) { }
 
   ngOnInit() {
+    this.agruparPor = carregarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, this.agruparPorOpcoes);
     this.carregarAnotacoes();
+  }
+
+  get isAbaRegras(): boolean {
+    return this.abaAtiva === 'regras';
+  }
+
+  get tipoAbaAtual(): string {
+    return this.isAbaRegras ? TIPO_REGRA_EMPRESA : TIPO_ANOTACAO;
+  }
+
+  get tituloBotaoNovo(): string {
+    return this.isAbaRegras ? 'Nova Regra' : 'Nova Anotação';
+  }
+
+  get tituloFormulario(): string {
+    if (this.isAbaRegras) {
+      return this.editando ? 'Editar Regra da Empresa' : 'Cadastrar Regra da Empresa';
+    }
+    return this.editando ? 'Editar Anotação' : 'Cadastrar Nova Anotação';
+  }
+
+  get mensagemVazia(): string {
+    if (this.termoBusca) {
+      return this.isAbaRegras ? 'Nenhuma regra encontrada' : 'Nenhuma anotação encontrada';
+    }
+    return this.isAbaRegras ? 'Nenhuma regra da empresa cadastrada' : 'Nenhuma anotação cadastrada';
+  }
+
+  selecionarAba(aba: AbaAnotacoes) {
+    if (this.abaAtiva === aba) return;
+    this.abaAtiva = aba;
+    this.termoBusca = '';
+    this.fecharFormulario();
+    this.aplicarFiltros();
   }
 
   carregarAnotacoes() {
@@ -64,7 +115,7 @@ export class AnotacoesComponent implements OnInit {
     this.anotacaoGeralService.listarTodasAnotacoes().subscribe({
       next: (data) => {
         this.anotacoes = data;
-        this.anotacoesFiltradas = data;
+        this.aplicarFiltros();
         this.loading = false;
       },
       error: (err) => {
@@ -80,7 +131,9 @@ export class AnotacoesComponent implements OnInit {
     this.anotacaoEditando = null;
     this.novaAnotacao = {
       descricao: '',
-      link: ''
+      observacoes: '',
+      link: '',
+      tipo: this.tipoAbaAtual
     };
     this.showForm = true;
     this.error = null;
@@ -92,7 +145,9 @@ export class AnotacoesComponent implements OnInit {
     this.anotacaoEditando = anotacao;
     this.novaAnotacao = {
       descricao: anotacao.descricao,
-      link: anotacao.link || ''
+      observacoes: anotacao.observacoes || '',
+      link: anotacao.link || '',
+      tipo: anotacao.tipo || this.tipoAbaAtual
     };
     this.showForm = true;
     this.error = null;
@@ -105,7 +160,9 @@ export class AnotacoesComponent implements OnInit {
     this.anotacaoEditando = null;
     this.novaAnotacao = {
       descricao: '',
-      link: ''
+      observacoes: '',
+      link: '',
+      tipo: this.tipoAbaAtual
     };
     this.error = null;
   }
@@ -117,6 +174,13 @@ export class AnotacoesComponent implements OnInit {
       this.error = 'A descrição é obrigatória.';
       this.notificacao.aviso(this.error);
       return;
+    }
+
+    this.novaAnotacao.tipo = this.tipoAbaAtual;
+    if (this.isAbaRegras) {
+      this.novaAnotacao.link = undefined;
+    } else {
+      this.novaAnotacao.observacoes = undefined;
     }
 
     this.loading = true;
@@ -131,10 +195,13 @@ export class AnotacoesComponent implements OnInit {
         this.carregarAnotacoes();
         this.fecharFormulario();
         this.loading = false;
-        this.notificacao.sucesso(this.editando ? 'Anotação atualizada com sucesso.' : 'Anotação cadastrada com sucesso.');
+        const msg = this.isAbaRegras
+          ? (this.editando ? 'Regra atualizada com sucesso.' : 'Regra cadastrada com sucesso.')
+          : (this.editando ? 'Anotação atualizada com sucesso.' : 'Anotação cadastrada com sucesso.');
+        this.notificacao.sucesso(msg);
       },
       error: (err) => {
-        this.error = err.error?.message || 'Erro ao salvar anotação.';
+        this.error = err.error?.message || 'Erro ao salvar.';
         this.loading = false;
         console.error(err);
       }
@@ -143,17 +210,19 @@ export class AnotacoesComponent implements OnInit {
 
   excluirAnotacao(anotacao: AnotacaoGeralResponseDto) {
     this.confirmTitle = 'Confirmar Exclusão';
-    this.confirmMessage = `Tem certeza que deseja excluir esta anotação?`;
+    this.confirmMessage = this.isAbaRegras
+      ? 'Tem certeza que deseja excluir esta regra da empresa?'
+      : 'Tem certeza que deseja excluir esta anotação?';
     this.confirmCallback = () => {
       this.loading = true;
       this.anotacaoGeralService.excluirAnotacao(anotacao.anotacaoId).subscribe({
         next: () => {
           this.carregarAnotacoes();
           this.loading = false;
-          this.notificacao.sucesso('Anotação excluída com sucesso.');
+          this.notificacao.sucesso(this.isAbaRegras ? 'Regra excluída com sucesso.' : 'Anotação excluída com sucesso.');
         },
         error: (err) => {
-          this.error = err.error?.message || 'Erro ao excluir anotação.';
+          this.error = err.error?.message || 'Erro ao excluir.';
           this.loading = false;
           console.error(err);
         }
@@ -163,29 +232,39 @@ export class AnotacoesComponent implements OnInit {
   }
 
   filtrarAnotacoes() {
-    if (!this.termoBusca.trim()) {
-      this.anotacoesFiltradas = this.anotacoes;
-      return;
+    this.aplicarFiltros();
+  }
+
+  private aplicarFiltros(): void {
+    const tipo = this.tipoAbaAtual;
+    let lista = this.anotacoes.filter(a => (a.tipo || TIPO_ANOTACAO) === tipo);
+
+    const termo = this.termoBusca.trim().toLowerCase();
+    if (termo) {
+      lista = lista.filter(a =>
+        a.descricao.toLowerCase().includes(termo) ||
+        (a.observacoes?.toLowerCase().includes(termo) ?? false) ||
+        (a.link?.toLowerCase().includes(termo) ?? false)
+      );
     }
 
-    const termo = this.termoBusca.toLowerCase();
-    this.anotacoesFiltradas = this.anotacoes.filter(a =>
-      a.descricao.toLowerCase().includes(termo) ||
-      (a.link && a.link.toLowerCase().includes(termo))
-    );
+    this.anotacoesFiltradas = lista;
   }
 
   formatarData(data?: string): string {
     if (!data) return '-';
-    const date = new Date(data);
-    return date.toLocaleDateString('pt-BR');
+    const parte = data.length >= 10 ? data.substring(0, 10) : data;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(parte)) {
+      const [ano, mes, dia] = parte.split('-');
+      return `${dia}/${mes}/${ano}`;
+    }
+    return new Date(data).toLocaleDateString('pt-BR');
   }
 
   abrirLink(link?: string) {
     if (link) {
-      // Verificar se o link já tem http:// ou https://
-      const url = link.startsWith('http://') || link.startsWith('https://') 
-        ? link 
+      const url = link.startsWith('http://') || link.startsWith('https://')
+        ? link
         : `https://${link}`;
       window.open(url, '_blank');
     }
@@ -209,6 +288,11 @@ export class AnotacoesComponent implements OnInit {
   fecharSuccessModal() {
     this.showSuccessModal = false;
     this.successMessage = '';
+  }
+
+  onAgruparPorChange(valor: string) {
+    this.agruparPor = valor;
+    salvarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, valor);
   }
 
   get anotacoesParaTabela(): AnotacaoGeralResponseDto[] {

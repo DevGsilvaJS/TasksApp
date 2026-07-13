@@ -14,6 +14,7 @@ public class ClienteService : IClienteService
     private readonly IRepository<Usuario> _usuarioRepository;
     private readonly IRepository<Email> _emailRepository;
     private readonly IRepository<ClienteContratoValor> _clienteContratoValorRepository;
+    private readonly IDuplicataService _duplicataService;
 
     public ClienteService(
         IRepository<Pessoa> pessoaRepository,
@@ -21,7 +22,8 @@ public class ClienteService : IClienteService
         IRepository<Tarefa> tarefaRepository,
         IRepository<Usuario> usuarioRepository,
         IRepository<Email> emailRepository,
-        IRepository<ClienteContratoValor> clienteContratoValorRepository)
+        IRepository<ClienteContratoValor> clienteContratoValorRepository,
+        IDuplicataService duplicataService)
     {
         _pessoaRepository = pessoaRepository;
         _clienteRepository = clienteRepository;
@@ -29,6 +31,7 @@ public class ClienteService : IClienteService
         _usuarioRepository = usuarioRepository;
         _emailRepository = emailRepository;
         _clienteContratoValorRepository = clienteContratoValorRepository;
+        _duplicataService = duplicataService;
     }
 
     public async Task<ClienteResponseDto> CadastrarClienteAsync(CadastroClienteDto dto)
@@ -226,6 +229,8 @@ public class ClienteService : IClienteService
         if (pessoa == null)
             throw new InvalidOperationException("Pessoa associada ao cliente não encontrada.");
 
+        var statusAnterior = cliente.CliStatus;
+
         // Atualizar Pessoa
         pessoa.PesFantasia = dto.Fantasia;
         pessoa.PesDocFederal = dto.DocFederal;
@@ -247,6 +252,14 @@ public class ClienteService : IClienteService
         await _clienteRepository.SalvarAlteracoesAsync();
 
         await SubstituirContratosAsync(cliente.CliId, dto);
+
+        if (statusAnterior != dto.Status)
+        {
+            if (dto.Status == StatusCliente.Ativo)
+                await _duplicataService.DescongelarParcelasPorClienteAsync(cliente.CliId);
+            else
+                await _duplicataService.CongelarParcelasAbertasPorClienteAsync(cliente.CliId);
+        }
 
         var pessoaUsuario = await _pessoaRepository.GetByIdAsync(usuario.PesId);
         var emails = await ObterEmailsPessoaAsync(pessoa.PesId);

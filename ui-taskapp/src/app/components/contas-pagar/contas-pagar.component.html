@@ -133,6 +133,12 @@
               </div>
             </div>
           }
+          <div class="form-group form-group-checkbox">
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="novaDuplicata.inativa" name="inativa">
+              Inativar conta a pagar (não aparece na listagem nem no dashboard)
+            </label>
+          </div>
           <div class="form-actions">
             <button type="button" class="btn-secondary" (click)="fecharFormulario()">Cancelar</button>
             <button type="submit" class="btn-primary" [disabled]="loading">
@@ -229,12 +235,59 @@
     </div>
   }
 
+  @if (showModalBaixaParcela && parcelaBaixa) {
+    <div class="modal-overlay modal-overlay-nested" (click)="fecharModalBaixaParcela()">
+      <div class="modal-baixa-parcela" (click)="$event.stopPropagation()">
+        <div class="modal-baixa-header">
+          <div class="modal-baixa-titulo">
+            <span class="modal-baixa-badge">Pagamento</span>
+            <h3>Parcela {{ parcelaBaixa.numeroParcela }}</h3>
+          </div>
+          <button type="button" class="btn-close-baixa" (click)="fecharModalBaixaParcela()" aria-label="Fechar">×</button>
+        </div>
+        <div class="modal-baixa-body">
+          <div class="modal-baixa-campos">
+            <div class="modal-baixa-campo">
+              <label class="modal-baixa-label">Valor</label>
+              <div class="modal-baixa-valor">{{ formatarMoeda(parcelaBaixa.valorTotal) }}</div>
+            </div>
+            <div class="modal-baixa-campo">
+              <label class="modal-baixa-label" for="cp-data-pagamento">Data</label>
+              <input
+                id="cp-data-pagamento"
+                type="date"
+                class="form-input-baixa"
+                [(ngModel)]="dataPagamentoBaixa"
+                name="dataPagamentoBaixa"
+                [max]="dataHojeInput"
+                required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-baixa-actions">
+          <button type="button" class="btn-secondary btn-baixa-sm" (click)="fecharModalBaixaParcela()">Cancelar</button>
+          <button type="button" class="btn-primary btn-baixa-sm" (click)="confirmarBaixaParcela()" [disabled]="loading || !dataPagamentoBaixa">
+            {{ loading ? '...' : 'Confirmar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
   <div class="filtros-container">
     <label class="checkbox-filtro">
       <input
         type="checkbox"
+        [(ngModel)]="exibirTitulosInativos"
+        (ngModelChange)="onToggleExibirTitulosInativos($event)"
+        name="exibirTitulosInativos">
+      Exibir títulos inativos
+    </label>
+    <label class="checkbox-filtro">
+      <input
+        type="checkbox"
         [(ngModel)]="exibirTitulosBaixados"
-        (ngModelChange)="onToggleExibirTitulosBaixados()"
+        (ngModelChange)="onToggleExibirTitulosBaixados($event)"
         name="exibirTitulosBaixados">
       Exibir títulos baixados
     </label>
@@ -253,12 +306,12 @@
     <div class="loading">Carregando...</div>
   } @else if (duplicatasFiltradas.length === 0) {
     <div class="empty-state">
-      <p>{{ termoBusca ? 'Nenhuma duplicata encontrada' : 'Nenhuma duplicata cadastrada' }}</p>
+      <p>{{ mensagemListaVazia() }}</p>
     </div>
   } @else {
     <app-seletor-agrupamento-grid
       [agruparPor]="agruparPor"
-      (agruparPorChange)="agruparPor = $event"
+      (agruparPorChange)="onAgruparPorChange($event)"
       [opcoes]="agruparPorOpcoes" />
     <div class="table-container">
       <table class="data-table">
@@ -283,8 +336,13 @@
                 <td [attr.colspan]="10"><strong>{{ getAgruparPorLabel() }}: {{ getValorGrupoDuplicata(duplicata) }}</strong></td>
               </tr>
             }
-            <tr>
-              <td>{{ duplicata.numero }}</td>
+            <tr [class.row-titulo-inativo]="tituloInativo(duplicata)">
+              <td>
+                {{ duplicata.numero }}
+                @if (tituloInativo(duplicata)) {
+                  <span class="badge-inativo" title="Título inativo">Inativa</span>
+                }
+              </td>
               <td>{{ formatarData(duplicata.dataEmissao) }}</td>
               <td [title]="duplicata.centroCustoDescricao || '-'">{{ duplicata.centroCustoDescricao || '-' }}</td>
               <td [title]="duplicata.descricaoDespesa || '-'">{{ duplicata.descricaoDespesa || '-' }}</td>
@@ -309,11 +367,6 @@
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                  </svg>
-                </button>
-                <button class="btn-delete" (click)="excluirDuplicata(duplicata)" title="Excluir" [disabled]="duplicata.valorPago > 0">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                   </svg>
                 </button>
               </td>

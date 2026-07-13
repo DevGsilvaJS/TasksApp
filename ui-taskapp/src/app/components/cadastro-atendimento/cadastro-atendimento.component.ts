@@ -8,6 +8,8 @@ import {
 } from '../../services/cadastro-atendimento.service';
 import {
   criarOpcoesAgrupamento,
+  carregarPreferenciaAgruparPor,
+  salvarPreferenciaAgruparPor,
   deveExibirCabecalhoGrupo,
   obterRotuloAgrupamento,
   obterValorCabecalhoGrupo,
@@ -49,10 +51,31 @@ export class CadastroAtendimentoComponent implements OnInit {
     { value: 'ativo', label: 'Ativo' }
   ]);
 
+  private readonly STORAGE_KEYS_AGRUPAR_POR: Record<TipoCadastro, string> = {
+    status: 'cadastro_atendimento_agrupar_por_status',
+    tipoAtendimento: 'cadastro_atendimento_agrupar_por_tipo_atendimento',
+    tipoContato: 'cadastro_atendimento_agrupar_por_tipo_contato'
+  };
+
   constructor(private service: CadastroAtendimentoService) {}
 
   ngOnInit() {
+    this.carregarPreferenciasAgruparPor();
     this.carregarTudo();
+  }
+
+  private carregarPreferenciasAgruparPor() {
+    (['status', 'tipoAtendimento', 'tipoContato'] as TipoCadastro[]).forEach(tipo => {
+      this.agruparPor[tipo] = carregarPreferenciaAgruparPor(
+        this.STORAGE_KEYS_AGRUPAR_POR[tipo],
+        this.agruparPorOpcoesCadastro
+      );
+    });
+  }
+
+  onAgruparPorChange(tipo: TipoCadastro, valor: string) {
+    this.agruparPor[tipo] = valor;
+    salvarPreferenciaAgruparPor(this.STORAGE_KEYS_AGRUPAR_POR[tipo], valor);
   }
 
   carregarTudo() {

@@ -8,6 +8,8 @@ import {
 } from '../../services/cadastro-atendimento.service';
 import {
   criarOpcoesAgrupamento,
+  carregarPreferenciaAgruparPor,
+  salvarPreferenciaAgruparPor,
   deveExibirCabecalhoGrupo,
   obterRotuloAgrupamento,
   obterValorCabecalhoGrupo,
@@ -37,6 +39,7 @@ export class StatusAtendimentoComercialComponent implements OnInit {
     { value: 'descricao', label: 'Descrição' },
     { value: 'ativo', label: 'Ativo' }
   ]);
+  private readonly STORAGE_KEY_AGRUPAR_POR = 'status_atendimento_comercial_agrupar_por';
 
   showModalExcluir = false;
   itemParaExcluir: StatusAtendimentoComercialDto | null = null;
@@ -45,6 +48,7 @@ export class StatusAtendimentoComercialComponent implements OnInit {
   constructor(private service: CadastroAtendimentoService) {}
 
   ngOnInit() {
+    this.agruparPor = carregarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, this.agruparPorOpcoes);
     this.carregar();
   }
 
@@ -147,6 +151,11 @@ export class StatusAtendimentoComercialComponent implements OnInit {
         this.excluindo = false;
       }
     });
+  }
+
+  onAgruparPorChange(valor: string) {
+    this.agruparPor = valor;
+    salvarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, valor);
   }
 
   get listaParaTabela(): StatusAtendimentoComercialDto[] {

@@ -16,7 +16,7 @@
             <h3>Lembrete do mês</h3>
             <p>Você tem pendências para não esquecer</p>
           </div>
-          <button type="button" class="pendencias-btn-close" aria-label="Fechar" (click)="fecharAlertaPendencias()">×</button>
+          <button type="button" class="pendencias-btn-close" aria-label="Fechar" (click)="fecharAlertaAtual()" title="Fechar (pode alertar de novo)">×</button>
         </div>
         <div class="pendencias-body">
           @if (alertaAtual.data.notasServicoPendentesMes.length > 0) {
@@ -51,9 +51,9 @@
           <p class="pendencias-dica">Acesse o <strong>Dashboard</strong> para marcar as notas como enviadas e a aba <strong>DAS</strong> para atualizar status.</p>
           <label class="pendencias-checkbox">
             <input type="checkbox" [(ngModel)]="cienteAlertaAtual" />
-            <span>Estou ciente das pendências deste mês.</span>
+            <span>Estou ciente — não exibir novamente.</span>
           </label>
-          <button type="button" class="pendencias-btn-ok" (click)="confirmarPendenciasEAvancar()">Entendi</button>
+          <button type="button" class="pendencias-btn-ok" (click)="confirmarAlertaEAvancar()">Entendi</button>
         </div>
       }
       @if (alertaAtual.tipo === 'contrato-vencendo') {
@@ -67,9 +67,9 @@
           </div>
           <div class="pendencias-header-text">
             <h3>Contrato prestes a vencer</h3>
-            <p>Marque ciência para continuar</p>
+            <p>Cliente com vigência próxima do fim</p>
           </div>
-          <button type="button" class="pendencias-btn-close" aria-label="Fechar" disabled title="Marque ciência para prosseguir">×</button>
+          <button type="button" class="pendencias-btn-close" aria-label="Fechar" (click)="fecharAlertaAtual()" title="Fechar (pode alertar de novo)">×</button>
         </div>
         <div class="pendencias-body">
           <section class="pendencias-section">
@@ -86,10 +86,10 @@
 
           <label class="pendencias-checkbox">
             <input type="checkbox" [(ngModel)]="cienteAlertaAtual" />
-            <span>Estou ciente do vencimento deste contrato.</span>
+            <span>Estou ciente — não exibir novamente.</span>
           </label>
 
-          <button type="button" class="pendencias-btn-ok" (click)="confirmarCienciaEAvancar()" [disabled]="!cienteAlertaAtual">Entendi</button>
+          <button type="button" class="pendencias-btn-ok" (click)="confirmarAlertaEAvancar()">Entendi</button>
         </div>
       }
       @if (alertaAtual.tipo === 'reunioes') {
@@ -104,7 +104,7 @@
             <h3>Reuniões</h3>
             <p>Atendimentos tipo Reunião em aberto</p>
           </div>
-          <button type="button" class="pendencias-btn-close" aria-label="Fechar" disabled title="Marque ciência para prosseguir">×</button>
+          <button type="button" class="pendencias-btn-close" aria-label="Fechar" (click)="fecharAlertaAtual()" title="Fechar (pode alertar de novo)">×</button>
         </div>
         <div class="pendencias-body">
           <section class="pendencias-section">
@@ -126,9 +126,9 @@
           <p class="pendencias-dica">Acesse <strong>Atendimentos</strong> para concluir ou alterar.</p>
           <label class="pendencias-checkbox">
             <input type="checkbox" [(ngModel)]="cienteAlertaAtual" />
-            <span>Estou ciente das reuniões pendentes.</span>
+            <span>Estou ciente — não exibir novamente.</span>
           </label>
-          <button type="button" class="pendencias-btn-ok" (click)="confirmarCienciaEAvancar()" [disabled]="!cienteAlertaAtual">Entendi</button>
+          <button type="button" class="pendencias-btn-ok" (click)="confirmarAlertaEAvancar()">Entendi</button>
         </div>
       }
     </div>

@@ -10,6 +10,8 @@ import { EmpresaService, EmpresaResponseDto } from '../../services/empresa.servi
 import { NotificacaoService } from '../../services/notificacao.service';
 import {
   criarOpcoesAgrupamento,
+  carregarPreferenciaAgruparPor,
+  salvarPreferenciaAgruparPor,
   deveExibirCabecalhoGrupo,
   obterRotuloAgrupamento,
   obterValorCabecalhoGrupo,
@@ -42,6 +44,7 @@ export class CentrosCustoComponent implements OnInit {
   agruparPorOpcoes = criarOpcoesAgrupamento([
     { value: 'empresaFantasia', label: 'Empresa' }
   ]);
+  private readonly STORAGE_KEY_AGRUPAR_POR = 'centros_custo_agrupar_por';
 
   constructor(
     private centroCustoService: CentroCustoService,
@@ -50,6 +53,7 @@ export class CentrosCustoComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.agruparPor = carregarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, this.agruparPorOpcoes);
     this.carregarEmpresas();
     this.carregar();
   }
@@ -160,6 +164,11 @@ export class CentrosCustoComponent implements OnInit {
     valor = valor.replace(/\.(\d{3})(\d)/, '.$1/$2');
     valor = valor.replace(/(\d{4})(\d)/, '$1-$2');
     return valor;
+  }
+
+  onAgruparPorChange(valor: string) {
+    this.agruparPor = valor;
+    salvarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, valor);
   }
 
   get centrosParaTabela(): CentroCustoResponseDto[] {

@@ -28,6 +28,32 @@ html, body {
   height: 100%;
 }
 
+/* Barras de rolagem visíveis em todo o sistema */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #e2e8f0;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 6px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 6px;
+  border: 2px solid #f1f5f9;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
 /* Padrão do sistema: campos em MAIÚSCULO (exceto .texto-normal) */
 input:not(.texto-normal),
 textarea:not(.texto-normal),
@@ -48,30 +74,69 @@ textarea:not(.texto-normal)::placeholder {
   color: #1e293b;
 }
 
-/* Padrão global: modais maiores (todas as telas) */
+/* Páginas: se o conteúdo for maior que a área, rola */
+.page-container {
+  overflow-x: auto;
+  overflow-y: visible;
+  min-width: 0;
+}
+
+/* Padrão global: modais — cabe tudo com rolagem quando passar da tela */
 .modal-content {
   width: 95% !important;
   max-width: 1100px !important;
   max-height: 92vh !important;
+  overflow-x: auto !important;
+  overflow-y: auto !important;
 }
 
 .modal-large {
   max-width: 1350px !important;
 }
 
-/* Padrão global: grids compactos com altura limitada e scroll vertical */
+/* Modal compacto de baixa/recebimento não herda largura forçada */
+.modal-baixa-parcela.modal-content,
+.modal-baixa-parcela {
+  width: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Grids/tabelas: rolagem vertical e horizontal até ver todas as linhas/colunas */
 .page-container .table-container,
 .page-container .table-wrap,
-.page-container .contratos-table-wrap {
-  max-height: min(70vh, calc(100vh - 14rem));
-  overflow-y: auto;
+.page-container .contratos-table-wrap,
+.page-container .p-table-wrapper,
+.page-container .p-datatable-wrapper,
+.page-container .p-datatable-table-container,
+.page-container .p-scroller,
+.page-container .grid-scroll,
+.page-container .lista-scroll {
+  max-height: min(70vh, calc(100vh - 12rem)) !important;
+  overflow-x: auto !important;
+  overflow-y: auto !important;
 }
 
 .page-container .table-container.p-table-wrapper {
   display: flex;
   flex-direction: column;
-  height: min(70vh, calc(100vh - 14rem));
-  overflow: hidden;
+  height: min(70vh, calc(100vh - 12rem));
+}
+
+/* Área principal e listas longas */
+.main-content {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+
+.page-container .cards-grid,
+.page-container .dashboard-grid,
+.page-container .lista-container,
+.page-container .content-scroll {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: none;
 }
 
 /* Agrupamento de grids */

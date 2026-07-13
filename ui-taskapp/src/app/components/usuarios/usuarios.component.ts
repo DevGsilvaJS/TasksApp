@@ -5,6 +5,8 @@ import { UsuarioService, UsuarioResponseDto, CadastroUsuarioDto, AtualizarUsuari
 import { NotificacaoService } from '../../services/notificacao.service';
 import {
   criarOpcoesAgrupamento,
+  carregarPreferenciaAgruparPor,
+  salvarPreferenciaAgruparPor,
   deveExibirCabecalhoGrupo,
   obterRotuloAgrupamento,
   obterValorCabecalhoGrupo,
@@ -34,6 +36,7 @@ export class UsuariosComponent implements OnInit {
     { value: 'perfil', label: 'Perfil' },
     { value: 'nome', label: 'Nome' }
   ]);
+  private readonly STORAGE_KEY_AGRUPAR_POR = 'usuarios_agrupar_por';
 
   novoUsuario: CadastroUsuarioDto = {
     nome: '',
@@ -53,6 +56,7 @@ export class UsuariosComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    this.agruparPor = carregarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, this.agruparPorOpcoes);
     this.carregarUsuarios();
   }
 
@@ -170,6 +174,11 @@ export class UsuariosComponent implements OnInit {
         }
       });
     }
+  }
+
+  onAgruparPorChange(valor: string) {
+    this.agruparPor = valor;
+    salvarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, valor);
   }
 
   get usuariosParaTabela(): UsuarioResponseDto[] {

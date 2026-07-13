@@ -11,6 +11,7 @@ public class ParcelaResponseDto
     public double ValorTotal { get; set; }
     public DateTime Vencimento { get; set; }
     public string Status { get; set; } = string.Empty;
+    public bool CongeladaPorCliente { get; set; }
     public DateTime? DataPagamento { get; set; }
     public int? EmpresaId { get; set; }
     public string? CentroCustoDescricao { get; set; }

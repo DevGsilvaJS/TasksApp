@@ -6,4 +6,6 @@ namespace Application.DTOs;
 public class BaixarParcelaDto
 {
     public int? PlanoContasId { get; set; }
+    /// <summary>Data em que o pagamento/recebimento ocorreu (pode ser retroativa).</summary>
+    public DateTime? DataPagamento { get; set; }
 }

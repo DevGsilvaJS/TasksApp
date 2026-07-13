@@ -122,10 +122,6 @@ export class FluxoCaixaComponent implements OnInit {
     });
   }
 
-  obterMes(centro: FluxoCaixaCentroCustoDto, mes: number): FluxoCaixaMesDto {
-    return centro.meses[mes - 1];
-  }
-
   obterMesPlano(plano: FluxoCaixaPlanoContasDto, mes: number): FluxoCaixaMesDto {
     return plano.meses[mes - 1];
   }
@@ -135,7 +131,7 @@ export class FluxoCaixaComponent implements OnInit {
   }
 
   formatarMoeda(valor: number): string {
-    if (!valor) return '-';
+    if (valor == null || Number.isNaN(valor)) return '-';
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
   }
 

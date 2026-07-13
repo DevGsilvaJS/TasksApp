@@ -6,6 +6,7 @@ services:
     dockerContext: .
     plan: starter
     region: oregon
+    branch: main
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
@@ -13,6 +14,6 @@ services:
         sync: false
       - key: CorsOrigins
         sync: false
-    healthCheckPath: /
+    healthCheckPath: /api/health/version
     autoDeploy: true
 

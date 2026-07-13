@@ -45,6 +45,17 @@ namespace Infrastructure.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("ANOLINK");
 
+                    b.Property<string>("AnoObservacoes")
+                        .HasMaxLength(3000)
+                        .HasColumnType("character varying(3000)")
+                        .HasColumnName("ANOOBSERVACOES");
+
+                    b.Property<string>("AnoTipo")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("ANOTIPO");
+
                     b.HasKey("AnoId");
 
                     b.ToTable("TB_ANO_ANOTACAO");
@@ -379,6 +390,10 @@ namespace Infrastructure.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("DUPDESCRICAODESPESA");
 
+                    b.Property<bool>("DupInativa")
+                        .HasColumnType("boolean")
+                        .HasColumnName("DUPINATIVA");
+
                     b.Property<int>("DupNumero")
                         .HasColumnType("integer")
                         .HasColumnName("DUPNUMERO");
@@ -584,6 +599,10 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("ParDataPagamento")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("PAR_DATA_PAGAMENTO");
+
+                    b.Property<bool>("ParCongeladaPorCliente")
+                        .HasColumnType("boolean")
+                        .HasColumnName("PARCONGELADAPORCLIENTE");
 
                     b.Property<double>("ParJuros")
                         .HasColumnType("double precision")

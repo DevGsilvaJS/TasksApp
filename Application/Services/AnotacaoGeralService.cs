@@ -6,6 +6,9 @@ namespace Application.Services;
 
 public class AnotacaoGeralService : IAnotacaoGeralService
 {
+    public const string TipoAnotacao = "ANOTACAO";
+    public const string TipoRegraEmpresa = "REGRA_EMPRESA";
+
     private readonly IRepository<Anotacao> _anotacaoRepository;
 
     public AnotacaoGeralService(IRepository<Anotacao> anotacaoRepository)
@@ -15,10 +18,13 @@ public class AnotacaoGeralService : IAnotacaoGeralService
 
     public async Task<AnotacaoGeralResponseDto> CadastrarAnotacaoAsync(CadastroAnotacaoGeralDto dto)
     {
+        var tipo = NormalizarTipo(dto.Tipo);
         var anotacao = new Anotacao
         {
             AnoDescricao = dto.Descricao,
-            AnoLink = dto.Link,
+            AnoObservacoes = tipo == TipoRegraEmpresa ? dto.Observacoes : null,
+            AnoLink = tipo == TipoAnotacao ? dto.Link : null,
+            AnoTipo = tipo,
             AnoDtCadastro = DateTime.UtcNow
         };
 
@@ -51,8 +57,11 @@ public class AnotacaoGeralService : IAnotacaoGeralService
         if (anotacao == null)
             throw new InvalidOperationException("Anotação não encontrada.");
 
+        var tipo = NormalizarTipo(dto.Tipo);
         anotacao.AnoDescricao = dto.Descricao;
-        anotacao.AnoLink = dto.Link;
+        anotacao.AnoTipo = tipo;
+        anotacao.AnoObservacoes = tipo == TipoRegraEmpresa ? dto.Observacoes : null;
+        anotacao.AnoLink = tipo == TipoAnotacao ? dto.Link : null;
 
         await _anotacaoRepository.AtualizarAsync(anotacao);
         await _anotacaoRepository.SalvarAlteracoesAsync();
@@ -70,13 +79,27 @@ public class AnotacaoGeralService : IAnotacaoGeralService
         await _anotacaoRepository.SalvarAlteracoesAsync();
     }
 
-    private AnotacaoGeralResponseDto MontarAnotacaoResponseDto(Anotacao anotacao)
+    private static string NormalizarTipo(string? tipo)
     {
+        if (string.Equals(tipo, TipoRegraEmpresa, StringComparison.OrdinalIgnoreCase))
+            return TipoRegraEmpresa;
+
+        return TipoAnotacao;
+    }
+
+    private static AnotacaoGeralResponseDto MontarAnotacaoResponseDto(Anotacao anotacao)
+    {
+        var tipo = string.IsNullOrWhiteSpace(anotacao.AnoTipo) ? TipoAnotacao : anotacao.AnoTipo.ToUpperInvariant();
+        if (tipo != TipoRegraEmpresa)
+            tipo = TipoAnotacao;
+
         return new AnotacaoGeralResponseDto
         {
             AnotacaoId = anotacao.AnoId,
             Descricao = anotacao.AnoDescricao ?? string.Empty,
+            Observacoes = anotacao.AnoObservacoes,
             Link = anotacao.AnoLink,
+            Tipo = tipo,
             DataCadastro = anotacao.AnoDtCadastro
         };
     }
