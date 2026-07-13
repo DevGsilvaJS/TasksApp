@@ -34,6 +34,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<CentroCusto> CentrosCusto { get; set; }
     public DbSet<PlanoContas> PlanosContas { get; set; }
     public DbSet<EmailEnvioComercial> EmailsEnvioComercial { get; set; }
+    public DbSet<Regimento> Regimentos { get; set; }
+    public DbSet<RegimentoAceite> RegimentoAceites { get; set; }
+    public DbSet<RegimentoAceiteLog> RegimentoAceiteLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -82,6 +85,30 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<EmailEnvioComercial>()
             .HasIndex(e => e.EecEmail)
             .IsUnique();
+
+        modelBuilder.Entity<RegimentoAceite>()
+            .HasOne(a => a.Regimento)
+            .WithMany(r => r.Aceites)
+            .HasForeignKey(a => a.RegId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RegimentoAceite>()
+            .HasOne(a => a.Usuario)
+            .WithMany()
+            .HasForeignKey(a => a.UsuId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<RegimentoAceiteLog>()
+            .HasOne(l => l.Regimento)
+            .WithMany(r => r.LogsAceite)
+            .HasForeignKey(l => l.RegId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RegimentoAceiteLog>()
+            .HasOne(l => l.Usuario)
+            .WithMany()
+            .HasForeignKey(l => l.UsuId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     public override int SaveChanges()

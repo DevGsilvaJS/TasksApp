@@ -337,6 +337,7 @@ try
         await GarantirColunaCentroCustoPlanoContasParcelaRunner.ExecutarAsync(db);
         await GarantirColunaEmpresaDuplicataParcelaRunner.ExecutarAsync(db);
         await GarantirPlanoContasReceitaConsultoriaRunner.ExecutarAsync(db);
+        await GarantirColunaTituloRegimentoRunner.ExecutarAsync(db);
     }
 }
 catch (Exception ex)

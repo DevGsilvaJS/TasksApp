@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260709154608_CriarTabelasRegimento")]
+    partial class CriarTabelasRegimento
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -810,12 +813,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("REGSTATUS");
 
-                    b.Property<string>("RegTitulo")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)")
-                        .HasColumnName("REGTITULO");
-
                     b.HasKey("RegId");
 
                     b.ToTable("TB_REG_REGIMENTO");
@@ -858,49 +855,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("UsuId");
 
                     b.ToTable("TB_REG_REGIMENTO_ACEITE");
-                });
-
-            modelBuilder.Entity("Domain.Entities.RegimentoAceiteLog", b =>
-                {
-                    b.Property<int>("RalId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("RALID");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RalId"));
-
-                    b.Property<DateTime>("RalData")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("RALDATA");
-
-                    b.Property<int?>("RalDecisao")
-                        .HasColumnType("integer")
-                        .HasColumnName("RALDECISAO");
-
-                    b.Property<string>("RalObservacao")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasColumnName("RALOBSERVACAO");
-
-                    b.Property<int>("RalTipo")
-                        .HasColumnType("integer")
-                        .HasColumnName("RALTIPO");
-
-                    b.Property<int>("RegId")
-                        .HasColumnType("integer")
-                        .HasColumnName("REGID");
-
-                    b.Property<int>("UsuId")
-                        .HasColumnType("integer")
-                        .HasColumnName("USUID");
-
-                    b.HasKey("RalId");
-
-                    b.HasIndex("RegId");
-
-                    b.HasIndex("UsuId");
-
-                    b.ToTable("TB_REG_REGIMENTO_ACEITE_LOG");
                 });
 
             modelBuilder.Entity("Domain.Entities.Tarefa", b =>
@@ -1202,25 +1156,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("Domain.Entities.RegimentoAceiteLog", b =>
-                {
-                    b.HasOne("Domain.Entities.Regimento", "Regimento")
-                        .WithMany("LogsAceite")
-                        .HasForeignKey("RegId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.Usuario", "Usuario")
-                        .WithMany()
-                        .HasForeignKey("UsuId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Regimento");
-
-                    b.Navigation("Usuario");
-                });
-
             modelBuilder.Entity("Domain.Entities.Tarefa", b =>
                 {
                     b.HasOne("Domain.Entities.Cliente", "Cliente")
@@ -1284,8 +1219,6 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Entities.Regimento", b =>
                 {
                     b.Navigation("Aceites");
-
-                    b.Navigation("LogsAceite");
                 });
 
             modelBuilder.Entity("Domain.Entities.Tarefa", b =>

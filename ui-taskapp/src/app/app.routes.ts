@@ -91,5 +91,10 @@ export const routes: Routes = [
     path: 'fluxo-caixa',
     loadComponent: () => import('./components/fluxo-caixa/fluxo-caixa.component').then(m => m.FluxoCaixaComponent),
     canActivate: [authGuard, perfilGuard]
+  },
+  {
+    path: 'regimento-interno',
+    loadComponent: () => import('./components/regimento-interno/regimento-interno.component').then(m => m.RegimentoInternoComponent),
+    canActivate: [authGuard]
   }
 ];

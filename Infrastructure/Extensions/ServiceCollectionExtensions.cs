@@ -67,6 +67,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmailEnvioCampanhaService, EmailEnvioCampanhaService>();
         services.AddScoped<IEmailEnvioSmtpSender, EmailEnvioSmtpSender>();
         services.AddScoped<IEmailEnvioProcessor, EmailEnvioProcessor>();
+        services.AddScoped<IRegimentoService, RegimentoService>();
 
         return services;
     }

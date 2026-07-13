@@ -1,0 +1,308 @@
+<div class="page-container">
+  <div class="page-header">
+    <h2>Regimento Interno</h2>
+    <button class="btn-primary" (click)="abrirFormularioNovo()" [disabled]="loading">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 5v14M5 12h14"></path>
+      </svg>
+      Adicionar
+    </button>
+  </div>
+
+  @if (error) {
+    <div class="modal-overlay modal-overlay-erro" (click)="fecharModalErro()">
+      <div class="modal-content modal-erro" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Erro</h3>
+          <button type="button" class="btn-close" (click)="fecharModalErro()">×</button>
+        </div>
+        <div class="modal-erro-body">
+          <p>{{ error }}</p>
+        </div>
+        <div class="modal-erro-actions">
+          <button type="button" class="btn-primary" (click)="fecharModalErro()">OK</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showForm) {
+    <div class="modal-overlay" (click)="fecharFormulario()">
+      <div class="modal-content modal-regimento" [class.modal-regimento-edicao]="editando" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ editando ? 'Editar Regimento' : 'Novo Regimento' }}</h3>
+          <button type="button" class="btn-close" (click)="fecharFormulario()">×</button>
+        </div>
+
+        @if (editando && carregandoEdicao) {
+          <div class="modal-body">
+            <div class="loading">Carregando...</div>
+          </div>
+        } @else {
+          <div class="modal-body">
+            <div class="form-row-titulo-status">
+              <div class="form-group form-group-titulo">
+                <label for="titulo">Título *</label>
+                <input
+                  id="titulo"
+                  type="text"
+                  [(ngModel)]="form.titulo"
+                  name="titulo"
+                  class="form-input"
+                  placeholder="Título do regimento..."
+                  required>
+              </div>
+              <div class="form-group form-group-ativo">
+                <label class="checkbox-ativo">
+                  <input type="checkbox" [(ngModel)]="form.ativo" name="ativo">
+                  Ativo
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="descricao">Descrição *</label>
+              <textarea
+                id="descricao"
+                [(ngModel)]="form.descricao"
+                name="descricao"
+                class="form-textarea"
+                rows="8"
+                placeholder="Conteúdo do regimento interno..."
+                required></textarea>
+            </div>
+
+            @if (editando && regimentoEdicao) {
+              @if (usuarioEhObrigatorio && regimentoEdicao.ativo) {
+                <div class="aceite-section">
+                  <h4>Minha decisão</h4>
+
+                  @if (regimentoEdicao.meuAceiteAtual) {
+                    <div class="meu-aceite-atual">
+                      <p>
+                        <strong>Situação:</strong>
+                        <span class="badge-situacao" [ngClass]="getClasseSituacaoAceite(regimentoEdicao.meuAceiteAtual.situacao)">
+                          {{ regimentoEdicao.meuAceiteAtual.situacao }}
+                        </span>
+                      </p>
+                      <p><strong>Justificativa:</strong> {{ regimentoEdicao.meuAceiteAtual.observacao || '-' }}</p>
+                      <p><strong>Data:</strong> {{ formatarData(regimentoEdicao.meuAceiteAtual.dataAceite) }}</p>
+                      <button
+                        type="button"
+                        class="btn-secondary btn-desfazer"
+                        (click)="desfazerMeuAceite()"
+                        [disabled]="processandoAceite">
+                        {{ processandoAceite ? 'Processando...' : 'Desfazer minha decisão' }}
+                      </button>
+                    </div>
+                  } @else {
+                    <div class="form-group">
+                      <label for="observacaoAceite">Justificativa</label>
+                      <textarea
+                        id="observacaoAceite"
+                        [(ngModel)]="observacaoAceite"
+                        name="observacaoAceite"
+                        class="form-textarea"
+                        rows="3"
+                        placeholder="Comentários, sugestões ou ressalvas sobre o regimento..."></textarea>
+                    </div>
+                    <div class="aceite-actions">
+                      <button type="button" class="btn-aceitar" (click)="registrarAceite(true)" [disabled]="processandoAceite">
+                        Aceitar
+                      </button>
+                      <button type="button" class="btn-recusar" (click)="registrarAceite(false)" [disabled]="processandoAceite">
+                        Recusar
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+
+              <div class="form-group grid-interno-section">
+                <label>Aceites e Recusas</label>
+                <div class="table-wrap grid-interno-wrap">
+                  <table class="cadastro-table">
+                    <thead>
+                      <tr>
+                        <th class="col-data">Data</th>
+                        <th class="col-usuario">Usuário</th>
+                        <th class="col-situacao">Situação</th>
+                        <th class="col-observacao">Observação</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (aceite of regimentoEdicao.aceites; track aceite.aceiteId) {
+                        <tr>
+                          <td class="col-data">{{ formatarData(aceite.dataAceite) }}</td>
+                          <td class="col-usuario">{{ aceite.usuarioNome }}</td>
+                          <td class="col-situacao">
+                            <span class="badge-situacao" [ngClass]="getClasseSituacaoAceite(aceite.situacao)">
+                              {{ aceite.situacao }}
+                            </span>
+                          </td>
+                          <td class="col-observacao">{{ aceite.observacao || '-' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="fecharFormulario()">Cancelar</button>
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="salvar()"
+            [disabled]="saving || carregandoEdicao || !form.titulo.trim() || !form.descricao.trim()">
+            {{ saving ? 'Salvando...' : 'Salvar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="search-container">
+    <input
+      type="text"
+      placeholder="Buscar por ID, título, descrição, status ou situação de aprovação..."
+      [(ngModel)]="termoBusca"
+      (input)="filtrar()"
+      class="search-input">
+  </div>
+
+  @if (loading && lista.length === 0) {
+    <div class="loading">Carregando...</div>
+  } @else if (listaFiltrada.length === 0) {
+    <div class="empty-state">
+      <p>{{ termoBusca ? 'Nenhum regimento encontrado' : 'Nenhum regimento cadastrado' }}</p>
+    </div>
+  } @else {
+    <app-seletor-agrupamento-grid
+      [agruparPor]="agruparPor"
+      (agruparPorChange)="agruparPor = $event"
+      [opcoes]="agruparPorOpcoes" />
+
+    <div class="table-wrap listagem-wrap">
+      <table class="cadastro-table">
+        <thead>
+          <tr>
+            <th class="col-id">ID</th>
+            <th class="col-titulo">Título</th>
+            <th class="col-status">Status</th>
+            <th class="col-aceites">Quantidade de Aceites</th>
+            <th class="col-acoes">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of listaParaTabela; track item.regimentoId; let i = $index) {
+            @if (exibirCabecalhoGrupo(i)) {
+              <tr class="grupo-grid-row">
+                <td [attr.colspan]="5">
+                  <strong>{{ getAgruparPorLabel() }}: {{ getValorGrupo(item) }}</strong>
+                </td>
+              </tr>
+            }
+            <tr [class.inativo]="!item.ativo">
+              <td class="col-id">{{ item.regimentoId }}</td>
+              <td class="col-titulo" [title]="item.titulo">{{ item.titulo }}</td>
+              <td class="col-status">
+                <span class="badge-situacao" [ngClass]="getClasseSituacao(item.situacaoAprovacao)">
+                  {{ item.situacaoAprovacao }}
+                </span>
+              </td>
+              <td class="col-aceites">{{ item.quantidadeAceites }}</td>
+              <td class="col-acoes">
+                <button type="button" class="btn-action btn-log" (click)="abrirModalLog(item)" title="Log de aprovações">
+                  LOG
+                </button>
+                <button type="button" class="btn-action btn-edit" (click)="abrirEditar(item)" title="Editar">
+                  <i class="pi pi-pencil"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn-action btn-delete"
+                  (click)="abrirModalExcluir(item)"
+                  [disabled]="!podeExcluir(item)"
+                  [title]="podeExcluir(item) ? 'Excluir' : 'Não é possível excluir regimento com aceites'">
+                  <i class="pi pi-trash"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (showModalLog && itemLog) {
+    <div class="modal-overlay" (click)="fecharModalLog()">
+      <div class="modal-content modal-regimento modal-log" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Log — {{ itemLog.titulo }}</h3>
+          <button type="button" class="btn-close" (click)="fecharModalLog()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (carregandoLog) {
+            <div class="loading">Carregando...</div>
+          } @else if (logsAceite.length === 0) {
+            <div class="empty-state">Nenhum registro no log.</div>
+          } @else {
+            <div class="table-wrap grid-interno-wrap modal-log-wrap">
+              <table class="cadastro-table">
+                <thead>
+                  <tr>
+                    <th class="col-data">Data</th>
+                    <th class="col-usuario">Usuário</th>
+                    <th class="col-situacao">Ação</th>
+                    <th class="col-observacao">Observação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (log of logsAceite; track log.logId) {
+                    <tr>
+                      <td class="col-data">{{ formatarData(log.data) }}</td>
+                      <td class="col-usuario">{{ log.usuarioNome }}</td>
+                      <td class="col-situacao">
+                        <span class="badge-situacao" [ngClass]="getClasseAcaoLog(log.acao)">
+                          {{ log.acao }}
+                        </span>
+                      </td>
+                      <td class="col-observacao">{{ log.observacao || '-' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="fecharModalLog()">Fechar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showModalExcluir && itemParaExcluir) {
+    <div class="modal-overlay" (click)="fecharModalExcluir()">
+      <div class="modal-content modal-regimento" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Excluir Regimento</h3>
+          <button type="button" class="btn-close" (click)="fecharModalExcluir()">×</button>
+        </div>
+        <div class="modal-body">
+          <p>Deseja realmente excluir o regimento <strong>{{ itemParaExcluir.titulo }}</strong>?</p>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="fecharModalExcluir()" [disabled]="excluindo">Cancelar</button>
+          <button type="button" class="btn-delete-confirm" (click)="confirmarExcluir()" [disabled]="excluindo">
+            {{ excluindo ? 'Excluindo...' : 'Excluir' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

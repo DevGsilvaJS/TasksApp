@@ -44,7 +44,8 @@ export class AppComponent implements OnInit {
     '/atendimentos',
     '/anotacoes',
     '/possiveis-clientes',
-    '/envio-email'
+    '/envio-email',
+    '/regimento-interno'
   ];
   private readonly rotasFinanceiro = ['/contas-pagar', '/contas-receber', '/relatorios-gerenciais'];
   private readonly rotasFiscal = ['/empresas', '/plano-contas', '/fluxo-caixa'];
