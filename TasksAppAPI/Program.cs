@@ -3,6 +3,7 @@ using Application.Interfaces;
 using Infrastructure.Data;
 using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
