@@ -27,8 +27,8 @@
   }
 
   @if (showForm) {
-    <div class="modal-overlay" (click)="fecharFormulario()">
-      <div class="modal-content modal-tarefa" (click)="$event.stopPropagation()">
+    <div class="modal-overlay">
+      <div class="modal-content modal-tarefa">
         <div class="modal-header">
           <h3>{{ editando ? 'Editar Tarefa' : 'Cadastrar Nova Tarefa' }}</h3>
           <button class="btn-close" (click)="fecharFormulario()">×</button>
@@ -185,45 +185,88 @@
   }
 
   <div class="search-container">
-    <input
-      type="text"
-      placeholder="Buscar por protocolo, título, solicitante, cliente, usuário, status ou ID..."
-      [(ngModel)]="termoBusca"
-      (input)="filtrarTarefas()"
-      class="search-input">
-    <label class="checkbox-label">
+    <app-seletor-agrupamento-grid
+      [agruparPor]="agruparPor"
+      (agruparPorChange)="onAgruparPorChange($event)"
+      [opcoes]="agruparPorOpcoes">
+    </app-seletor-agrupamento-grid>
+
+    <select
+      [(ngModel)]="criterioPesquisa"
+      name="criterioPesquisa"
+      class="search-criterio-select"
+      (ngModelChange)="onCriterioChange()">
+      @for (op of criteriosPesquisa; track op.value) {
+        <option [ngValue]="op.value">{{ op.label }}</option>
+      }
+    </select>
+
+    @if (criterioPesquisa === 'data') {
       <input
-        type="checkbox"
-        [(ngModel)]="mostrarTodosUsuarios"
-        (change)="onMostrarTodosUsuariosChange()"
-        class="checkbox-input">
-      <span>Todos Usuários</span>
-    </label>
-    <label class="checkbox-label">
+        type="date"
+        [(ngModel)]="valorPesquisa"
+        name="valorPesquisa"
+        class="search-input search-input-valor"
+        (keyup.enter)="pesquisar()">
+    } @else if (criterioPesquisa === 'status') {
+      <select
+        [(ngModel)]="valorPesquisa"
+        name="valorPesquisa"
+        class="search-criterio-select search-input-valor">
+        <option value="">ARGUMENTO DE PESQUISA</option>
+        @for (status of statusOptions; track status.value) {
+          <option [ngValue]="status.label">{{ status.label }}</option>
+        }
+      </select>
+    } @else {
       <input
-        type="checkbox"
-        [(ngModel)]="mostrarConcluidas"
-        (change)="onMostrarConcluidasChange()"
-        class="checkbox-input">
-      <span>Concluídas</span>
-    </label>
+        type="text"
+        [(ngModel)]="valorPesquisa"
+        name="valorPesquisa"
+        class="search-input search-input-valor"
+        placeholder="ARGUMENTO DE PESQUISA"
+        (keyup.enter)="pesquisar()">
+    }
+
+    <button type="button" class="btn-primary btn-pesquisar" (click)="pesquisar()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      {{ loading ? 'Pesquisando...' : 'Pesquisar' }}
+    </button>
+
+    @if (hasFiltrosColuna) {
+      <button type="button" class="filter-clear-all-btn" (click)="limparFiltrosColuna()" title="Limpar filtros das colunas">Limpar filtros</button>
+    }
+
+    <div class="search-checkboxes">
+      <label class="checkbox-label">
+        <input
+          type="checkbox"
+          [(ngModel)]="mostrarTodosUsuarios"
+          (change)="onMostrarTodosUsuariosChange()"
+          class="checkbox-input">
+        <span>Todos Usuários</span>
+      </label>
+      <label class="checkbox-label">
+        <input
+          type="checkbox"
+          [(ngModel)]="mostrarConcluidas"
+          (change)="onMostrarConcluidasChange()"
+          class="checkbox-input">
+        <span>Concluídas</span>
+      </label>
+    </div>
   </div>
 
   @if (loading && tarefas.length === 0) {
     <div class="loading">Carregando...</div>
   } @else if (tarefasFiltradas.length === 0) {
     <div class="empty-state">
-      <p>{{ termoBusca ? 'Nenhuma tarefa encontrada' : 'Nenhuma tarefa cadastrada' }}</p>
+      <p>Nenhuma tarefa encontrada</p>
     </div>
   } @else {
-    <app-seletor-agrupamento-grid
-      [agruparPor]="agruparPor"
-      (agruparPorChange)="onAgruparPorChange($event)"
-      [opcoes]="agruparPorOpcoes">
-      @if (hasFiltrosColuna) {
-        <button type="button" class="filter-clear-all-btn" (click)="limparFiltrosColuna()" title="Limpar filtros das colunas">Limpar filtros</button>
-      }
-    </app-seletor-agrupamento-grid>
     <div class="table-container p-table-wrapper">
       <p-table
         [value]="tarefasParaTabela"
@@ -238,7 +281,7 @@
         [tableStyle]="{ 'min-width': '50rem' }">
         <ng-template pTemplate="groupheader" let-rowData>
           <tr class="p-row-group-header">
-            <td [attr.colspan]="9">
+            <td [attr.colspan]="10">
               @if (agruparPor) {
                 <strong>{{ getAgruparPorLabel() }}: {{ getGroupHeaderValue(rowData) }}</strong>
               }
@@ -258,6 +301,9 @@
             <th pSortableColumn="titulo">
               Título <p-sortIcon field="titulo"></p-sortIcon>
               <button type="button" class="filter-funnel-btn" (click)="abrirFiltroColuna('titulo', $event)" title="Filtrar coluna"><i class="pi pi-filter"></i></button>
+            </th>
+            <th pSortableColumn="dataCadastro">
+              Data <p-sortIcon field="dataCadastro"></p-sortIcon>
             </th>
             <th pSortableColumn="clienteNome">
               Cliente <p-sortIcon field="clienteNome"></p-sortIcon>
@@ -287,6 +333,7 @@
             <td>{{ rowData.numero }}</td>
             <td>{{ rowData.protocolo }}</td>
             <td>{{ rowData.titulo }}</td>
+            <td>{{ formatarData(rowData.dataCadastro) }}</td>
             <td>{{ rowData.clienteNome }}</td>
             <td>{{ rowData.solicitante }}</td>
             <td>{{ rowData.tipoAtendimentoDescricao }}</td>
@@ -325,7 +372,7 @@
         </ng-template>
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="10">Nenhuma tarefa.</td>
+            <td colspan="11">Nenhuma tarefa.</td>
           </tr>
         </ng-template>
       </p-table>

@@ -3,6 +3,7 @@ namespace Application.DTOs;
 public class DashboardEstatisticasDto
 {
     public int TotalAtendimentosPorUsuario { get; set; }
+    public int MediaDiariaAtendimentos { get; set; }
     public int TotalContasAPagar { get; set; }
     public decimal ValorTotalContasAPagar { get; set; }
     public int TotalAtendimentosPorCliente { get; set; }
@@ -34,6 +35,8 @@ public class DetalheAtendimentoDto
 {
     public int TarefaId { get; set; }
     public int? Numero { get; set; }
+    public string? Titulo { get; set; }
+    public DateTime? DataCadastro { get; set; }
     public int ClienteId { get; set; }
     public string ClienteCodigo { get; set; } = string.Empty;
     public string ClienteNome { get; set; } = string.Empty;

@@ -95,6 +95,8 @@ public class DashboardService : IDashboardService
                         {
                             TarefaId = tarefa.TarId,
                             Numero = tarefa.TarNumero,
+                            Titulo = tarefa.TarTitulo,
+                            DataCadastro = tarefa.TarDtCadastro,
                             ClienteId = cliente.CliId,
                             ClienteCodigo = cliente.CliCodigo,
                             ClienteNome = pessoaCliente?.PesFantasia ?? "Desconhecido"
@@ -286,9 +288,27 @@ public class DashboardService : IDashboardService
         // O lucro é calculado como: Contas Recebidas (CR) - Contas Pagas (CP)
         var lucro = valorTotalContasRecebidas - valorTotalContasPagas;
 
+        // Média diária de atendimentos no mês atual (total do mês / dias decorridos)
+        var inicioMesAtendimentos = inicioMesAtual;
+        var fimMesAtendimentos = DateTime.UtcNow;
+        var atendimentosMesAtual = todasTarefasComData.Count(t =>
+        {
+            if (!t.TarDtCadastro.HasValue) return false;
+            var dataCadastro = t.TarDtCadastro.Value;
+            var dataCadastroUtc = dataCadastro.Kind == DateTimeKind.Utc
+                ? dataCadastro
+                : dataCadastro.ToUniversalTime();
+            return dataCadastroUtc >= inicioMesAtendimentos && dataCadastroUtc <= fimMesAtendimentos;
+        });
+        var diasDecorridosMes = DateTime.UtcNow.Day;
+        var mediaDiariaAtendimentos = diasDecorridosMes > 0
+            ? (int)Math.Round((double)atendimentosMesAtual / diasDecorridosMes)
+            : 0;
+
         return new DashboardEstatisticasDto
         {
             TotalAtendimentosPorUsuario = atendimentosPorUsuarioDto.Sum(a => a.Quantidade),
+            MediaDiariaAtendimentos = mediaDiariaAtendimentos,
             TotalContasAPagar = contasAPagar.Count(),
             ValorTotalContasAPagar = valorTotalContasAPagar,
             TotalAtendimentosPorCliente = atendimentosPorClienteDto.Sum(a => a.Quantidade),

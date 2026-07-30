@@ -55,6 +55,19 @@
             <p class="card-subtitle">Total de atendimentos</p>
           </div>
         </div>
+        <div class="stat-card">
+          <div class="card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <div class="card-content">
+            <h3>Média Diária</h3>
+            <p class="card-value">{{ mediaDiariaAtendimentosDisplay }}</p>
+            <p class="card-subtitle">Atendimentos / dia (mês atual)</p>
+          </div>
+        </div>
       </div>
     </fieldset>
 
@@ -267,6 +280,8 @@
                       <tr class="detalhe-row">
                         <td colspan="2" class="detalhe-cell">
                           <span class="detalhe-item">Nº: {{ detalhe.numero || '-' }}</span>
+                          <span class="detalhe-item">Título: {{ detalhe.titulo || '-' }}</span>
+                          <span class="detalhe-item">Data: {{ formatarData(detalhe.dataCadastro || '') }}</span>
                           <span class="detalhe-item">Cliente: {{ detalhe.clienteCodigo }} - {{ detalhe.clienteNome }}</span>
                         </td>
                       </tr>

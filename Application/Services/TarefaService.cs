@@ -119,18 +119,239 @@ public class TarefaService : ITarefaService
         return await ListarTarefasAsync(usuarioId: null, incluirConcluidas: true);
     }
 
-    public async Task<IEnumerable<TarefaResponseDto>> ListarTarefasAsync(int? usuarioId, bool incluirConcluidas)
+    public async Task<IEnumerable<TarefaResponseDto>> ListarTarefasAsync(
+        int? usuarioId,
+        bool incluirConcluidas,
+        string? criterio = null,
+        string? valor = null)
     {
-        var tarefas = await _tarefaRepository.ListarTodosAsync();
-        var filtradas = tarefas.Where(t =>
-            (!usuarioId.HasValue || t.UsuId == usuarioId.Value) &&
-            (incluirConcluidas || t.TarStatus != StatusConcluidaId));
+        var termo = NormalizarTermoPesquisa(valor);
+        var criterioNorm = (criterio ?? string.Empty).Trim().ToLowerInvariant();
+        var temPesquisa = !string.IsNullOrWhiteSpace(termo) && !string.IsNullOrWhiteSpace(criterioNorm);
+
+        IEnumerable<Tarefa> tarefas;
+
+        if (!temPesquisa)
+        {
+            if (usuarioId.HasValue && !incluirConcluidas)
+            {
+                tarefas = await _tarefaRepository.BuscarTodosAsync(t =>
+                    t.UsuId == usuarioId.Value && t.TarStatus != StatusConcluidaId);
+            }
+            else if (usuarioId.HasValue)
+            {
+                tarefas = await _tarefaRepository.BuscarTodosAsync(t => t.UsuId == usuarioId.Value);
+            }
+            else if (!incluirConcluidas)
+            {
+                tarefas = await _tarefaRepository.BuscarTodosAsync(t => t.TarStatus != StatusConcluidaId);
+            }
+            else
+            {
+                tarefas = await _tarefaRepository.ListarTodosAsync();
+            }
+        }
+        else
+        {
+            // Pesquisa por executor ignora filtro de usuário logado (o critério já é o executor)
+            var usuarioFiltro = criterioNorm == "executor" ? null : usuarioId;
+            tarefas = await BuscarPorCriterioAsync(criterioNorm, termo, usuarioFiltro);
+
+            // Em pesquisa por status, o próprio critério define o status (não aplica exclusão de concluídas)
+            if (!incluirConcluidas && criterioNorm != "status")
+            {
+                tarefas = tarefas.Where(t => t.TarStatus != StatusConcluidaId);
+            }
+        }
+
         var resultado = new List<TarefaResponseDto>();
-        foreach (var tarefa in filtradas)
+        foreach (var tarefa in tarefas.OrderByDescending(t => t.TarNumero ?? t.TarId))
         {
             resultado.Add(await MontarTarefaResponseDto(tarefa));
         }
         return resultado;
+    }
+
+    private async Task<IEnumerable<Tarefa>> BuscarPorCriterioAsync(string criterio, string termo, int? usuarioId)
+    {
+        switch (criterio)
+        {
+            case "titulo":
+            {
+                var upper = termo.ToUpperInvariant();
+                if (usuarioId.HasValue)
+                {
+                    return await _tarefaRepository.BuscarTodosAsync(t =>
+                        t.UsuId == usuarioId.Value &&
+                        t.TarTitulo != null &&
+                        t.TarTitulo.Contains(upper));
+                }
+                return await _tarefaRepository.BuscarTodosAsync(t =>
+                    t.TarTitulo != null &&
+                    t.TarTitulo.Contains(upper));
+            }
+            case "cliente":
+            {
+                var upper = termo.ToUpperInvariant();
+                var pessoas = await _pessoaRepository.BuscarTodosAsync(p =>
+                    p.PesFantasia != null && p.PesFantasia.ToUpper().Contains(upper));
+                var pesIds = pessoas.Select(p => p.PesId).ToHashSet();
+
+                var clientesPorNome = await _clienteRepository.BuscarTodosAsync(c => pesIds.Contains(c.PesId));
+                var clientesPorCodigo = await _clienteRepository.BuscarTodosAsync(c =>
+                    c.CliCodigo != null && c.CliCodigo.ToUpper().Contains(upper));
+
+                var cliIds = clientesPorNome.Select(c => c.CliId)
+                    .Concat(clientesPorCodigo.Select(c => c.CliId))
+                    .ToHashSet();
+
+                if (cliIds.Count == 0)
+                    return Enumerable.Empty<Tarefa>();
+
+                if (usuarioId.HasValue)
+                {
+                    return await _tarefaRepository.BuscarTodosAsync(t =>
+                        t.UsuId == usuarioId.Value && cliIds.Contains(t.CliId));
+                }
+                return await _tarefaRepository.BuscarTodosAsync(t => cliIds.Contains(t.CliId));
+            }
+            case "executor":
+            {
+                var upper = termo.ToUpperInvariant();
+                var pessoas = await _pessoaRepository.BuscarTodosAsync(p =>
+                    p.PesFantasia != null && p.PesFantasia.ToUpper().Contains(upper));
+                var pesIds = pessoas.Select(p => p.PesId).ToHashSet();
+                if (pesIds.Count == 0)
+                    return Enumerable.Empty<Tarefa>();
+
+                var usuarios = await _usuarioRepository.BuscarTodosAsync(u => pesIds.Contains(u.PesId));
+                var usuIds = usuarios.Select(u => u.UsuId).ToHashSet();
+                if (usuIds.Count == 0)
+                    return Enumerable.Empty<Tarefa>();
+
+                return await _tarefaRepository.BuscarTodosAsync(t => usuIds.Contains(t.UsuId));
+            }
+            case "status":
+            {
+                var upper = termo.ToUpperInvariant();
+                var statusIds = new HashSet<int>();
+
+                foreach (StatusTarefa st in Enum.GetValues(typeof(StatusTarefa)))
+                {
+                    var desc = st switch
+                    {
+                        StatusTarefa.EmAberto => "EM ABERTO",
+                        StatusTarefa.Concluida => "CONCLUIDA",
+                        StatusTarefa.Cancelada => "CANCELADA",
+                        StatusTarefa.Reativada => "REATIVADA",
+                        StatusTarefa.AguardandoCliente => "AGUARDANDO CLIENTE",
+                        _ => st.ToString().ToUpperInvariant()
+                    };
+                    var descSemAcento = RemoverAcentos(desc);
+                    var termoSemAcento = RemoverAcentos(upper);
+                    if (desc.Contains(upper) || descSemAcento.Contains(termoSemAcento))
+                        statusIds.Add((int)st);
+                }
+
+                var cadastros = await _cadastroStatusTarefaRepository.BuscarTodosAsync(s =>
+                    s.Descricao != null && s.Descricao.ToUpper().Contains(upper));
+                foreach (var c in cadastros)
+                    statusIds.Add(c.Id);
+
+                if (int.TryParse(termo, out var statusIdNumerico))
+                    statusIds.Add(statusIdNumerico);
+
+                if (statusIds.Count == 0)
+                    return Enumerable.Empty<Tarefa>();
+
+                if (usuarioId.HasValue)
+                {
+                    return await _tarefaRepository.BuscarTodosAsync(t =>
+                        t.UsuId == usuarioId.Value && statusIds.Contains(t.TarStatus));
+                }
+                return await _tarefaRepository.BuscarTodosAsync(t => statusIds.Contains(t.TarStatus));
+            }
+            case "numero":
+            {
+                if (int.TryParse(termo, out var numero))
+                {
+                    if (usuarioId.HasValue)
+                    {
+                        return await _tarefaRepository.BuscarTodosAsync(t =>
+                            t.UsuId == usuarioId.Value &&
+                            (t.TarNumero == numero || t.TarId == numero ||
+                             (t.TarNumero.HasValue && t.TarNumero.Value.ToString().Contains(termo))));
+                    }
+                    return await _tarefaRepository.BuscarTodosAsync(t =>
+                        t.TarNumero == numero || t.TarId == numero ||
+                        (t.TarNumero.HasValue && t.TarNumero.Value.ToString().Contains(termo)));
+                }
+
+                if (usuarioId.HasValue)
+                {
+                    var todas = await _tarefaRepository.BuscarTodosAsync(t => t.UsuId == usuarioId.Value);
+                    return todas.Where(t =>
+                        (t.TarNumero.HasValue && t.TarNumero.Value.ToString().Contains(termo)) ||
+                        t.TarId.ToString().Contains(termo));
+                }
+                {
+                    var todas = await _tarefaRepository.ListarTodosAsync();
+                    return todas.Where(t =>
+                        (t.TarNumero.HasValue && t.TarNumero.Value.ToString().Contains(termo)) ||
+                        t.TarId.ToString().Contains(termo));
+                }
+            }
+            case "data":
+            {
+                if (!DateTime.TryParse(termo, out var dataLocal))
+                    return Enumerable.Empty<Tarefa>();
+
+                var inicioUtc = DateTime.SpecifyKind(dataLocal.Date, DateTimeKind.Local).ToUniversalTime();
+                var fimUtc = inicioUtc.AddDays(1).AddTicks(-1);
+
+                if (usuarioId.HasValue)
+                {
+                    return await _tarefaRepository.BuscarTodosAsync(t =>
+                        t.UsuId == usuarioId.Value &&
+                        t.TarDtCadastro.HasValue &&
+                        t.TarDtCadastro.Value >= inicioUtc &&
+                        t.TarDtCadastro.Value <= fimUtc);
+                }
+                return await _tarefaRepository.BuscarTodosAsync(t =>
+                    t.TarDtCadastro.HasValue &&
+                    t.TarDtCadastro.Value >= inicioUtc &&
+                    t.TarDtCadastro.Value <= fimUtc);
+            }
+            default:
+                return Enumerable.Empty<Tarefa>();
+        }
+    }
+
+    private static string RemoverAcentos(string texto)
+    {
+        var normalized = texto.Normalize(System.Text.NormalizationForm.FormD);
+        var sb = new System.Text.StringBuilder();
+        foreach (var c in normalized)
+        {
+            if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) !=
+                System.Globalization.UnicodeCategory.NonSpacingMark)
+            {
+                sb.Append(c);
+            }
+        }
+        return sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
+    }
+
+    /// <summary>
+    /// Normaliza o argumento de pesquisa estilo LIKE: "%" ou "%%" = todos; "%texto%" = "texto".
+    /// </summary>
+    private static string NormalizarTermoPesquisa(string? valor)
+    {
+        var termo = (valor ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(termo) || termo.All(c => c == '%'))
+            return string.Empty;
+
+        return termo.Trim('%').Trim();
     }
 
     public async Task<TarefaResponseDto> AtualizarTarefaAsync(int id, CadastroTarefaDto dto)

@@ -107,16 +107,23 @@ export class TarefaService {
   }
 
   /**
-   * Lista tarefas com filtros opcionais.
-   * @param usuarioId - Se informado, apenas tarefas deste usuário; se não informado, todos os usuários.
-   * @param incluirConcluidas - Se true, inclui concluídas; se false, apenas não concluídas.
+   * Lista tarefas com filtros no banco.
+   * criterios: titulo | cliente | status | numero | data | executor
    */
-  listarTarefas(params?: { usuarioId?: number; incluirConcluidas?: boolean }): Observable<TarefaResponseDto[]> {
+  listarTarefas(params?: {
+    usuarioId?: number;
+    incluirConcluidas?: boolean;
+    criterio?: string;
+    valor?: string;
+  }): Observable<TarefaResponseDto[]> {
     const q: Record<string, string> = {};
-    // Só envia usuarioId quando for número (evita enviar "undefined" quando Todos Usuários está marcado)
     if (typeof params?.usuarioId === 'number') q['usuarioId'] = String(params.usuarioId);
-    if (params?.incluirConcluidas !== undefined && params?.incluirConcluidas !== null) q['incluirConcluidas'] = String(params.incluirConcluidas);
-    const query = Object.keys(q).length ? '?' + new URLSearchParams(q).toString() : '';
+    q['incluirConcluidas'] = String(params?.incluirConcluidas === true);
+    if (params?.criterio) q['criterio'] = params.criterio;
+    if (params?.valor != null && params.valor !== '') q['valor'] = params.valor;
+    // evita cache de GET em algumas situações
+    q['_'] = String(Date.now());
+    const query = '?' + new URLSearchParams(q).toString();
     return this.api.get<TarefaResponseDto[]>(`tarefa${query}`);
   }
 

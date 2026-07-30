@@ -65,12 +65,22 @@ export class AtendimentosComponent implements OnInit {
   error: string | null = null;
   editando = false;
   tarefaEditando: TarefaResponseDto | null = null;
-  termoBusca = '';
+  criterioPesquisa = 'titulo';
+  valorPesquisa = '';
   mostrarConcluidas = false;
   mostrarTodosUsuarios = false;
   private readonly STORAGE_KEY_MOSTRAR_CONCLUIDAS = 'atendimentos_mostrar_concluidas';
   private readonly STORAGE_KEY_MOSTRAR_TODOS_USUARIOS = 'atendimentos_mostrar_todos_usuarios';
   private readonly STORAGE_KEY_AGRUPAR_POR = 'atendimentos_agrupar_por';
+
+  readonly criteriosPesquisa: { value: string; label: string }[] = [
+    { value: 'titulo', label: 'Título' },
+    { value: 'cliente', label: 'Cliente' },
+    { value: 'executor', label: 'Executor' },
+    { value: 'status', label: 'Status' },
+    { value: 'numero', label: 'Número do atendimento' },
+    { value: 'data', label: 'Data do atendimento' }
+  ];
 
   novoTarefa: CadastroTarefaDto = {
     clienteId: 0,
@@ -105,7 +115,7 @@ export class AtendimentosComponent implements OnInit {
     { value: 'usuarioNome', label: 'Usuário' },
     { value: 'tipoAtendimentoDescricao', label: 'Tipo' }
   ];
-  agruparPor = '';
+  agruparPor = 'clienteNome';
 
   /** Colunas que têm filtro multi-select (ícone funil). */
   readonly colunasFiltravelis: { campo: string; label: string }[] = [
@@ -128,21 +138,9 @@ export class AtendimentosComponent implements OnInit {
 
   @ViewChild('opFiltroColuna') opFiltroColuna!: OverlayPanel;
 
-  /** Dados já filtrados pela busca global e por outras colunas, sem o filtro da coluna dada. */
+  /** Dados já filtrados por outras colunas, sem o filtro da coluna dada. */
   getDadosParaFiltroColuna(campo: string): TarefaResponseDto[] {
     let lista = [...this.tarefas];
-    if (this.termoBusca.trim()) {
-      const termo = this.termoBusca.toLowerCase();
-      lista = lista.filter(t =>
-        t.clienteNome.toLowerCase().includes(termo) ||
-        t.usuarioNome.toLowerCase().includes(termo) ||
-        (t.statusDescricao && t.statusDescricao.toLowerCase().includes(termo)) ||
-        t.tarefaId.toString().includes(termo) ||
-        (t.titulo && t.titulo.toLowerCase().includes(termo)) ||
-        (t.protocolo && t.protocolo.toLowerCase().includes(termo)) ||
-        (t.solicitante && t.solicitante.toLowerCase().includes(termo))
-      );
-    }
     for (const [col, valores] of Object.entries(this.filtrosColunasSelecao)) {
       if (col === campo || !valores?.length) continue;
       const set = new Set(valores);
@@ -348,7 +346,11 @@ export class AtendimentosComponent implements OnInit {
   }
 
   private carregarPreferenciaAgruparPor() {
-    this.agruparPor = carregarPreferenciaAgruparPor(this.STORAGE_KEY_AGRUPAR_POR, this.agruparPorOpcoes);
+    this.agruparPor = carregarPreferenciaAgruparPor(
+      this.STORAGE_KEY_AGRUPAR_POR,
+      this.agruparPorOpcoes,
+      'clienteNome'
+    );
   }
 
   onAgruparPorChange(valor: string) {
@@ -366,24 +368,55 @@ export class AtendimentosComponent implements OnInit {
     this.carregarTarefas();
   }
 
+  onCriterioChange() {
+    this.valorPesquisa = '';
+  }
+
+  pesquisar() {
+    this.carregarTarefas();
+  }
+
+  /**
+   * Interpreta o argumento de pesquisa:
+   * - vazio, "%" ou "%%" → null (lista todos no BD, respeitando checkboxes)
+   * - "%texto%" / "texto" → "texto" (LIKE %texto%)
+   */
+  private normalizarArgumentoPesquisa(valor: string): string | null {
+    const bruto = (valor ?? '').toString().trim();
+    if (!bruto || /^%+$/.test(bruto)) {
+      return null;
+    }
+    const semCuringa = bruto.replace(/^%+|%+$/g, '').trim();
+    return semCuringa || null;
+  }
+
   carregarTarefas() {
     this.loading = true;
     this.error = null;
-    // 1) Padrão: apenas atendimentos do usuário logado (meu usuid)
-    // 2) Se "Todos usuários" marcado: não envia usuarioId → API retorna de todos
-    // 3) Se "Concluídas" marcado: incluirConcluidas true → API inclui concluídas
-    const usuarioId = this.mostrarTodosUsuarios ? undefined : (this.authService.getUsuarioId() ?? undefined);
+
+    const termo = this.normalizarArgumentoPesquisa(this.valorPesquisa ?? '');
+    const comFiltroTexto = termo != null;
+
+    const porExecutor = comFiltroTexto && this.criterioPesquisa === 'executor';
+    const usuarioId = (this.mostrarTodosUsuarios || porExecutor)
+      ? undefined
+      : (this.authService.getUsuarioId() ?? undefined);
+
     this.tarefaService.listarTarefas({
       usuarioId,
-      incluirConcluidas: this.mostrarConcluidas
+      incluirConcluidas: this.mostrarConcluidas,
+      criterio: comFiltroTexto ? this.criterioPesquisa : undefined,
+      valor: comFiltroTexto ? termo! : undefined
     }).subscribe({
       next: (data) => {
-        this.tarefas = data;
+        this.tarefas = data ?? [];
         this.aplicarFiltros();
         this.loading = false;
       },
       error: (err) => {
         this.error = 'Erro ao carregar tarefas. Verifique se a API está rodando.';
+        this.tarefas = [];
+        this.tarefasFiltradas = [];
         this.loading = false;
         console.error(err);
       }
@@ -429,21 +462,7 @@ export class AtendimentosComponent implements OnInit {
   aplicarFiltros() {
     let tarefasFiltradas = [...this.tarefas];
 
-    // Filtrar por termo de busca global
-    if (this.termoBusca.trim()) {
-      const termo = this.termoBusca.toLowerCase();
-      tarefasFiltradas = tarefasFiltradas.filter(t =>
-        t.clienteNome.toLowerCase().includes(termo) ||
-        t.usuarioNome.toLowerCase().includes(termo) ||
-        t.statusDescricao.toLowerCase().includes(termo) ||
-        t.tarefaId.toString().includes(termo) ||
-        (t.titulo && t.titulo.toLowerCase().includes(termo)) ||
-        (t.protocolo && t.protocolo.toLowerCase().includes(termo)) ||
-        (t.solicitante && t.solicitante.toLowerCase().includes(termo))
-      );
-    }
-
-    // Filtros por coluna (multi-select)
+    // Filtros por coluna (multi-select) — apenas no grid já carregado
     for (const [campo, valores] of Object.entries(this.filtrosColunasSelecao)) {
       if (!valores?.length) continue;
       const set = new Set(valores);

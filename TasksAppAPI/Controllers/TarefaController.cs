@@ -75,23 +75,29 @@ public class TarefaController : ControllerBase
     }
 
     /// <summary>
-    /// Lista todas as tarefas (sem filtros).
+    /// Lista tarefas. Padrão: não concluídas. Pesquisa por criterio+valor (LIKE no banco).
+    /// criterios: titulo | cliente | status | numero | data | executor
+    /// valor "%" ou vazio: retorna todos conforme usuarioId/incluirConcluidas.
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<TarefaResponseDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ListarTarefas([FromQuery] int? usuarioId, [FromQuery] bool? incluirConcluidas)
+    public async Task<IActionResult> ListarTarefas(
+        [FromQuery] int? usuarioId,
+        [FromQuery] bool? incluirConcluidas,
+        [FromQuery] string? criterio,
+        [FromQuery] string? valor)
     {
         try
         {
-            // Se não informar parâmetros, mantém comportamento anterior: todas as tarefas
-            var incluir = incluirConcluidas ?? true;
-            var tarefas = await _tarefaService.ListarTarefasAsync(usuarioId, incluir);
+            var incluir = incluirConcluidas ?? false;
+            var tarefas = await _tarefaService.ListarTarefasAsync(usuarioId, incluir, criterio, valor);
             return Ok(tarefas);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao listar tarefas");
-            return StatusCode(500, new { message = "Erro interno do servidor" });
+            _logger.LogError(ex, "Erro ao listar tarefas. usuarioId={UsuarioId}, incluirConcluidas={Incluir}, criterio={Criterio}, valor={Valor}",
+                usuarioId, incluirConcluidas, criterio, valor);
+            return StatusCode(500, new { message = "Erro interno do servidor", detail = ex.Message });
         }
     }
 
