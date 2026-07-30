@@ -23,7 +23,8 @@ export class DashboardComponent implements OnInit {
   /** Valores exibidos com animação de count-up (iniciam em 0 e sobem até o valor real) */
   totalAtendimentosPorUsuarioDisplay = 0;
   atendimentosPorClienteMesCountDisplay = 0;
-  mediaDiariaAtendimentosDisplay = 0;
+  mediaDiariaAtendimentosDisplay = '0,0';
+  mediaDiariaPorOperadorDisplay = '0,0';
   totalContasAReceberDisplay = 0;
   totalContasRecebidasDisplay = 0;
   lucroDisplay = 0;
@@ -177,7 +178,8 @@ export class DashboardComponent implements OnInit {
   private zerarDisplays() {
     this.totalAtendimentosPorUsuarioDisplay = 0;
     this.atendimentosPorClienteMesCountDisplay = 0;
-    this.mediaDiariaAtendimentosDisplay = 0;
+    this.mediaDiariaAtendimentosDisplay = '0,0';
+    this.mediaDiariaPorOperadorDisplay = '0,0';
     this.totalContasAReceberDisplay = 0;
     this.totalContasRecebidasDisplay = 0;
     this.lucroDisplay = 0;
@@ -213,7 +215,12 @@ export class DashboardComponent implements OnInit {
     this.animarValor(0, e.totalAtendimentosPorUsuario ?? 0, DURATION, v => this.totalAtendimentosPorUsuarioDisplay = v);
     const totalAtendimentosCliente = (e.atendimentosPorClienteMes ?? []).reduce((sum, item) => sum + (item.quantidade ?? 0), 0);
     this.animarValor(0, totalAtendimentosCliente, DURATION, v => this.atendimentosPorClienteMesCountDisplay = v);
-    this.animarValor(0, e.mediaDiariaAtendimentos ?? 0, DURATION, v => this.mediaDiariaAtendimentosDisplay = v);
+    this.animarValor(0, e.mediaDiariaAtendimentos ?? 0, DURATION, v => {
+      this.mediaDiariaAtendimentosDisplay = v.toFixed(1).replace('.', ',');
+    }, false);
+    this.animarValor(0, e.mediaDiariaPorOperador ?? 0, DURATION, v => {
+      this.mediaDiariaPorOperadorDisplay = v.toFixed(1).replace('.', ',');
+    }, false);
     this.animarValor(0, e.valorTotalContasAReceber ?? 0, DURATION, v => this.totalContasAReceberDisplay = v, false);
     this.animarValor(0, e.valorTotalContasRecebidas ?? 0, DURATION, v => this.totalContasRecebidasDisplay = v, false);
     this.animarValor(0, e.valorTotalContasAPagar ?? 0, DURATION, v => this.totalContasAPagarDisplay = v, false);

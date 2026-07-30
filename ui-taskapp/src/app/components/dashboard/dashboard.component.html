@@ -65,7 +65,20 @@
           <div class="card-content">
             <h3>Média Diária</h3>
             <p class="card-value">{{ mediaDiariaAtendimentosDisplay }}</p>
-            <p class="card-subtitle">Atendimentos / dia (mês atual)</p>
+            <p class="card-subtitle">Equipe / dia útil (mês atual)</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <div class="card-content">
+            <h3>Média por Operador</h3>
+            <p class="card-value">{{ mediaDiariaPorOperadorDisplay }}</p>
+            <p class="card-subtitle">Operador / dia útil (mês atual)</p>
           </div>
         </div>
       </div>

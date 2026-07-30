@@ -3,7 +3,10 @@ namespace Application.DTOs;
 public class DashboardEstatisticasDto
 {
     public int TotalAtendimentosPorUsuario { get; set; }
-    public int MediaDiariaAtendimentos { get; set; }
+    /// <summary>Média da equipe por dia útil no mês atual.</summary>
+    public decimal MediaDiariaAtendimentos { get; set; }
+    /// <summary>Média por operador por dia útil no mês atual.</summary>
+    public decimal MediaDiariaPorOperador { get; set; }
     public int TotalContasAPagar { get; set; }
     public decimal ValorTotalContasAPagar { get; set; }
     public int TotalAtendimentosPorCliente { get; set; }

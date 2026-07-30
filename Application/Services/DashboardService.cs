@@ -288,27 +288,40 @@ public class DashboardService : IDashboardService
         // O lucro é calculado como: Contas Recebidas (CR) - Contas Pagas (CP)
         var lucro = valorTotalContasRecebidas - valorTotalContasPagas;
 
-        // Média diária de atendimentos no mês atual (total do mês / dias decorridos)
-        var inicioMesAtendimentos = inicioMesAtual;
-        var fimMesAtendimentos = DateTime.UtcNow;
-        var atendimentosMesAtual = todasTarefasComData.Count(t =>
+        // Média diária no mês atual por dias úteis (seg–sex)
+        // Equipe: total ÷ dias úteis | Operador: média da equipe ÷ qtd. operadores do mês
+        var agoraLocal = DateTime.Now;
+        var inicioMesLocal = new DateTime(agoraLocal.Year, agoraLocal.Month, 1, 0, 0, 0, DateTimeKind.Local);
+        var fimMesLocal = agoraLocal.Date.AddDays(1).AddTicks(-1);
+        var inicioMesUtc = inicioMesLocal.ToUniversalTime();
+        var fimMesUtc = fimMesLocal.ToUniversalTime();
+
+        var tarefasMesAtual = todasTarefasComData.Where(t =>
         {
             if (!t.TarDtCadastro.HasValue) return false;
             var dataCadastro = t.TarDtCadastro.Value;
             var dataCadastroUtc = dataCadastro.Kind == DateTimeKind.Utc
                 ? dataCadastro
                 : dataCadastro.ToUniversalTime();
-            return dataCadastroUtc >= inicioMesAtendimentos && dataCadastroUtc <= fimMesAtendimentos;
-        });
-        var diasDecorridosMes = DateTime.UtcNow.Day;
-        var mediaDiariaAtendimentos = diasDecorridosMes > 0
-            ? (int)Math.Round((double)atendimentosMesAtual / diasDecorridosMes)
+            return dataCadastroUtc >= inicioMesUtc && dataCadastroUtc <= fimMesUtc;
+        }).ToList();
+
+        var atendimentosMesAtual = tarefasMesAtual.Count;
+        var diasUteis = ContarDiasUteis(inicioMesLocal.Date, agoraLocal.Date);
+        var operadoresMes = tarefasMesAtual.Select(t => t.UsuId).Distinct().Count();
+
+        var mediaDiariaAtendimentos = diasUteis > 0
+            ? Math.Round((decimal)atendimentosMesAtual / diasUteis, 1)
+            : 0;
+        var mediaDiariaPorOperador = diasUteis > 0 && operadoresMes > 0
+            ? Math.Round((decimal)atendimentosMesAtual / diasUteis / operadoresMes, 1)
             : 0;
 
         return new DashboardEstatisticasDto
         {
             TotalAtendimentosPorUsuario = atendimentosPorUsuarioDto.Sum(a => a.Quantidade),
             MediaDiariaAtendimentos = mediaDiariaAtendimentos,
+            MediaDiariaPorOperador = mediaDiariaPorOperador,
             TotalContasAPagar = contasAPagar.Count(),
             ValorTotalContasAPagar = valorTotalContasAPagar,
             TotalAtendimentosPorCliente = atendimentosPorClienteDto.Sum(a => a.Quantidade),
@@ -327,6 +340,20 @@ public class DashboardService : IDashboardService
             AtendimentosPorCliente = atendimentosPorClienteDto,
             AtendimentosPorClienteMes = atendimentosPorClienteMesDto
         };
+    }
+
+    /// <summary>Conta dias úteis (segunda a sexta) entre as datas, inclusive.</summary>
+    private static int ContarDiasUteis(DateTime inicio, DateTime fim)
+    {
+        if (fim < inicio) return 0;
+
+        var dias = 0;
+        for (var d = inicio.Date; d <= fim.Date; d = d.AddDays(1))
+        {
+            if (d.DayOfWeek != DayOfWeek.Saturday && d.DayOfWeek != DayOfWeek.Sunday)
+                dias++;
+        }
+        return dias;
     }
 
     public async Task<List<ValorPorMesPorUsuarioDto>> ObterValoresPorMesPorUsuarioAsync(int? ano = null)

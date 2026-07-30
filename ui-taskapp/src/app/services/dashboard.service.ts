@@ -5,6 +5,7 @@ import { ApiService } from './api.service';
 export interface DashboardEstatisticasDto {
   totalAtendimentosPorUsuario: number;
   mediaDiariaAtendimentos: number;
+  mediaDiariaPorOperador: number;
   totalContasAPagar: number;
   valorTotalContasAPagar: number;
   totalAtendimentosPorCliente: number;
