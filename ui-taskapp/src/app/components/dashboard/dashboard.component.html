@@ -68,7 +68,7 @@
             <p class="card-subtitle">Equipe / dia útil (mês atual)</p>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" (click)="abrirModalMediaOperador()" role="button" tabindex="0" (keydown.enter)="abrirModalMediaOperador()">
           <div class="card-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -300,6 +300,46 @@
                       </tr>
                     }
                   }
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Média por Operador -->
+  @if (showModalMediaOperador) {
+    <div class="modal-overlay" (click)="fecharModalMediaOperador()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Média por Operador (mês atual)</h3>
+          <button class="btn-close" (click)="fecharModalMediaOperador()">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="card-subtitle" style="margin-bottom: 1rem;">
+            Dias úteis no período: {{ estatisticas?.diasUteisMesAtual ?? 0 }}
+            · Média geral: {{ mediaDiariaPorOperadorDisplay }} / dia útil
+          </p>
+          @if (dadosModalMediaOperador.length === 0) {
+            <p class="empty-state">Nenhum atendimento encontrado no mês atual.</p>
+          } @else {
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th>Operador</th>
+                  <th>Quantidade</th>
+                  <th>Média / dia útil</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of dadosModalMediaOperador; track item.usuarioId) {
+                  <tr>
+                    <td><strong>{{ item.usuarioNome }}</strong></td>
+                    <td>{{ item.quantidade }}</td>
+                    <td>{{ formatarMedia(item.mediaDiaria) }}</td>
+                  </tr>
                 }
               </tbody>
             </table>

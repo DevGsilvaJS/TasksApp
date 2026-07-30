@@ -7,6 +7,8 @@ public class DashboardEstatisticasDto
     public decimal MediaDiariaAtendimentos { get; set; }
     /// <summary>Média por operador por dia útil no mês atual.</summary>
     public decimal MediaDiariaPorOperador { get; set; }
+    public int DiasUteisMesAtual { get; set; }
+    public List<MediaPorOperadorDto> MediasPorOperador { get; set; } = new();
     public int TotalContasAPagar { get; set; }
     public decimal ValorTotalContasAPagar { get; set; }
     public int TotalAtendimentosPorCliente { get; set; }
@@ -32,6 +34,14 @@ public class AtendimentoPorUsuarioDto
     public string UsuarioNome { get; set; } = string.Empty;
     public int Quantidade { get; set; }
     public List<DetalheAtendimentoDto> Detalhes { get; set; } = new();
+}
+
+public class MediaPorOperadorDto
+{
+    public int UsuarioId { get; set; }
+    public string UsuarioNome { get; set; } = string.Empty;
+    public int Quantidade { get; set; }
+    public decimal MediaDiaria { get; set; }
 }
 
 public class DetalheAtendimentoDto

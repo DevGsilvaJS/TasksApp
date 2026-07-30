@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DashboardService, DashboardEstatisticasDto, PeriodoFiltro, AtendimentoPorUsuarioDto, ContaAPagarDto, AtendimentoPorClienteDto, AtendimentoPorClienteMesDto, ValorPorMesPorUsuarioDto, TelemarketingContatosDto, AlertaContratoVencendoDto } from '../../services/dashboard.service';
+import { DashboardService, DashboardEstatisticasDto, PeriodoFiltro, AtendimentoPorUsuarioDto, ContaAPagarDto, AtendimentoPorClienteDto, AtendimentoPorClienteMesDto, ValorPorMesPorUsuarioDto, TelemarketingContatosDto, AlertaContratoVencendoDto, MediaPorOperadorDto } from '../../services/dashboard.service';
 import { NotaServicoService, NotaServicoItemDto } from '../../services/nota-servico.service';
 
 @Component({
@@ -42,6 +42,7 @@ export class DashboardComponent implements OnInit {
   
   // Modais
   showModalAtendimentosUsuario = false;
+  showModalMediaOperador = false;
   showModalContasPagar = false;
   showModalContasPagas = false;
   showModalContasAReceber = false;
@@ -62,6 +63,7 @@ export class DashboardComponent implements OnInit {
   salvandoEnvio = false;
   
   dadosModalAtendimentosUsuario: AtendimentoPorUsuarioDto[] = [];
+  dadosModalMediaOperador: MediaPorOperadorDto[] = [];
   dadosModalContasPagar: ContaAPagarDto[] = [];
   dadosModalContasPagas: ContaAPagarDto[] = [];
   dadosModalContasAReceber: ContaAPagarDto[] = [];
@@ -271,6 +273,21 @@ export class DashboardComponent implements OnInit {
 
   fecharModalAtendimentosUsuario() {
     this.showModalAtendimentosUsuario = false;
+  }
+
+  abrirModalMediaOperador() {
+    if (this.estatisticas) {
+      this.dadosModalMediaOperador = this.estatisticas.mediasPorOperador ?? [];
+      this.showModalMediaOperador = true;
+    }
+  }
+
+  fecharModalMediaOperador() {
+    this.showModalMediaOperador = false;
+  }
+
+  formatarMedia(valor: number): string {
+    return (valor ?? 0).toFixed(1).replace('.', ',');
   }
 
   abrirModalContasPagar() {

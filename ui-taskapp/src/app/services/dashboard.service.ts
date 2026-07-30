@@ -6,6 +6,8 @@ export interface DashboardEstatisticasDto {
   totalAtendimentosPorUsuario: number;
   mediaDiariaAtendimentos: number;
   mediaDiariaPorOperador: number;
+  diasUteisMesAtual: number;
+  mediasPorOperador: MediaPorOperadorDto[];
   totalContasAPagar: number;
   valorTotalContasAPagar: number;
   totalAtendimentosPorCliente: number;
@@ -23,6 +25,13 @@ export interface DashboardEstatisticasDto {
   contasRecebidas: ContaAPagarDto[];
   atendimentosPorCliente: AtendimentoPorClienteDto[];
   atendimentosPorClienteMes: AtendimentoPorClienteMesDto[];
+}
+
+export interface MediaPorOperadorDto {
+  usuarioId: number;
+  usuarioNome: string;
+  quantidade: number;
+  mediaDiaria: number;
 }
 
 export interface AtendimentoPorUsuarioDto {

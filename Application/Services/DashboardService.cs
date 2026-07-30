@@ -317,11 +317,34 @@ public class DashboardService : IDashboardService
             ? Math.Round((decimal)atendimentosMesAtual / diasUteis / operadoresMes, 1)
             : 0;
 
+        var mediasPorOperador = new List<MediaPorOperadorDto>();
+        foreach (var grupo in tarefasMesAtual.GroupBy(t => t.UsuId))
+        {
+            var usuario = await _usuarioRepository.GetByIdAsync(grupo.Key);
+            var pessoa = usuario != null ? await _pessoaRepository.GetByIdAsync(usuario.PesId) : null;
+            var quantidade = grupo.Count();
+            mediasPorOperador.Add(new MediaPorOperadorDto
+            {
+                UsuarioId = grupo.Key,
+                UsuarioNome = pessoa?.PesFantasia ?? "Desconhecido",
+                Quantidade = quantidade,
+                MediaDiaria = diasUteis > 0
+                    ? Math.Round((decimal)quantidade / diasUteis, 1)
+                    : 0
+            });
+        }
+        mediasPorOperador = mediasPorOperador
+            .OrderByDescending(m => m.Quantidade)
+            .ThenBy(m => m.UsuarioNome)
+            .ToList();
+
         return new DashboardEstatisticasDto
         {
             TotalAtendimentosPorUsuario = atendimentosPorUsuarioDto.Sum(a => a.Quantidade),
             MediaDiariaAtendimentos = mediaDiariaAtendimentos,
             MediaDiariaPorOperador = mediaDiariaPorOperador,
+            DiasUteisMesAtual = diasUteis,
+            MediasPorOperador = mediasPorOperador,
             TotalContasAPagar = contasAPagar.Count(),
             ValorTotalContasAPagar = valorTotalContasAPagar,
             TotalAtendimentosPorCliente = atendimentosPorClienteDto.Sum(a => a.Quantidade),
