@@ -261,7 +261,7 @@
   <!-- Modal: Atendimentos por Usuário -->
   @if (showModalAtendimentosUsuario) {
     <div class="modal-overlay" (click)="fecharModalAtendimentosUsuario()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-content modal-large" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h3>Atendimentos por Usuário</h3>
           <button class="btn-close" (click)="fecharModalAtendimentosUsuario()">×</button>
@@ -270,39 +270,40 @@
           @if (dadosModalAtendimentosUsuario.length === 0) {
             <p class="empty-state">Nenhum atendimento encontrado no período selecionado.</p>
           } @else {
-            <table class="detail-table">
-              <thead>
-                <tr>
-                  <th>Usuário</th>
-                  <th>Quantidade</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of dadosModalAtendimentosUsuario; track item.usuarioId) {
-                  <tr class="usuario-row">
-                    <td><strong>{{ item.usuarioNome }}</strong></td>
-                    <td><strong>{{ item.quantidade }}</strong></td>
-                  </tr>
+            <div class="modal-table-wrap">
+              @for (item of dadosModalAtendimentosUsuario; track item.usuarioId) {
+                <div class="operador-bloco">
+                  <div class="operador-cabecalho">
+                    <span class="operador-nome">{{ item.usuarioNome }}</span>
+                    <span class="operador-qtd">{{ item.quantidade }} atendimento(s)</span>
+                  </div>
                   @if (item.detalhes && item.detalhes.length > 0) {
-                    <tr class="detalhes-header">
-                      <td colspan="2">
-                        <strong>Detalhes:</strong>
-                      </td>
-                    </tr>
-                    @for (detalhe of item.detalhes; track detalhe.tarefaId) {
-                      <tr class="detalhe-row">
-                        <td colspan="2" class="detalhe-cell">
-                          <span class="detalhe-item">Nº: {{ detalhe.numero || '-' }}</span>
-                          <span class="detalhe-item">Título: {{ detalhe.titulo || '-' }}</span>
-                          <span class="detalhe-item">Data: {{ formatarData(detalhe.dataCadastro || '') }}</span>
-                          <span class="detalhe-item">Cliente: {{ detalhe.clienteCodigo }} - {{ detalhe.clienteNome }}</span>
-                        </td>
-                      </tr>
-                    }
+                    <table class="detail-table detail-table-nested">
+                      <thead>
+                        <tr>
+                          <th class="col-numero">Nº</th>
+                          <th class="col-titulo">Título</th>
+                          <th class="col-data">Data</th>
+                          <th class="col-cliente">Cliente</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (detalhe of item.detalhes; track detalhe.tarefaId) {
+                          <tr>
+                            <td class="col-numero">{{ detalhe.numero || '-' }}</td>
+                            <td class="col-titulo" [title]="detalhe.titulo || ''">{{ detalhe.titulo || '-' }}</td>
+                            <td class="col-data">{{ formatarData(detalhe.dataCadastro || '') }}</td>
+                            <td class="col-cliente" [title]="detalhe.clienteCodigo + ' - ' + detalhe.clienteNome">
+                              {{ detalhe.clienteCodigo }} - {{ detalhe.clienteNome }}
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
                   }
-                }
-              </tbody>
-            </table>
+                </div>
+              }
+            </div>
           }
         </div>
       </div>
