@@ -115,7 +115,8 @@ export interface AlertaContratoVencendoDto {
 export enum PeriodoFiltro {
   Dia = 'dia',
   Semana = 'semana',
-  Mes = 'mes'
+  Mes = 'mes',
+  MesAnterior = 'mes-anterior'
 }
 
 @Injectable({

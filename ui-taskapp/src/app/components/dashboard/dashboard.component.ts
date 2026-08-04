@@ -255,6 +255,15 @@ export class DashboardComponent implements OnInit {
           dataInicio: inicioMes,
           dataFim: new Date(hoje)
         };
+
+      case PeriodoFiltro.MesAnterior: {
+        const inicioMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+        const fimMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+        return {
+          dataInicio: inicioMesAnterior,
+          dataFim: fimMesAnterior
+        };
+      }
       
       default:
         return {
