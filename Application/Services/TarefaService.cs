@@ -71,7 +71,9 @@ public class TarefaService : ITarefaService
         {
             CliId = dto.ClienteId,
             UsuId = dto.UsuarioId,
-            TarDtCadastro = DateTime.UtcNow,
+            TarDtCadastro = dto.DataCadastro.HasValue
+                ? DateTime.SpecifyKind(dto.DataCadastro.Value.Date, DateTimeKind.Utc)
+                : DateTime.UtcNow,
             TarDtConclusao = dto.DataConclusao?.ToUniversalTime(),
             TarStatus = dto.Status,
             TarTitulo = dto.Titulo?.ToUpper(),
@@ -373,6 +375,8 @@ public class TarefaService : ITarefaService
         // Atualizar Tarefa
         tarefa.CliId = dto.ClienteId;
         tarefa.UsuId = dto.UsuarioId;
+        if (dto.DataCadastro.HasValue)
+            tarefa.TarDtCadastro = DateTime.SpecifyKind(dto.DataCadastro.Value.Date, DateTimeKind.Utc);
         tarefa.TarDtConclusao = dto.DataConclusao?.ToUniversalTime();
         tarefa.TarStatus = dto.Status;
         tarefa.TarTitulo = dto.Titulo?.ToUpper();

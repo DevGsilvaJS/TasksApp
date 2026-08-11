@@ -977,6 +977,16 @@ td.grupo-cliente-cell {
   grid-template-columns: 1fr 1fr 1fr;
 }
 
+.form-row-4 {
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+@media (max-width: 900px) {
+  .form-row-4 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .imagens-preview {
   display: flex;
   flex-wrap: wrap;

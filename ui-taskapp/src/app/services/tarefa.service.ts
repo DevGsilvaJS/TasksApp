@@ -34,6 +34,7 @@ export interface CadastroTarefaDto {
   usuarioId: number;
   status: number;
   dataConclusao?: string;
+  dataCadastro?: string;
   descricao?: string;
   titulo?: string;
   protocolo?: string;
@@ -140,6 +141,9 @@ export class TarefaService {
 
     if (dto.dataConclusao) {
       formData.append('dataConclusao', dto.dataConclusao);
+    }
+    if (dto.dataCadastro) {
+      formData.append('dataCadastro', dto.dataCadastro);
     }
     if (dto.descricao) {
       formData.append('descricao', dto.descricao);

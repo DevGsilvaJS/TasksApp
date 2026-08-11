@@ -8,6 +8,7 @@
         <option [value]="PeriodoFiltro.Semana">Semana (Últimos 7 dias)</option>
         <option [value]="PeriodoFiltro.Mes">Mês (Atual)</option>
         <option [value]="PeriodoFiltro.MesAnterior">Mês (Anterior)</option>
+        <option [value]="PeriodoFiltro.Geral">Geral</option>
       </select>
     </div>
   </div>
@@ -66,7 +67,7 @@
           <div class="card-content">
             <h3>Média Diária</h3>
             <p class="card-value">{{ mediaDiariaAtendimentosDisplay }}</p>
-            <p class="card-subtitle">Equipe / dia útil (mês atual)</p>
+            <p class="card-subtitle">Equipe / dia útil ({{ labelPeriodoSelecionado() }})</p>
           </div>
         </div>
         <div class="stat-card" (click)="abrirModalMediaOperador()" role="button" tabindex="0" (keydown.enter)="abrirModalMediaOperador()">
@@ -79,7 +80,19 @@
           <div class="card-content">
             <h3>Média por Operador</h3>
             <p class="card-value">{{ mediaDiariaPorOperadorDisplay }}</p>
-            <p class="card-subtitle">Operador / dia útil (mês atual)</p>
+            <p class="card-subtitle">Operador / dia útil ({{ labelPeriodoSelecionado() }})</p>
+          </div>
+        </div>
+        <div class="stat-card" (click)="abrirModalAtendimentosPrioridade()" role="button" tabindex="0" (keydown.enter)="abrirModalAtendimentosPrioridade()">
+          <div class="card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"></path>
+            </svg>
+          </div>
+          <div class="card-content">
+            <h3>Atendimentos por Prioridade</h3>
+            <p class="card-value">{{ totalAtendimentosPorPrioridade() }}</p>
+            <p class="card-subtitle">Total no período</p>
           </div>
         </div>
       </div>
@@ -285,6 +298,7 @@
                           <th class="col-numero">Nº</th>
                           <th class="col-titulo">Título</th>
                           <th class="col-data">Data</th>
+                          <th class="col-prioridade">Prioridade</th>
                           <th class="col-cliente">Cliente</th>
                         </tr>
                       </thead>
@@ -294,6 +308,11 @@
                             <td class="col-numero">{{ detalhe.numero || '-' }}</td>
                             <td class="col-titulo" [title]="detalhe.titulo || ''">{{ detalhe.titulo || '-' }}</td>
                             <td class="col-data">{{ formatarData(detalhe.dataCadastro || '') }}</td>
+                            <td class="col-prioridade">
+                              <span class="prioridade-badge" [attr.data-prioridade]="detalhe.prioridade">
+                                {{ detalhe.prioridadeDescricao || '-' }}
+                              </span>
+                            </td>
                             <td class="col-cliente" [title]="detalhe.clienteCodigo + ' - ' + detalhe.clienteNome">
                               {{ detalhe.clienteCodigo }} - {{ detalhe.clienteNome }}
                             </td>
@@ -316,7 +335,7 @@
     <div class="modal-overlay" (click)="fecharModalMediaOperador()">
       <div class="modal-content" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h3>Média por Operador (mês atual)</h3>
+          <h3>Média por Operador ({{ labelPeriodoSelecionado() }})</h3>
           <button class="btn-close" (click)="fecharModalMediaOperador()">×</button>
         </div>
         <div class="modal-body">
@@ -325,7 +344,7 @@
             · Média geral: {{ mediaDiariaPorOperadorDisplay }} / dia útil
           </p>
           @if (dadosModalMediaOperador.length === 0) {
-            <p class="empty-state">Nenhum atendimento encontrado no mês atual.</p>
+            <p class="empty-state">Nenhum atendimento encontrado no período selecionado.</p>
           } @else {
             <table class="detail-table">
               <thead>
@@ -341,6 +360,46 @@
                     <td><strong>{{ item.usuarioNome }}</strong></td>
                     <td>{{ item.quantidade }}</td>
                     <td>{{ formatarMedia(item.mediaDiaria) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Atendimentos por Prioridade -->
+  @if (showModalAtendimentosPrioridade) {
+    <div class="modal-overlay" (click)="fecharModalAtendimentosPrioridade()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Atendimentos por Prioridade ({{ labelPeriodoSelecionado() }})</h3>
+          <button class="btn-close" (click)="fecharModalAtendimentosPrioridade()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (dadosModalAtendimentosPrioridade.length === 0) {
+            <p class="empty-state">Nenhum atendimento encontrado no período selecionado.</p>
+          } @else {
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th>Prioridade</th>
+                  <th>Quantidade</th>
+                  <th>Percentual</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of dadosModalAtendimentosPrioridade; track item.prioridade) {
+                  <tr>
+                    <td>
+                      <span class="prioridade-badge" [attr.data-prioridade]="item.prioridade">
+                        {{ item.prioridadeDescricao | uppercase }}
+                      </span>
+                    </td>
+                    <td>{{ item.quantidade }} atendimento(s)</td>
+                    <td>{{ formatarPercentual(item.percentual) }}</td>
                   </tr>
                 }
               </tbody>
@@ -623,17 +682,17 @@
     </div>
   }
 
-  <!-- Modal: Atendimentos por Cliente (desde sempre) -->
+  <!-- Modal: Atendimentos por Cliente -->
   @if (showModalAtendimentosClienteMes) {
     <div class="modal-overlay" (click)="fecharModalAtendimentosClienteMes()">
       <div class="modal-content modal-large" (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h3>Atendimentos por Cliente</h3>
+          <h3>Atendimentos por Cliente ({{ labelPeriodoSelecionado() }})</h3>
           <button class="btn-close" (click)="fecharModalAtendimentosClienteMes()">×</button>
         </div>
         <div class="modal-body">
           @if (dadosModalAtendimentosClienteMes.length === 0) {
-            <p class="empty-state">Nenhum atendimento encontrado.</p>
+            <p class="empty-state">Nenhum atendimento encontrado no período selecionado.</p>
           } @else {
             <table class="detail-table">
               <thead>

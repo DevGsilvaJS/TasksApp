@@ -87,6 +87,7 @@ export class AtendimentosComponent implements OnInit {
     usuarioId: 0,
     status: StatusTarefa.EmAberto,
     dataConclusao: undefined,
+    dataCadastro: new Date().toISOString().split('T')[0],
     descricao: undefined,
     titulo: undefined,
     protocolo: undefined,
@@ -485,6 +486,7 @@ export class AtendimentosComponent implements OnInit {
       usuarioId: 0,
       status: this.obterStatusPadrao(),
       dataConclusao: undefined,
+      dataCadastro: new Date().toISOString().split('T')[0],
       descricao: undefined,
       titulo: '',
       protocolo: '',
@@ -519,6 +521,7 @@ export class AtendimentosComponent implements OnInit {
       usuarioId: tarefa.usuarioId,
       status: tarefa.status,
       dataConclusao: tarefa.dataConclusao,
+      dataCadastro: tarefa.dataCadastro ? tarefa.dataCadastro.substring(0, 10) : new Date().toISOString().split('T')[0],
       descricao: undefined,
       titulo: tarefa.titulo,
       protocolo: tarefa.protocolo,
@@ -720,6 +723,7 @@ export class AtendimentosComponent implements OnInit {
       dataConclusao: statusEnvio === StatusTarefa.Concluida
         ? (this.novoTarefa.dataConclusao || new Date().toISOString().split('T')[0])
         : undefined,
+      dataCadastro: this.novoTarefa.dataCadastro || new Date().toISOString().split('T')[0],
       descricao: this.novoTarefa.descricao ?? undefined,
       titulo: this.novoTarefa.titulo ? this.novoTarefa.titulo.toUpperCase() : undefined,
       protocolo: this.novoTarefa.protocolo ? this.novoTarefa.protocolo.toUpperCase() : undefined,

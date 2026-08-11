@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DashboardService, DashboardEstatisticasDto, PeriodoFiltro, AtendimentoPorUsuarioDto, ContaAPagarDto, AtendimentoPorClienteDto, AtendimentoPorClienteMesDto, ValorPorMesPorUsuarioDto, TelemarketingContatosDto, AlertaContratoVencendoDto, MediaPorOperadorDto } from '../../services/dashboard.service';
+import { DashboardService, DashboardEstatisticasDto, PeriodoFiltro, AtendimentoPorUsuarioDto, ContaAPagarDto, AtendimentoPorClienteDto, AtendimentoPorClienteMesDto, ValorPorMesPorUsuarioDto, TelemarketingContatosDto, AlertaContratoVencendoDto, MediaPorOperadorDto, AtendimentoPorPrioridadeDto } from '../../services/dashboard.service';
 import { NotaServicoService, NotaServicoItemDto } from '../../services/nota-servico.service';
 
 @Component({
@@ -43,6 +43,7 @@ export class DashboardComponent implements OnInit {
   // Modais
   showModalAtendimentosUsuario = false;
   showModalMediaOperador = false;
+  showModalAtendimentosPrioridade = false;
   showModalContasPagar = false;
   showModalContasPagas = false;
   showModalContasAReceber = false;
@@ -64,6 +65,7 @@ export class DashboardComponent implements OnInit {
   
   dadosModalAtendimentosUsuario: AtendimentoPorUsuarioDto[] = [];
   dadosModalMediaOperador: MediaPorOperadorDto[] = [];
+  dadosModalAtendimentosPrioridade: AtendimentoPorPrioridadeDto[] = [];
   dadosModalContasPagar: ContaAPagarDto[] = [];
   dadosModalContasPagas: ContaAPagarDto[] = [];
   dadosModalContasAReceber: ContaAPagarDto[] = [];
@@ -166,6 +168,9 @@ export class DashboardComponent implements OnInit {
         if (!this.estatisticas.atendimentosPorClienteMes) {
           this.estatisticas.atendimentosPorClienteMes = [];
         }
+        if (!this.estatisticas.atendimentosPorPrioridade) {
+          this.estatisticas.atendimentosPorPrioridade = [];
+        }
         this.loading = false;
         this.animarValoresEstatisticas();
       },
@@ -264,12 +269,35 @@ export class DashboardComponent implements OnInit {
           dataFim: fimMesAnterior
         };
       }
+
+      case PeriodoFiltro.Geral:
+        return {
+          dataInicio: new Date(2000, 0, 1),
+          dataFim: new Date(hoje)
+        };
       
       default:
         return {
           dataInicio: new Date(hoje),
           dataFim: new Date(hoje)
         };
+    }
+  }
+
+  labelPeriodoSelecionado(): string {
+    switch (this.periodoSelecionado) {
+      case PeriodoFiltro.Dia:
+        return 'dia atual';
+      case PeriodoFiltro.Semana:
+        return 'últimos 7 dias';
+      case PeriodoFiltro.Mes:
+        return 'mês atual';
+      case PeriodoFiltro.MesAnterior:
+        return 'mês anterior';
+      case PeriodoFiltro.Geral:
+        return 'geral';
+      default:
+        return 'período selecionado';
     }
   }
 
@@ -293,6 +321,22 @@ export class DashboardComponent implements OnInit {
 
   fecharModalMediaOperador() {
     this.showModalMediaOperador = false;
+  }
+
+  abrirModalAtendimentosPrioridade() {
+    if (this.estatisticas) {
+      this.dadosModalAtendimentosPrioridade = this.estatisticas.atendimentosPorPrioridade ?? [];
+      this.showModalAtendimentosPrioridade = true;
+    }
+  }
+
+  fecharModalAtendimentosPrioridade() {
+    this.showModalAtendimentosPrioridade = false;
+  }
+
+  totalAtendimentosPorPrioridade(): number {
+    return (this.estatisticas?.atendimentosPorPrioridade ?? [])
+      .reduce((sum, item) => sum + (item.quantidade ?? 0), 0);
   }
 
   formatarMedia(valor: number): string {

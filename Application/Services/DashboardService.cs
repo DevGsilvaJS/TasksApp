@@ -99,7 +99,9 @@ public class DashboardService : IDashboardService
                             DataCadastro = tarefa.TarDtCadastro,
                             ClienteId = cliente.CliId,
                             ClienteCodigo = cliente.CliCodigo,
-                            ClienteNome = pessoaCliente?.PesFantasia ?? "Desconhecido"
+                            ClienteNome = pessoaCliente?.PesFantasia ?? "Desconhecido",
+                            Prioridade = tarefa.TarPrioridade,
+                            PrioridadeDescricao = ObterDescricaoPrioridade(tarefa.TarPrioridade)
                         });
                     }
                 }
@@ -175,9 +177,8 @@ public class DashboardService : IDashboardService
                 clientesNomes: clientesCrDict))
             .ToList();
 
-        // 3. Atendimentos por cliente (desde sempre, não por período/mês)
-        var todasTarefasSempre = todasTarefasComData.ToList();
-        var atendimentosPorCliente = todasTarefasSempre
+        // 3. Atendimentos por cliente (respeita o período selecionado)
+        var atendimentosPorCliente = todasTarefas
             .GroupBy(t => t.CliId)
             .Select(g => new
             {
@@ -270,17 +271,36 @@ public class DashboardService : IDashboardService
         var valorTotalContasPagas = contasPagasDto.Sum(c => c.Valor);
         var valorTotalContasRecebidas = contasRecebidasDto.Sum(c => c.Valor);
 
-        // 5. Atendimentos por cliente desde sempre (com percentual) — mesma base da seção 3
-        var totalAtendimentosSempre = atendimentosPorClienteDto.Sum(a => a.Quantidade);
+        // 5. Atendimentos por cliente no período (com percentual) — mesma base da seção 3
+        var totalAtendimentosPeriodo = atendimentosPorClienteDto.Sum(a => a.Quantidade);
         var atendimentosPorClienteMesDto = atendimentosPorClienteDto
             .Select(a => new AtendimentoPorClienteMesDto
             {
                 ClienteId = a.ClienteId,
                 ClienteNome = a.ClienteNome,
                 Quantidade = a.Quantidade,
-                Percentual = totalAtendimentosSempre > 0 ? (decimal)a.Quantidade / totalAtendimentosSempre * 100 : 0
+                Percentual = totalAtendimentosPeriodo > 0 ? (decimal)a.Quantidade / totalAtendimentosPeriodo * 100 : 0
             })
             .OrderByDescending(a => a.Quantidade)
+            .ToList();
+
+        // 5.1 Atendimentos por prioridade no período
+        var totalPorPrioridade = todasTarefas.Count;
+        var atendimentosPorPrioridadeDto = Enum.GetValues<PrioridadeTarefa>()
+            .Select(p =>
+            {
+                var quantidade = todasTarefas.Count(t => t.TarPrioridade == p);
+                return new AtendimentoPorPrioridadeDto
+                {
+                    Prioridade = p,
+                    PrioridadeDescricao = ObterDescricaoPrioridade(p),
+                    Quantidade = quantidade,
+                    Percentual = totalPorPrioridade > 0
+                        ? Math.Round((decimal)quantidade / totalPorPrioridade * 100, 1)
+                        : 0
+                };
+            })
+            .OrderByDescending(a => a.Prioridade)
             .ToList();
 
         // Calcular lucro (Contas Recebidas - Contas Pagas)
@@ -288,37 +308,36 @@ public class DashboardService : IDashboardService
         // O lucro é calculado como: Contas Recebidas (CR) - Contas Pagas (CP)
         var lucro = valorTotalContasRecebidas - valorTotalContasPagas;
 
-        // Média diária no mês atual por dias úteis (seg–sex)
-        // Equipe: total ÷ dias úteis | Operador: média da equipe ÷ qtd. operadores do mês
-        var agoraLocal = DateTime.Now;
-        var inicioMesLocal = new DateTime(agoraLocal.Year, agoraLocal.Month, 1, 0, 0, 0, DateTimeKind.Local);
-        var fimMesLocal = agoraLocal.Date.AddDays(1).AddTicks(-1);
-        var inicioMesUtc = inicioMesLocal.ToUniversalTime();
-        var fimMesUtc = fimMesLocal.ToUniversalTime();
+        // Média diária no período selecionado por dias úteis (seg–sex)
+        // Equipe: total ÷ dias úteis | Operador: média da equipe ÷ qtd. operadores do período
+        var inicioPeriodoLocal = dataInicio.Date;
+        var fimPeriodoLocal = dataFim.Date;
 
-        var tarefasMesAtual = todasTarefasComData.Where(t =>
+        // Em períodos amplos (ex.: Geral), contar dias úteis a partir do 1º atendimento
+        if (todasTarefas.Count > 0)
         {
-            if (!t.TarDtCadastro.HasValue) return false;
-            var dataCadastro = t.TarDtCadastro.Value;
-            var dataCadastroUtc = dataCadastro.Kind == DateTimeKind.Utc
-                ? dataCadastro
-                : dataCadastro.ToUniversalTime();
-            return dataCadastroUtc >= inicioMesUtc && dataCadastroUtc <= fimMesUtc;
-        }).ToList();
+            var primeiraData = todasTarefas
+                .Where(t => t.TarDtCadastro.HasValue)
+                .Select(t => t.TarDtCadastro!.Value.Date)
+                .DefaultIfEmpty(inicioPeriodoLocal)
+                .Min();
+            if (primeiraData > inicioPeriodoLocal)
+                inicioPeriodoLocal = primeiraData;
+        }
 
-        var atendimentosMesAtual = tarefasMesAtual.Count;
-        var diasUteis = ContarDiasUteis(inicioMesLocal.Date, agoraLocal.Date);
-        var operadoresMes = tarefasMesAtual.Select(t => t.UsuId).Distinct().Count();
+        var diasUteis = ContarDiasUteis(inicioPeriodoLocal, fimPeriodoLocal);
+        var atendimentosPeriodo = todasTarefas.Count;
+        var operadoresPeriodo = todasTarefas.Select(t => t.UsuId).Distinct().Count();
 
         var mediaDiariaAtendimentos = diasUteis > 0
-            ? Math.Round((decimal)atendimentosMesAtual / diasUteis, 1)
+            ? Math.Round((decimal)atendimentosPeriodo / diasUteis, 1)
             : 0;
-        var mediaDiariaPorOperador = diasUteis > 0 && operadoresMes > 0
-            ? Math.Round((decimal)atendimentosMesAtual / diasUteis / operadoresMes, 1)
+        var mediaDiariaPorOperador = diasUteis > 0 && operadoresPeriodo > 0
+            ? Math.Round((decimal)atendimentosPeriodo / diasUteis / operadoresPeriodo, 1)
             : 0;
 
         var mediasPorOperador = new List<MediaPorOperadorDto>();
-        foreach (var grupo in tarefasMesAtual.GroupBy(t => t.UsuId))
+        foreach (var grupo in todasTarefas.GroupBy(t => t.UsuId))
         {
             var usuario = await _usuarioRepository.GetByIdAsync(grupo.Key);
             var pessoa = usuario != null ? await _pessoaRepository.GetByIdAsync(usuario.PesId) : null;
@@ -361,7 +380,19 @@ public class DashboardService : IDashboardService
             ContasAReceber = contasAReceber,
             ContasRecebidas = contasRecebidasDto,
             AtendimentosPorCliente = atendimentosPorClienteDto,
-            AtendimentosPorClienteMes = atendimentosPorClienteMesDto
+            AtendimentosPorClienteMes = atendimentosPorClienteMesDto,
+            AtendimentosPorPrioridade = atendimentosPorPrioridadeDto
+        };
+    }
+
+    private static string ObterDescricaoPrioridade(PrioridadeTarefa prioridade)
+    {
+        return prioridade switch
+        {
+            PrioridadeTarefa.Baixa => "Baixa",
+            PrioridadeTarefa.Media => "Média",
+            PrioridadeTarefa.Alta => "Alta",
+            _ => prioridade.ToString()
         };
     }
 

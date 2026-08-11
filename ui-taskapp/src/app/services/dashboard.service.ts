@@ -25,6 +25,7 @@ export interface DashboardEstatisticasDto {
   contasRecebidas: ContaAPagarDto[];
   atendimentosPorCliente: AtendimentoPorClienteDto[];
   atendimentosPorClienteMes: AtendimentoPorClienteMesDto[];
+  atendimentosPorPrioridade: AtendimentoPorPrioridadeDto[];
 }
 
 export interface MediaPorOperadorDto {
@@ -49,6 +50,15 @@ export interface DetalheAtendimentoDto {
   clienteId: number;
   clienteCodigo: string;
   clienteNome: string;
+  prioridade: number;
+  prioridadeDescricao: string;
+}
+
+export interface AtendimentoPorPrioridadeDto {
+  prioridade: number;
+  prioridadeDescricao: string;
+  quantidade: number;
+  percentual: number;
 }
 
 export interface ContaAPagarDto {
@@ -116,7 +126,8 @@ export enum PeriodoFiltro {
   Dia = 'dia',
   Semana = 'semana',
   Mes = 'mes',
-  MesAnterior = 'mes-anterior'
+  MesAnterior = 'mes-anterior',
+  Geral = 'geral'
 }
 
 @Injectable({

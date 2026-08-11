@@ -20,6 +20,9 @@ public class CadastroTarefaDto
 
     public DateTime? DataConclusao { get; set; }
 
+    /// <summary>Data do atendimento. Se não informada, usa a data/hora atual.</summary>
+    public DateTime? DataCadastro { get; set; }
+
     public string? Descricao { get; set; }
 
     [MaxLength(255)]

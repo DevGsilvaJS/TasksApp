@@ -1,11 +1,13 @@
+using Domain.Enums;
+
 namespace Application.DTOs;
 
 public class DashboardEstatisticasDto
 {
     public int TotalAtendimentosPorUsuario { get; set; }
-    /// <summary>Média da equipe por dia útil no mês atual.</summary>
+    /// <summary>Média da equipe por dia útil no período selecionado.</summary>
     public decimal MediaDiariaAtendimentos { get; set; }
-    /// <summary>Média por operador por dia útil no mês atual.</summary>
+    /// <summary>Média por operador por dia útil no período selecionado.</summary>
     public decimal MediaDiariaPorOperador { get; set; }
     public int DiasUteisMesAtual { get; set; }
     public List<MediaPorOperadorDto> MediasPorOperador { get; set; } = new();
@@ -26,6 +28,7 @@ public class DashboardEstatisticasDto
     public List<ContaAPagarDto> ContasRecebidas { get; set; } = new();
     public List<AtendimentoPorClienteDto> AtendimentosPorCliente { get; set; } = new();
     public List<AtendimentoPorClienteMesDto> AtendimentosPorClienteMes { get; set; } = new();
+    public List<AtendimentoPorPrioridadeDto> AtendimentosPorPrioridade { get; set; } = new();
 }
 
 public class AtendimentoPorUsuarioDto
@@ -53,6 +56,16 @@ public class DetalheAtendimentoDto
     public int ClienteId { get; set; }
     public string ClienteCodigo { get; set; } = string.Empty;
     public string ClienteNome { get; set; } = string.Empty;
+    public PrioridadeTarefa Prioridade { get; set; }
+    public string PrioridadeDescricao { get; set; } = string.Empty;
+}
+
+public class AtendimentoPorPrioridadeDto
+{
+    public PrioridadeTarefa Prioridade { get; set; }
+    public string PrioridadeDescricao { get; set; } = string.Empty;
+    public int Quantidade { get; set; }
+    public decimal Percentual { get; set; }
 }
 
 public class ContaAPagarDto
