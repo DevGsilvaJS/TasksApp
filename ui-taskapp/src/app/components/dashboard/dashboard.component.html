@@ -83,18 +83,26 @@
             <p class="card-subtitle">Operador / dia útil ({{ labelPeriodoSelecionado() }})</p>
           </div>
         </div>
-        <div class="stat-card" (click)="abrirModalAtendimentosPrioridade()" role="button" tabindex="0" (keydown.enter)="abrirModalAtendimentosPrioridade()">
-          <div class="card-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"></path>
-            </svg>
+      </div>
+    </fieldset>
+
+    <fieldset class="dashboard-fieldset">
+      <legend class="dashboard-fieldset-legend">Atendimentos por Prioridade</legend>
+      <div class="cards-container">
+        @for (item of estatisticas.atendimentosPorPrioridade; track item.prioridade) {
+          <div class="stat-card">
+            <div class="card-icon" [attr.data-prioridade]="item.prioridade">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"></path>
+              </svg>
+            </div>
+            <div class="card-content">
+              <h3>{{ item.prioridadeDescricao | uppercase }}</h3>
+              <p class="card-value">{{ item.quantidade }}</p>
+              <p class="card-subtitle">atendimento(s) · {{ formatarPercentual(item.percentual) }} do total</p>
+            </div>
           </div>
-          <div class="card-content">
-            <h3>Atendimentos por Prioridade</h3>
-            <p class="card-value">{{ totalAtendimentosPorPrioridade() }}</p>
-            <p class="card-subtitle">Total no período</p>
-          </div>
-        </div>
+        }
       </div>
     </fieldset>
 
@@ -181,11 +189,13 @@
             <p class="card-value">{{ alertasContratosVencendo.length }}</p>
           </div>
         </div>
-        <div class="stat-card stat-card-financeiro-pendente" (click)="abrirModalContasAReceber()">
+        <div class="stat-card" (click)="abrirModalContasAReceber()">
           <div class="card-icon card-icon-receber">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-              <line x1="1" y1="10" x2="23" y2="10"></line>
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+              <circle cx="12" cy="12" r="2"></circle>
+              <path d="M6 12h.01"></path>
+              <path d="M18 12h.01"></path>
             </svg>
           </div>
           <div class="card-content">
@@ -193,11 +203,12 @@
             <p class="card-value">{{ formatarMoeda(totalContasAReceberDisplay) }}</p>
           </div>
         </div>
-        <div class="stat-card stat-card-financeiro-recebido" (click)="abrirModalContasRecebidas()">
+        <div class="stat-card" (click)="abrirModalContasRecebidas()">
           <div class="card-icon card-icon-recebido">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+              <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+              <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
             </svg>
           </div>
           <div class="card-content">
@@ -205,11 +216,12 @@
             <p class="card-value">{{ formatarMoeda(totalContasRecebidasDisplay) }}</p>
           </div>
         </div>
-        <div class="stat-card stat-card-financeiro-pendente" (click)="abrirModalContasPagar()">
+        <div class="stat-card" (click)="abrirModalContasPagar()">
           <div class="card-icon card-icon-pagar">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-              <line x1="1" y1="10" x2="23" y2="10"></line>
+              <path d="M12 19V5"></path>
+              <polyline points="5 12 12 5 19 12"></polyline>
+              <path d="M5 21h14"></path>
             </svg>
           </div>
           <div class="card-content">
@@ -217,11 +229,12 @@
             <p class="card-value">{{ formatarMoeda(totalContasAPagarDisplay) }}</p>
           </div>
         </div>
-        <div class="stat-card stat-card-financeiro-pago" (click)="abrirModalContasPagas()">
+        <div class="stat-card" (click)="abrirModalContasPagas()">
           <div class="card-icon card-icon-pago">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+              <path d="M2 10h20"></path>
+              <polyline points="7 15 9 17 13 13"></polyline>
             </svg>
           </div>
           <div class="card-content">
@@ -298,7 +311,6 @@
                           <th class="col-numero">Nº</th>
                           <th class="col-titulo">Título</th>
                           <th class="col-data">Data</th>
-                          <th class="col-prioridade">Prioridade</th>
                           <th class="col-cliente">Cliente</th>
                         </tr>
                       </thead>
@@ -308,11 +320,6 @@
                             <td class="col-numero">{{ detalhe.numero || '-' }}</td>
                             <td class="col-titulo" [title]="detalhe.titulo || ''">{{ detalhe.titulo || '-' }}</td>
                             <td class="col-data">{{ formatarData(detalhe.dataCadastro || '') }}</td>
-                            <td class="col-prioridade">
-                              <span class="prioridade-badge" [attr.data-prioridade]="detalhe.prioridade">
-                                {{ detalhe.prioridadeDescricao || '-' }}
-                              </span>
-                            </td>
                             <td class="col-cliente" [title]="detalhe.clienteCodigo + ' - ' + detalhe.clienteNome">
                               {{ detalhe.clienteCodigo }} - {{ detalhe.clienteNome }}
                             </td>
@@ -360,46 +367,6 @@
                     <td><strong>{{ item.usuarioNome }}</strong></td>
                     <td>{{ item.quantidade }}</td>
                     <td>{{ formatarMedia(item.mediaDiaria) }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          }
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- Modal: Atendimentos por Prioridade -->
-  @if (showModalAtendimentosPrioridade) {
-    <div class="modal-overlay" (click)="fecharModalAtendimentosPrioridade()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Atendimentos por Prioridade ({{ labelPeriodoSelecionado() }})</h3>
-          <button class="btn-close" (click)="fecharModalAtendimentosPrioridade()">×</button>
-        </div>
-        <div class="modal-body">
-          @if (dadosModalAtendimentosPrioridade.length === 0) {
-            <p class="empty-state">Nenhum atendimento encontrado no período selecionado.</p>
-          } @else {
-            <table class="detail-table">
-              <thead>
-                <tr>
-                  <th>Prioridade</th>
-                  <th>Quantidade</th>
-                  <th>Percentual</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of dadosModalAtendimentosPrioridade; track item.prioridade) {
-                  <tr>
-                    <td>
-                      <span class="prioridade-badge" [attr.data-prioridade]="item.prioridade">
-                        {{ item.prioridadeDescricao | uppercase }}
-                      </span>
-                    </td>
-                    <td>{{ item.quantidade }} atendimento(s)</td>
-                    <td>{{ formatarPercentual(item.percentual) }}</td>
                   </tr>
                 }
               </tbody>

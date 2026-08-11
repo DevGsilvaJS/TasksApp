@@ -106,14 +106,16 @@
 }
 
 .modal-tarefa {
-  max-width: 1500px;
-  width: 99%;
-  max-height: 95vh;
+  width: 96vw;
+  max-width: 96vw;
+  max-height: 96vh;
+  min-height: min(70vh, 900px);
 }
 
-@media (min-width: 1600px) {
+@media (min-width: 2000px) {
   .modal-tarefa {
-    max-width: 1700px;
+    width: 94vw;
+    max-width: 94vw;
   }
 }
 
@@ -209,10 +211,34 @@
 
 .form-select, .form-input {
   width: 100%;
-  padding: 0.625rem;
+  height: 2.75rem;
+  padding: 0.625rem 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
   font-size: 1rem;
+  line-height: 1.25;
+  font-family: inherit;
+  color: #111827;
+  background-color: #fff;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.form-input[type="date"] {
+  appearance: none;
+  -webkit-appearance: none;
+  display: block;
+  min-height: 2.75rem;
+}
+
+.form-input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.65;
+}
+
+.form-select {
+  appearance: auto;
+  cursor: pointer;
 }
 
 .form-select:focus, .form-input:focus {
@@ -975,10 +1001,12 @@ td.grupo-cliente-cell {
   display: grid;
   gap: 1rem;
   grid-template-columns: 1fr 1fr 1fr;
+  align-items: start;
 }
 
 .form-row-4 {
   grid-template-columns: 1fr 1fr 1fr 1fr;
+  align-items: start;
 }
 
 @media (max-width: 900px) {

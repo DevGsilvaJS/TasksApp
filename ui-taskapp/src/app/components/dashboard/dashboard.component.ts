@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DashboardService, DashboardEstatisticasDto, PeriodoFiltro, AtendimentoPorUsuarioDto, ContaAPagarDto, AtendimentoPorClienteDto, AtendimentoPorClienteMesDto, ValorPorMesPorUsuarioDto, TelemarketingContatosDto, AlertaContratoVencendoDto, MediaPorOperadorDto, AtendimentoPorPrioridadeDto } from '../../services/dashboard.service';
+import { DashboardService, DashboardEstatisticasDto, PeriodoFiltro, AtendimentoPorUsuarioDto, ContaAPagarDto, AtendimentoPorClienteDto, AtendimentoPorClienteMesDto, ValorPorMesPorUsuarioDto, TelemarketingContatosDto, AlertaContratoVencendoDto, MediaPorOperadorDto } from '../../services/dashboard.service';
 import { NotaServicoService, NotaServicoItemDto } from '../../services/nota-servico.service';
 
 @Component({
@@ -43,7 +43,6 @@ export class DashboardComponent implements OnInit {
   // Modais
   showModalAtendimentosUsuario = false;
   showModalMediaOperador = false;
-  showModalAtendimentosPrioridade = false;
   showModalContasPagar = false;
   showModalContasPagas = false;
   showModalContasAReceber = false;
@@ -65,7 +64,6 @@ export class DashboardComponent implements OnInit {
   
   dadosModalAtendimentosUsuario: AtendimentoPorUsuarioDto[] = [];
   dadosModalMediaOperador: MediaPorOperadorDto[] = [];
-  dadosModalAtendimentosPrioridade: AtendimentoPorPrioridadeDto[] = [];
   dadosModalContasPagar: ContaAPagarDto[] = [];
   dadosModalContasPagas: ContaAPagarDto[] = [];
   dadosModalContasAReceber: ContaAPagarDto[] = [];
@@ -321,22 +319,6 @@ export class DashboardComponent implements OnInit {
 
   fecharModalMediaOperador() {
     this.showModalMediaOperador = false;
-  }
-
-  abrirModalAtendimentosPrioridade() {
-    if (this.estatisticas) {
-      this.dadosModalAtendimentosPrioridade = this.estatisticas.atendimentosPorPrioridade ?? [];
-      this.showModalAtendimentosPrioridade = true;
-    }
-  }
-
-  fecharModalAtendimentosPrioridade() {
-    this.showModalAtendimentosPrioridade = false;
-  }
-
-  totalAtendimentosPorPrioridade(): number {
-    return (this.estatisticas?.atendimentosPorPrioridade ?? [])
-      .reduce((sum, item) => sum + (item.quantidade ?? 0), 0);
   }
 
   formatarMedia(valor: number): string {
