@@ -77,6 +77,14 @@ export class AppComponent implements OnInit {
     return this.authService.isAdministrador();
   }
 
+  get iniciaisUsuario(): string {
+    const nome = (this.usuarioNome || '').trim();
+    if (!nome) return 'U';
+    const partes = nome.split(/\s+/).filter(Boolean);
+    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+    return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+  }
+
   ngOnInit() {
     this.atualizarMenusLaterais();
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
