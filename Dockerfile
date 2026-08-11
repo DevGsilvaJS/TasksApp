@@ -72,6 +72,9 @@ RUN printf '{"commit":"%s","builtAt":"%s","features":["agrupamento-coluna","baix
 
 # Variáveis de ambiente
 ENV ASPNETCORE_ENVIRONMENT=Production
+# Evita FileSystemWatcher/inotify (limite 128 no Render) ao carregar appsettings
+ENV DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false
+ENV DOTNET_USE_POLLING_FILE_WATCHER=1
 
 # Render injeta PORT automaticamente via variável de ambiente
 ENTRYPOINT ["dotnet", "TasksAppAPI.dll"]
